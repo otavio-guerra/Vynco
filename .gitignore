@@ -21,3 +21,19 @@ Thumbs.db
 dist/
 
 .vercel
+
+# gerado pela sincronização do Farol com a IA escolhida (a fonte é agent/)
+/CLAUDE.md
+/AGENTS.md
+/GEMINI.md
+/QWEN.md
+/.mcp.json
+/opencode.json
+/.claude/
+/.agents/
+/.gemini/
+/.qwen/
+/.opencode/
+/.github/skills/
+/.github/prompts/
+/.github/copilot-instructions.md

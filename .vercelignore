@@ -2,4 +2,5 @@
 !/app
 /app/*
 !/app/public
+!/api
 !/vercel.json
