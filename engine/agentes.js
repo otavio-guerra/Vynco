@@ -11,6 +11,12 @@ const C = require('./config.js')
 const ROOT = C.ROOT, HOME = os.homedir(), IS_WIN = process.platform === 'win32'
 const FONTE = path.join(ROOT, 'agent')
 const POSTAR = 'node engine/linkedin/postar.js'
+// O que as rotinas podem rodar e onde podem escrever. Todo o resto fica bloqueado para a IA:
+// ela não roda "node -e", PowerShell nem outros programas, não lê config/ (onde fica o cofre) e não mexe no resto do motor.
+// O código que ela escreve (dias/, pautas/) roda dentro da caixa de permissões (engine/caixa.js): sem processos, sem rede, sem cofre.
+const SCRIPTS = ['node engine/dailyui/dia.js', 'node engine/exportar-png.js', 'node engine/noticias/carrossel.js', 'node engine/noticias/exportar.js', 'node engine/desigma/anexar.js', 'node --max-old-space-size=6144 engine/desigma/anexar.js']
+const ESCRITA = ['engine/dailyui/dias', 'engine/noticias/pautas']
+const TRAVA_TXT = 'não pode publicar nem ler o cofre; o código que escreve roda numa caixa sem rede.'
 
 // ---------------------------------------------------------------- achar e rodar a linha de comando de cada agente
 const PASTAS = () => (process.env.PATH || '').split(path.delimiter).concat([
@@ -63,8 +69,9 @@ const AGENTES = {
     instrucoes: 'CLAUDE.md', skills: ['.claude/skills'],
     prompts: n => ({ arq: path.join(ROOT, '.claude', 'commands', n + '.md'), fmt: 'md' }),
     plugins(d) { fundir(path.join(ROOT, '.mcp.json'), { mcpServers: { desigma: { command: d.mcpExe, args: ['--workspace', d.workspace] } } }); fundir(path.join(ROOT, '.claude', 'settings.json'), { enabledMcpjsonServers: ['desigma'] }) },
-    trava() { fundir(path.join(ROOT, '.claude', 'settings.json'), { permissions: { deny: [`Bash(${POSTAR}:*)`] } }); return 'O Claude não pode rodar o script de publicação.' },
-    rotina: arq => ({ args: ['-p', '--permission-mode', 'acceptEdits', '--allowedTools', 'Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(node:*),mcp__desigma', '--disallowedTools', `Bash(${POSTAR}:*)`], stdin: fs.readFileSync(path.join(ROOT, arq), 'utf8') }),
+    trava() { fundir(path.join(ROOT, '.claude', 'settings.json'), { permissions: { deny: [`Bash(${POSTAR}:*)`, 'Read(./config/**)', 'Edit(./config/**)'] } }); return 'O Claude ' + TRAVA_TXT },
+    // sem acceptEdits: no modo -p, tudo o que não está na lista é negado (testado: escrever fora de dias/ e pautas/, ler config/ e "node -e" ficam bloqueados)
+    rotina: arq => ({ args: ['-p', '--allowedTools', ['Read', 'Glob', 'Grep', 'WebSearch', 'WebFetch', 'mcp__desigma', ...ESCRITA.map(d => `Edit(./${d}/**)`), ...SCRIPTS.map(s => `Bash(${s}:*)`)].join(','), '--disallowedTools', [`Bash(${POSTAR}:*)`, 'Read(./config/**)', 'Edit(./config/**)'].join(',')], stdin: fs.readFileSync(path.join(ROOT, arq), 'utf8') }),
     teste: ['-p', 'Responda apenas: ok'],
   },
   codex: {
@@ -75,8 +82,8 @@ const AGENTES = {
     instrucoes: 'AGENTS.md', skills: ['.agents/skills'],
     prompts: n => ({ arq: path.join(HOME, '.codex', 'prompts', n + '.md'), fmt: 'md' }),
     async plugins(d, bin) { if ((await rodar(bin, ['mcp', 'get', 'desigma'])).code === 0) return 'já estava ligado'; const r = await rodar(bin, ['mcp', 'add', 'desigma', '--', d.mcpExe, '--workspace', d.workspace]); if (r.code) throw new Error((r.err || r.out).slice(0, 200)) },
-    trava: () => 'O Codex roda as rotinas sem rede no terminal: o script de publicação não alcança o LinkedIn.',
-    rotina: arq => ({ args: ['exec', '--sandbox', 'workspace-write', '--skip-git-repo-check', '-c', 'tools.web_search=true', pedir(arq)] }),
+    trava: () => 'O Codex roda no sandbox workspace-write, sem rede no terminal; o código que ele escreve roda numa caixa sem rede.',
+    rotina: arq => ({ args: ['exec', '--sandbox', 'workspace-write', '-c', 'sandbox_workspace_write.network_access=false', '--skip-git-repo-check', '-c', 'tools.web_search=true', pedir(arq)] }),
     teste: ['exec', '--skip-git-repo-check', 'Responda apenas: ok'],
   },
   gemini: {
@@ -90,8 +97,9 @@ const AGENTES = {
     instrucoes: 'GEMINI.md', skills: ['.gemini/skills'],
     prompts: n => ({ arq: path.join(ROOT, '.gemini', 'commands', n + '.toml'), fmt: 'toml' }),
     plugins(d) { fundir(path.join(ROOT, '.gemini', 'settings.json'), { mcpServers: { desigma: { command: d.mcpExe, args: ['--workspace', d.workspace] } } }) },
-    trava() { fundir(path.join(ROOT, '.gemini', 'settings.json'), { tools: { exclude: [`run_shell_command(${POSTAR})`] } }); return 'O Gemini não pode rodar o script de publicação.' },
-    rotina: arq => ({ args: ['--yolo', '-p', pedir(arq)] }),
+    // sem --yolo: edições são aceitas sozinhas e o terminal só roda os scripts da lista (tools.allowed)
+    trava() { fundir(path.join(ROOT, '.gemini', 'settings.json'), { tools: { allowed: SCRIPTS.map(s => `run_shell_command(${s})`), exclude: [`run_shell_command(${POSTAR})`] } }); return 'O Gemini ' + TRAVA_TXT },
+    rotina: arq => ({ args: ['--approval-mode', 'auto_edit', '-p', pedir(arq)] }),
     teste: ['-p', 'Responda apenas: ok'],
   },
   // ---- outros (beta): login pelo próprio terminal do agente
@@ -102,8 +110,8 @@ const AGENTES = {
     instrucoes: '.github/copilot-instructions.md', skills: ['.github/skills'],
     prompts: n => ({ arq: path.join(ROOT, '.github', 'prompts', n + '.prompt.md'), fmt: 'md' }),
     plugins(d) { fundir(path.join(HOME, '.copilot', 'mcp-config.json'), { mcpServers: { desigma: { type: 'local', command: d.mcpExe, args: ['--workspace', d.workspace], tools: ['*'] } } }) },
-    trava: () => 'As rotinas rodam com o script de publicação bloqueado (--deny-tool).',
-    rotina: arq => ({ args: ['-p', pedir(arq), '--allow-all-tools', '--deny-tool', `shell(${POSTAR})`] }),
+    trava: () => 'O Copilot ' + TRAVA_TXT,
+    rotina: arq => ({ args: ['-p', pedir(arq), '--allow-tool', 'write', ...SCRIPTS.flatMap(s => ['--allow-tool', `shell(${s})`]), '--deny-tool', `shell(${POSTAR})`] }),
     teste: ['-p', 'Responda apenas: ok'],
   },
   qwen: {
@@ -113,8 +121,8 @@ const AGENTES = {
     instrucoes: 'QWEN.md', skills: ['.qwen/skills'],
     prompts: n => ({ arq: path.join(ROOT, '.qwen', 'commands', n + '.toml'), fmt: 'toml' }),
     plugins(d) { fundir(path.join(ROOT, '.qwen', 'settings.json'), { mcpServers: { desigma: { command: d.mcpExe, args: ['--workspace', d.workspace] } } }) },
-    trava() { fundir(path.join(ROOT, '.qwen', 'settings.json'), { tools: { exclude: [`run_shell_command(${POSTAR})`] } }); return 'O Qwen não pode rodar o script de publicação.' },
-    rotina: arq => ({ args: ['--yolo', '-p', pedir(arq)] }),
+    trava() { fundir(path.join(ROOT, '.qwen', 'settings.json'), { tools: { allowed: SCRIPTS.map(s => `run_shell_command(${s})`), exclude: [`run_shell_command(${POSTAR})`] } }); return 'O Qwen ' + TRAVA_TXT },
+    rotina: arq => ({ args: ['--approval-mode', 'auto_edit', '-p', pedir(arq)] }),
     teste: ['-p', 'Responda apenas: ok'],
   },
   opencode: {
@@ -124,7 +132,7 @@ const AGENTES = {
     instrucoes: 'AGENTS.md', skills: ['.opencode/skills'],
     prompts: n => ({ arq: path.join(ROOT, '.opencode', 'command', n + '.md'), fmt: 'md' }),
     plugins(d) { fundir(path.join(ROOT, 'opencode.json'), { mcp: { desigma: { type: 'local', command: [d.mcpExe, '--workspace', d.workspace], enabled: true } } }) },
-    trava() { fundir(path.join(ROOT, 'opencode.json'), { permission: { bash: { [`${POSTAR}*`]: 'deny' } } }); return 'O OpenCode não pode rodar o script de publicação.' },
+    trava() { fundir(path.join(ROOT, 'opencode.json'), { permission: { bash: { '*': 'deny', ...Object.fromEntries(SCRIPTS.map(s => [`${s}*`, 'allow'])), [`${POSTAR}*`]: 'deny' } } }); return 'O OpenCode ' + TRAVA_TXT },
     rotina: arq => ({ args: ['run', pedir(arq)] }),
     teste: ['run', 'Responda apenas: ok'],
   },

@@ -2,6 +2,7 @@
 // Daily UI: gera o SVG e a legenda de um dia a partir de dias/NNN.js.
 //   node dia.js hoje        → mostra o número e o tema de hoje (conta só dias úteis desde temas.json.inicio)
 //   node dia.js 1           → gera ../svg/001-<tema>.svg e ../legendas/001.txt
+require('../caixa.js')(__filename)   // dias/NNN.js é escrito pela IA: roda sem processos, sem rede e sem acesso ao cofre
 const fs = require('fs')
 const path = require('path')
 const { Board, T, FONT } = require('../brand/lib.js')

@@ -9,7 +9,8 @@ Você trabalha dentro do Farol, um motor de conteúdo para LinkedIn. Responda em
 
 ## O que você nunca faz
 - **Nunca publique nada.** Não rode `node engine/linkedin/postar.js` e não chame a API do LinkedIn. Aprovar e publicar é com o usuário, no painel do Farol.
-- Não leia nem mostre `config/linkedin.json` e `config/linkedin-token.json` (são segredos).
+- Não tente ler `config/` (lá fica o cofre de segredos) nem abrir o cofre por outros meios.
+- Rode só os scripts que as rotinas pedem. O código que você escreve em `engine/dailyui/dias` e `engine/noticias/pautas` roda numa caixa sem rede e sem processos: não tente contorná-la.
 - Não invente números, datas, falas, clientes ou resultados. Se um dado for disputado, mostre o outro lado.
 - Não copie trechos longos de matérias nem use imagens de terceiros.
 - Não apague peças já aprovadas (`workspace/*/aprovados/`) nem o registro `workspace/publicados.json`.

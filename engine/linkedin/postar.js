@@ -5,12 +5,12 @@
 const fs = require('fs')
 const path = require('path')
 
-const DIR = __dirname
 const [img, txt, flag] = process.argv.slice(2)
 const C = require('../config.js')
-// as chaves do app só são usadas no login; aqui basta o token (vale para a ponte do Farol e para o app próprio)
+// as chaves do app só são usadas no login; aqui basta o token, que vem do cofre cifrado (vale para a ponte do Farol e para o app próprio)
 const cfg = { version: C.cfg.linkedin.version }
-const tok = JSON.parse(fs.readFileSync(C.LINKEDIN.token, 'utf8'))
+const tok = require('../segredos.js').get('linkedin.token')
+if (!tok || !tok.access_token) { console.error('O LinkedIn não está conectado. Conecte no Farol (Ajustes).'); process.exit(2) }
 const legenda = fs.readFileSync(txt, 'utf8').trim()
 
 if (Date.now() > tok.expires_at - 86400000) { console.error('O acesso ao LinkedIn venceu (ou vence hoje). Reconecte no Farol (Ajustes).'); process.exit(2) }

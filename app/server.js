@@ -9,6 +9,7 @@ const crypto = require('crypto')
 const { spawn, execFile } = require('child_process')
 const C = require('../engine/config.js')
 const AG = require('../engine/agentes.js')
+const S = require('../engine/segredos.js')
 
 const ROOT = C.ROOT, PUB = path.join(__dirname, 'public')
 const TOKEN = crypto.randomBytes(24).toString('hex')
@@ -28,7 +29,7 @@ const agenteId = () => (C.load().agente || {}).id || null
 
 // ---------------------------------------------------------------- LinkedIn
 function linkedinStatus() {
-  const k = readJSON(C.LINKEDIN.config), t = readJSON(C.LINKEDIN.token)
+  const k = S.get('linkedin.app'), t = S.get('linkedin.token')
   return { proprio: !!(k && k.client_id && k.client_secret), connected: !!(t && t.access_token && t.expires_at > Date.now()), name: t && t.nome, expiresAt: t && t.expires_at, via: t && t.via, redirectUri: C.cfg.linkedin.redirectUri, aguardando: !!(LI && LI.expira > Date.now()) }
 }
 // login em andamento pela ponte do Farol (o state confere que o token que volta é deste pedido)
@@ -38,8 +39,7 @@ async function salvarToken(access_token, expires_in, via) {
   // confere o token com o próprio LinkedIn (nome e id vêm de lá, não do navegador)
   const me = await fetch('https://api.linkedin.com/v2/userinfo', { headers: { Authorization: `Bearer ${access_token}` } }).then(r => r.ok ? r.json() : null).catch(() => null)
   if (!me || !me.sub) throw new Error('O LinkedIn não confirmou o acesso. Tente de novo.')
-  fs.mkdirSync(C.CONFIG_DIR, { recursive: true })
-  fs.writeFileSync(C.LINKEDIN.token, JSON.stringify({ access_token, expires_at: Date.now() + (+expires_in || 5184000) * 1000, author: `urn:li:person:${me.sub}`, nome: me.name, foto: me.picture || null, via }, null, 2), { encoding: 'utf8', mode: 0o600 })
+  S.set('linkedin.token', { access_token, expires_at: Date.now() + (+expires_in || 5184000) * 1000, author: `urn:li:person:${me.sub}`, nome: me.name, foto: me.picture || null, via })
   return me.name
 }
 const PAGINA_VOLTA = () => `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Farol · LinkedIn</title>
@@ -139,7 +139,12 @@ const DEMO_STATUS = () => ({
   config: { assetsDir: 'examples/assets', workspaceDir: 'workspace', dailyUiStart: '2026-11-03' },
 })
 
+// só atende quem chamou pelo endereço local exato: barra o "DNS rebinding" (um site que aponta o próprio domínio para 127.0.0.1
+// para ler o painel como se fosse da mesma origem)
+const hostOk = h => { const p = server.address().port; return h === `127.0.0.1:${p}` || h === `localhost:${p}` }
+
 const server = http.createServer(async (req, res) => {
+  if (!hostOk(String(req.headers.host || '').toLowerCase())) return send(res, 403, 'endereço não permitido', 'text/plain; charset=utf-8')
   const u = new URL(req.url, `http://127.0.0.1:${PORT}`)
   try {
     // volta do login do LinkedIn pela ponte (a página lê o token do fragmento e manda para /api/linkedin/salvar)
@@ -170,7 +175,7 @@ const server = http.createServer(async (req, res) => {
           if (process.env.ENGINE_DEMO) return send(res, 200, DEMO_STATUS())
           const ag = agenteId(), cfg = C.load()
           const agente = ag ? { ...(await AG.status(ag)), nome: AG.AGENTES[ag].nome, via: AG.AGENTES[ag].via, sincronizado: cfg.agente.sincronizado } : null
-          return send(res, 200, { agente, linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart } })
+          return send(res, 200, { agente, linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() } })
         }
         case '/api/agentes': {
           const principais = ['claude', 'codex', 'gemini']
@@ -229,11 +234,10 @@ const server = http.createServer(async (req, res) => {
       case '/api/linkedin/keys': {
         const id = String(b.client_id || '').trim(), sec = String(b.client_secret || '').trim()
         if (!/^[A-Za-z0-9]{8,40}$/.test(id) || sec.length < 8) return send(res, 400, { erro: 'Confira o Client ID e o Client Secret.' })
-        fs.mkdirSync(C.CONFIG_DIR, { recursive: true })
-        fs.writeFileSync(C.LINKEDIN.config, JSON.stringify({ client_id: id, client_secret: sec }, null, 2), { encoding: 'utf8', mode: 0o600 })
+        S.set('linkedin.app', { client_id: id, client_secret: sec })
         return send(res, 200, { ok: true })
       }
-      case '/api/linkedin/disconnect': { if (exists(C.LINKEDIN.token)) fs.unlinkSync(C.LINKEDIN.token); return send(res, 200, { ok: true }) }
+      case '/api/linkedin/disconnect': S.del('linkedin.token'); return send(res, 200, { ok: true })
       // ---- Desigma
       case '/api/desigma/config': {
         const patch = {}

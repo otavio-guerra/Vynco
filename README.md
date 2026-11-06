@@ -49,9 +49,9 @@ Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fi
 ### Onde cada IA recebe o Farol
 | IA | Regras | Skills | Prompts | Plugin (Desigma) | Trava da publicação |
 |---|---|---|---|---|---|
-| Claude (Claude Code) | `CLAUDE.md` | `.claude/skills` | `.claude/commands` | `.mcp.json` | `permissions.deny` |
-| ChatGPT (Codex) | `AGENTS.md` | `.agents/skills` | `~/.codex/prompts` | `codex mcp add` | terminal sem rede |
-| Gemini (Gemini CLI) | `GEMINI.md` | `.gemini/skills` | `.gemini/commands` | `.gemini/settings.json` | `tools.exclude` |
+| Claude (Claude Code) | `CLAUDE.md` | `.claude/skills` | `.claude/commands` | `.mcp.json` | lista fechada de ferramentas e pastas |
+| ChatGPT (Codex) | `AGENTS.md` | `.agents/skills` | `~/.codex/prompts` | `codex mcp add` | sandbox `workspace-write`, terminal sem rede |
+| Gemini (Gemini CLI) | `GEMINI.md` | `.gemini/skills` | `.gemini/commands` | `.gemini/settings.json` | `tools.allowed` só com os scripts das rotinas |
 
 Tudo isso é gerado dentro da pasta do Farol a partir de `agent/` e fica fora do Git. Para mudar uma regra ou skill, edite `agent/` e clique em "Sincronizar de novo" em Ajustes. O mapa completo, com as IAs em beta, está em `engine/agentes.js`.
 
@@ -94,9 +94,12 @@ Depois é seguir a entrada. Para mudar caminhos à mão, copie `config/engine.co
 
 ## Segurança
 - O app escuta só em `127.0.0.1` e toda ação exige um token novo a cada vez que ele sobe. Assim, um site aberto no navegador não consegue agir por você.
-- O token do LinkedIn (e as chaves, se você usar o seu próprio app) ficam em `config/`, que está fora do Git. O app nunca devolve segredos para a tela.
+- O painel só responde a quem chama pelo endereço local exato (`127.0.0.1:<porta>` ou `localhost:<porta>`). Isso barra o "DNS rebinding", em que um site aponta o próprio domínio para o seu computador para ler o painel.
+- **Cofre de segredos** (`engine/segredos.js`): o token e as chaves do LinkedIn ficam em `config/segredos.dat`, cifrado com a DPAPI do Windows, que só o seu usuário, neste computador, consegue abrir. Os arquivos antigos em texto puro são migrados e apagados sozinhos na primeira vez. O app nunca devolve segredos para a tela.
 - No login de um clique, o token volta da ponte só para `127.0.0.1`, com um código de verificação (`state`) que expira em 10 minutos; o Farol confere o token com o LinkedIn antes de salvar.
-- As rotinas rodam na IA escolhida com as ferramentas limitadas: ler e escrever no repositório, rodar `node`, pesquisar e usar o MCP do Desigma. O script de publicação é bloqueado para todas (veja a tabela acima).
+- **A IA não publica e não abre o cofre.** Nas rotinas, ela só pode ler, pesquisar, usar o Desigma, escrever em `engine/dailyui/dias` e `engine/noticias/pautas` e rodar os scripts das rotinas (`SCRIPTS` em `engine/agentes.js`). Ler `config/`, rodar `node -e`, PowerShell ou o script de publicação fica bloqueado.
+- **Caixa de permissões** (`engine/caixa.js`): o código que a IA escreve (um dia do Daily UI, uma pauta) roda dentro do modelo de permissões do Node, sem abrir processos, sem rede e lendo só o motor, as imagens e a configuração. Se uma página da web induzir a IA a escrever algo malicioso, esse código não consegue rodar programas, abrir o cofre nem publicar. Precisa do Node 22.13 ou mais novo (no Node 25+ a rede também fica bloqueada).
+- O Claude tem o isolamento mais forte (a lista fechada impede editar o resto do motor). As outras IAs podem editar qualquer arquivo do projeto; para elas a caixa protege o código das rotinas, mas uma IA mal-intencionada poderia desligá-la editando o motor.
 - O token do LinkedIn vence em cerca de 60 dias. O app mostra a data, e reconectar leva um clique.
 
 ## Estrutura
@@ -110,12 +113,16 @@ engine/
   desigma/      juntar páginas e anexar quadros no .desigma
   linkedin/     OAuth e publicação pela API oficial (imagem, GIF, PDF, vídeo)
   agentes.js    instalar, entrar e sincronizar cada IA
+  segredos.js   cofre cifrado (DPAPI) para tokens e chaves
+  caixa.js      caixa de permissões para o código escrito pela IA
 agent/          regras e skills que o Farol entrega à sua IA (fonte única)
 api/linkedin/   ponte do login de um clique (Vercel)
 prompts/        instruções das rotinas (viram comandos /farol-* na IA)
 examples/assets imagens de exemplo (pixel art do meu portfólio)
 workspace/      tudo o que é gerado (fora do Git); avulsos/ aceita qualquer imagem, GIF, vídeo ou PDF com uma legenda .txt de mesmo nome
-config/         configuração local e segredos (fora do Git)
+config/         configuração local e o cofre segredos.dat (fora do Git)
+
+FAROL_DATA      variável opcional: muda a pasta de config/ e workspace/ (a versão instalada vai usar a pasta do usuário)
 ```
 
 ## Agendar

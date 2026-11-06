@@ -2,6 +2,7 @@
 // Carrossel de notícias (LinkedIn: PDF com páginas 1080 × 1350), na identidade do Arquipélago.
 //   node carrossel.js <pautas/AAAA-MM-DD-x.js>
 // Gera svg/<id>/NN.svg (um por slide), svg/<id>.svg (todos lado a lado, para o Desigma) e legendas/<id>.txt.
+require('../caixa.js')(__filename)   // a pauta é escrita pela IA: roda sem processos, sem rede e sem acesso ao cofre
 const fs = require('fs')
 const path = require('path')
 const L = require('../brand/lib.js')
