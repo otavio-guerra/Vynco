@@ -21,8 +21,12 @@ const gemini = () => { const g = 'gg' + (++gid); return `<svg viewBox="0 0 24 24
 const glifo = (id, cor) => id === 'gemini' ? gemini() : GLIFO[id] ||`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${cor || 'var(--violet)'}" opacity=".22"/><text x="12" y="16.2" text-anchor="middle" font-size="11" font-weight="700" fill="${cor || 'var(--violet)'}" font-family="Segoe UI, sans-serif">${esc((id || '?')[0].toUpperCase())}</text></svg>`
 
 // ---------------------------------------------------------------- wireframes dos formatos (nenhum post real nos exemplos)
-const BADGE = { imagem: 'PNG', gif: 'GIF', carrossel: 'PDF', video: 'MP4' }
+const BADGE = { imagem: 'PNG', gif: 'GIF', carrossel: 'PDF', documento: 'PDF', video: 'MP4', multi: 'IMAGENS', texto: 'TEXTO', artigo: 'LINK' }
 function wire(f, o = {}) {
+  if (f === 'documento') f = 'carrossel'
+  if (f === 'texto') return `<div class="wf wf-txt"><span class="wf-badge">${BADGE.texto}</span>${o.texto ? `<p>${esc(o.texto)}</p>` : '<svg viewBox="0 0 80 100"><rect class="c" x="10" y="22" width="52" height="5" rx="2.5"/><rect class="b" x="10" y="34" width="60" height="4" rx="2"/><rect class="b" x="10" y="42" width="56" height="4" rx="2"/><rect class="b" x="10" y="50" width="60" height="4" rx="2"/><rect class="b" x="10" y="58" width="38" height="4" rx="2"/><rect class="a" x="10" y="72" width="30" height="4" rx="2"/></svg>'}</div>`
+  if (f === 'multi') return `<div class="wf wf-multi"><span class="wf-badge">${o.n || 4} ${BADGE.multi}</span>${[0, 1, 2, 3].map(i => `<i class="t${i}"><svg viewBox="0 0 40 40" preserveAspectRatio="xMidYMid slice"><rect class="a" width="40" height="40"/><circle class="c" cx="13" cy="13" r="4"/><path class="b" d="M0 34 14 22l9 8 6-5 11 9v6H0z"/></svg></i>`).join('')}</div>`
+  if (f === 'artigo') return `<div class="wf wf-art"><span class="wf-badge">${BADGE.artigo}</span><div class="art-card"><svg viewBox="0 0 80 42" preserveAspectRatio="xMidYMid slice"><rect class="a" width="80" height="42"/><circle class="c" cx="16" cy="13" r="5"/><path class="b" d="M0 38 22 22l12 10 9-6 37 16z"/></svg><span><b></b><i></i><i class="s"></i></span></div></div>`
   const badge = `<span class="wf-badge">${f === 'gif' ? '<svg viewBox="0 0 12 12"><path d="M2 6a4 4 0 0 1 7-2.6M10 6a4 4 0 0 1-7 2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M9.6 1.2v2.6H7M2.4 10.8V8.2H5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}${BADGE[f]}${f === 'carrossel' ? ` · ${o.paginas || 7}` : ''}</span>`
   const k = o.cor ? ` style="--k:${o.cor}"` : ''
   if (f === 'carrossel') return `<div class="wf wf-car"${k}>${badge}<div class="paginas">${[0, 1, 2].map(() => '<div class="pg"><i></i><i></i><i></i><i class="blk"></i></div>').join('')}</div><div class="pontos"><i></i><i></i><i></i></div></div>`
@@ -52,6 +56,8 @@ const D = DEMO && (() => {
       { kind: 'dailyui', id: '003', title: 'Daily UI 003 · Tela de entrada', formato: 'gif', hasFile: true, approved: false, published: null, caption: 'Daily UI 003 · Tela de entrada\n\nUm campo por vez, erro que explica o que fazer e foco sempre visível.\n\n- Rótulo fora do campo, para não sumir ao digitar\n- Mensagem de erro perto do erro\n- Botão com o verbo da ação\n\n#dailyui #uidesign #ux' },
       { kind: 'noticias', id: 'hoje-a', title: 'Carrossel A · notícias do dia', formato: 'carrossel', paginas: 7, hasFile: true, approved: false, published: null, caption: 'O assunto do dia em 7 slides: o que aconteceu, o outro lado e o que muda para quem desenha.\n\nFontes checadas no último slide.\n\n#design #ia #tecnologia' },
       { kind: 'avulsos', id: 'processo', title: 'Vídeo · bastidores de um projeto', formato: 'video', hasFile: true, approved: false, published: null, caption: 'Quarenta segundos de processo: do rascunho à tela final.\n\nO que você mudaria?\n\n#processo #design' },
+      { kind: 'avulsos', id: 'antes-depois', title: 'Antes e depois · 4 telas', formato: 'multi', arquivos: [], hasFile: true, approved: false, published: null, caption: 'Quatro telas, antes e depois do redesenho.\n\nArraste para o lado e diga qual mudança você notou primeiro.\n\n#uxdesign #redesign' },
+      { kind: 'avulsos', id: 'reflexao', title: 'Só texto · uma lição da semana', formato: 'texto', hasFile: true, approved: true, published: null, caption: 'Uma lição desta semana: mostrar o rascunho cedo economiza três rodadas de ajuste.\n\nO que você aprendeu esta semana?' },
       { kind: 'series', id: '04', title: 'Série 04 · ferramentas', formato: 'imagem', hasFile: true, approved: true, published: null, caption: 'As ferramentas que eu abro todo dia, e por quê.\n\n#design #ferramentas' },
       { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', hasFile: true, approved: true, published: { link: 'https://github.com/AbapaOnSwamp/farol', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
     ],
@@ -62,7 +68,7 @@ async function apiDemo(path, data) {
   await espera(160)
   const q = new URL(path, 'http://x'), id = q.searchParams.get('id') || (data && data.id)
   const it = data && D.fila.find(i => i.kind === data.kind && i.id === data.id)
-  const status = () => ({ agente: D.escolhido ? { id: D.escolhido, nome: ag(D.escolhido).nome, via: ag(D.escolhido).via, instalado: true, conectado: true, conta: 'voce@exemplo.com', sincronizado: D.sincronizado ? new Date().toISOString() : null } : null, linkedin: D.linkedin, desigma: { mcpOk: true, exeOk: true, registered: D.sincronizado, workspace: 'C:\\Users\\voce\\Documents\\desigma', exe: 'C:\\Programas\\desigma\\desigma.exe', mcpExe: 'C:\\Programas\\desigma\\desigma-mcp.exe', project: '' }, config: { assetsDir: 'examples/assets', dailyUiStart: '2026-11-03' } })
+  const status = () => ({ agente: D.escolhido ? { id: D.escolhido, nome: ag(D.escolhido).nome, via: ag(D.escolhido).via, instalado: true, conectado: true, conta: 'voce@exemplo.com', sincronizado: D.sincronizado ? new Date().toISOString() : null } : null, linkedin: { ...D.linkedin, dias: Math.floor((D.linkedin.expiresAt - Date.now()) / 864e5), contas: D.linkedin.connected ? [{ id: 'demo', nome: D.linkedin.name, expiresAt: D.linkedin.expiresAt, dias: Math.floor((D.linkedin.expiresAt - Date.now()) / 864e5), valida: true, ativa: true }] : [] }, desigma: { mcpOk: true, exeOk: true, registered: D.sincronizado, workspace: 'C:\\Users\\voce\\Documents\\desigma', exe: 'C:\\Programas\\desigma\\desigma.exe', mcpExe: 'C:\\Programas\\desigma\\desigma-mcp.exe', project: '' }, config: { assetsDir: 'examples/assets', dailyUiStart: '2026-11-03' } })
   switch (q.pathname) {
     case '/api/status': return status()
     case '/api/agentes': return { escolhido: D.escolhido, agentes: D.lista.map(a => ({ ...a, ...D.agentes[a.id] })) }
@@ -193,16 +199,24 @@ const ENTRAR = {
 }
 
 // ---------------------------------------------------------------- estado geral
-let ST = null
+let ST = null, avisouVence = false
+// o token do LinkedIn dura ~60 dias e não renova sozinho (renovação automática é só para parceiros aprovados)
+const venceLogo = l => !!(l && l.connected && l.dias != null && l.dias <= 7)
+const prazo = d => d <= 0 ? 'hoje' : d === 1 ? 'amanhã' : `em ${d} dias`
 async function status() {
   try { ST = await api('/api/status') } catch (e) { return falha(e) }
   desenharConns(); desenharAjustes()
+  const l = ST.linkedin
+  if (!avisouVence && store.get('onboarded') === '1') {
+    if (venceLogo(l)) { avisouVence = true; setTimeout(() => pill(`O acesso ao LinkedIn vence ${prazo(l.dias)}`, 'Reconecte em Ajustes: leva um clique.', 'var(--amber)'), 1500) }
+    else if (!l.connected && (l.contas || []).length) { avisouVence = true; setTimeout(() => pill('O acesso ao LinkedIn venceu', 'Reconecte em Ajustes para voltar a publicar.', 'var(--red)'), 1500) }
+  }
   return ST
 }
 function desenharConns() {
   if (!ST) return
   const l = ST.linkedin, a = ST.agente
-  $('#conns').innerHTML = `<span style="--c:${l.connected ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)" title="LinkedIn: ${l.connected ? esc(l.name) : 'não conectado'}">${GLIFO.linkedin}</span><span style="--c:${a && a.conectado ? 'var(--green)' : 'var(--amber)'}" title="IA: ${a ? esc(a.nome) : 'nenhuma'}">${glifo(a ? a.id : 'x')}</span>`
+  $('#conns').innerHTML = `<span style="--c:${l.connected && !venceLogo(l) ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)" title="LinkedIn: ${l.connected ? esc(l.name) + (venceLogo(l) ? ' (vence ' + prazo(l.dias) + ')' : '') : 'não conectado'}">${GLIFO.linkedin}</span><span style="--c:${a && a.conectado ? 'var(--green)' : 'var(--amber)'}" title="IA: ${a ? esc(a.nome) : 'nenhuma'}">${glifo(a ? a.id : 'x')}</span>`
 }
 
 // ---------------------------------------------------------------- 1. LinkedIn
@@ -223,12 +237,15 @@ async function conectarLinkedin(proprio = false) {
     const r = await api('/api/linkedin/connect', proprio ? { proprio: true } : {})
     if (r.precisaChaves) { pill('Login de um clique indisponível', 'Use o seu próprio app do LinkedIn por enquanto.', 'var(--amber)'); return $('#proprio').showModal() }
     liEstado('wait'); Som.tique()
+    // ao reconectar ou entrar com outra conta, só vale quando o acesso muda de verdade (conta nova ou validade nova)
+    const marca = s => JSON.stringify((s?.linkedin?.contas || []).map(c => [c.id, c.expiresAt]))
+    const antes = marca(ST)
     clearInterval(LI_POLL); let n = 0
     LI_POLL = setInterval(async () => {
       if (++n > 200) { clearInterval(LI_POLL); LI_POLL = null; liEstado('idle'); return pill('O login demorou demais', 'Clique em Continuar com LinkedIn de novo.', 'var(--amber)') }
       const s = await api('/api/status').catch(() => null); if (!s) return
       ST = s
-      if (s.linkedin.connected) {
+      if (s.linkedin.connected && marca(s) !== antes) {
         clearInterval(LI_POLL); LI_POLL = null; desenharContaLi(s.linkedin); liEstado('ok'); desenharConns(); Som.liga()
         pill('LinkedIn conectado', s.linkedin.name || '', 'var(--green)')
         if (atual?.dataset.scene === 'linkedin') setTimeout(() => atual?.dataset.scene === 'linkedin' && proximaCena(), 1600)
@@ -365,7 +382,9 @@ function alternarFormato(i) {
 // ---------------------------------------------------------------- fila
 let FILA = [], FILTRO = 'pendente', foco = 0, verMais = false
 const TIPO = { dailyui: 'Daily UI', noticias: 'Carrossel', series: 'Série', avulsos: 'Avulso' }
-const FMT_TXT = { imagem: 'Imagem', gif: 'GIF', carrossel: 'Carrossel', video: 'Vídeo' }
+const FMT_TXT = { imagem: 'Imagem', gif: 'GIF', carrossel: 'Carrossel', documento: 'Documento', video: 'Vídeo', multi: 'Várias imagens', texto: 'Só texto', artigo: 'Artigo' }
+const LIMITE = 3000   // caracteres do texto de um post no LinkedIn
+const dominio = u => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return '' } }
 const estado = i => i.published ? 'pub' : i.approved ? 'ok' : ''
 const estadoTxt = i => i.published ? 'no ar' : i.approved ? 'aprovado' : 'esperando você'
 const CONTA = { pendente: i => !i.published && !i.approved, pronto: i => !i.published && i.approved, publicado: i => !!i.published, todos: () => true }
@@ -378,7 +397,24 @@ function atualizarHumor() {
   if (!['fila', 'rotinas', 'ajustes'].includes(atual?.dataset.scene)) return
   humor(FILA.some(CONTA.pendente) ? 'waiting' : FILA.some(CONTA.pronto) ? 'live' : 'neutral')
 }
-const capa = i => i.cover ? `<img src="${arquivo(i.cover)}" alt="" loading="lazy">` : i.formato === 'video' && i.file && !DEMO ? `<video src="${arquivo(i.file)}" muted preload="metadata"></video>` : wire(i.formato || 'imagem', { paginas: i.paginas })
+const capa = i => i.formato === 'texto' ? wire('texto', { texto: (i.caption || '').slice(0, 160) })
+  : i.cover ? `<img src="${arquivo(i.cover)}" alt="" loading="lazy">${i.formato === 'multi' ? `<span class="wf-badge">${(i.arquivos || []).length} IMAGENS</span>` : i.formato === 'artigo' ? `<span class="wf-badge">LINK</span>` : ''}`
+  : i.formato === 'video' && i.file && !DEMO ? `<video src="${arquivo(i.file)}" muted preload="metadata"></video>` : wire(i.formato || 'imagem', { paginas: i.paginas, n: (i.arquivos || []).length || undefined })
+// mídia da prévia no feed: como o LinkedIn mostra cada formato
+function midiaFeed(i) {
+  if (i.formato === 'texto') return ''
+  if (i.formato === 'multi') {
+    const a = i.arquivos || [], mostra = a.slice(0, 4)
+    if (!a.length) return `<div class="fp-media">${wire('multi')}</div>`
+    return `<div class="fp-media fp-multi n${Math.min(mostra.length, 4)}">${mostra.map((f, k) => `<span><img src="${arquivo(f)}" alt="">${k === 3 && a.length > 4 ? `<b>+${a.length - 4}</b>` : ''}</span>`).join('')}</div>`
+  }
+  if (i.formato === 'artigo') {
+    const art = i.artigo || {}
+    return `<div class="fp-media fp-link">${i.cover ? `<img src="${arquivo(i.cover)}" alt="">` : wire('artigo')}<span><b>${esc(art.titulo || 'Título do artigo')}</b><small>${esc(dominio(art.url) || 'site.com')}</small></span></div>`
+  }
+  const media = i.formato === 'video' && i.file && !DEMO ? `<video src="${arquivo(i.file)}" controls preload="metadata"></video>` : i.cover ? `<img src="${arquivo(i.cover)}" alt="Prévia de ${esc(i.title)}">` : wire(i.formato || 'imagem', { paginas: i.paginas })
+  return `<div class="fp-media">${media}${['carrossel', 'documento'].includes(i.formato) ? `<span class="fp-pages">${i.paginas || 7} páginas</span>` : ''}</div>`
+}
 function desenharFila() {
   const v = visiveis(), pend = FILA.filter(CONTA.pendente).length, prontos = FILA.filter(CONTA.pronto).length
   $$('[data-filter] button').forEach(b => { b.classList.toggle('on', b.dataset.v === FILTRO); const n = FILA.filter(CONTA[b.dataset.v]).length; b.innerHTML = `${b.textContent.replace(/\d+$/, '').trim()}<span class="n">${n}</span>` })
@@ -395,21 +431,21 @@ function detalhe() {
   const i = visiveis()[foco], d = $('[data-detail]')
   if (!i) { d.hidden = true; return } d.hidden = false
   const l = ST?.linkedin || {}, nome = l.name || 'Você'
-  const media = i.formato === 'video' && i.file && !DEMO ? `<video src="${arquivo(i.file)}" controls preload="metadata"></video>` : i.cover ? `<img src="${arquivo(i.cover)}" alt="Prévia de ${esc(i.title)}">` : wire(i.formato || 'imagem', { paginas: i.paginas })
+  const chars = i.caracteres ?? (i.caption || '').trim().length, passou = chars > LIMITE
   const acoes = i.published ? `<a class="btn" href="${esc(i.published.link)}" target="_blank" rel="noopener">Ver no LinkedIn</a>`
     : [!i.hasFile ? `<button class="btn" data-q="export">Exportar</button>` : '',
        i.kind !== 'series' ? `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>` : '',
-       i.approved && i.hasFile ? `<button class="btn${i.kind === 'series' || i.approved ? ' good' : ''}" data-q="publish">Publicar agora <kbd>P</kbd></button>` : ''].join('')
+       i.approved && i.hasFile ? `<button class="btn${i.kind === 'series' || i.approved ? ' good' : ''}" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : ''].join('')
   const longa = (i.caption || '').length > 180 || (i.caption || '').split('\n').length > 3
   d.innerHTML = `<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
     <article class="fp">
       <header class="fp-head"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(nome)}</span><span><b>${esc(nome)}</b><small>${i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora'} · Público</small></span></header>
       <div class="fp-cap${longa && !verMais ? ' clamp' : ''}">${esc(i.caption || 'Sem legenda.')}</div>${longa ? `<div class="fp-more"><button class="link" data-q="mais">${verMais ? 'ver menos' : '…ver mais'}</button></div>` : ''}
-      <div class="fp-media">${media}${i.formato === 'carrossel' ? `<span class="fp-pages">${i.paginas || 7} páginas</span>` : ''}</div>
+      ${midiaFeed(i)}
       <div class="fp-foot"><span><svg viewBox="0 0 16 16"><path d="M5 7v6H3V7zm2 6V7l3-5c1 0 1.6.8 1.4 1.8L11 6h2.4c.9 0 1.5.8 1.3 1.7l-1 4.5c-.2.5-.6.8-1.2.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Gostei</span><span><svg viewBox="0 0 16 16"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Comentar</span><span><svg viewBox="0 0 16 16"><path d="M9.5 3 13 6.5 9.5 10M13 6.5H7a4 4 0 0 0-4 4V13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Compartilhar</span></div>
     </article>
     <div class="fp-actions">${acoes}${i.file ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">Abrir o arquivo</a>` : ''}</div>
-    ${!i.published && !l.connected ? '<p class="fp-note">Conecte o LinkedIn em Ajustes para publicar.</p>' : ''}`
+    <p class="fp-note${passou ? ' bad' : ''}">${passou ? `O texto tem ${chars.toLocaleString('pt-BR')} caracteres: o LinkedIn aceita até ${LIMITE.toLocaleString('pt-BR')}. Encurte a legenda para publicar.` : `${chars.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')} caracteres`}${!i.published && !l.connected ? ' · Conecte o LinkedIn em Ajustes para publicar.' : l.connected && !i.published ? ` · sai como ${esc(l.name || '')}` : ''}</p>`
 }
 async function acao(q) {
   const i = visiveis()[foco]; if (!i) return
@@ -426,6 +462,7 @@ async function acao(q) {
     if (q === 'export') { pill('Exportando…', i.title); await api('/api/export', item); Som.tique(); pill('Exportado', i.title, 'var(--green)') }
     if (q === 'publish') {
       if (!i.approved || i.published || !i.hasFile) return
+      if ((i.caracteres ?? 0) > LIMITE) return pill('Texto longo demais', `O LinkedIn aceita até ${LIMITE} caracteres.`, 'var(--amber)')
       if (!ST?.linkedin?.connected) return pill('Conecte o LinkedIn antes', 'Ajustes → LinkedIn', 'var(--amber)')
       if (!(await confirmar('Publicar no LinkedIn agora?', `"${i.title}" vai para o seu perfil, visível para todo mundo.`, 'Publicar'))) return
       pill('Publicando…', i.formato === 'video' ? 'Vídeos levam um ou dois minutos.' : i.title, 'var(--violet)')
@@ -466,8 +503,14 @@ function desenharAjustes() {
   const { linkedin: l, agente: a, desigma: d, config } = ST
   const linha = (k, cor, txt, acoes) => { const r = $(`[data-conn="${k}"]`); $('.c-ic', r).style.setProperty('--c', cor); $('[data-conn-t]', r).textContent = txt; $('[data-conn-a]', r).innerHTML = acoes }
   $('[data-conn=linkedin] .c-ic').innerHTML = GLIFO.linkedin
-  linha('linkedin', l.connected ? 'var(--green)' : 'var(--amber)', l.connected ? `${l.name} · válido até ${quando(l.expiresAt)}` : 'Não conectado: sem isso nada vai ao ar.',
-    l.connected ? '<button class="btn sm" data-act="li-again">Reconectar</button><button class="link soft" data-act="li-off">Desconectar</button>' : '<button class="btn sm accent" data-act="li-again">Conectar</button>')
+  const contas = l.contas || [], vence = venceLogo(l)
+  linha('linkedin', !l.connected ? (contas.length ? 'var(--red)' : 'var(--amber)') : vence ? 'var(--amber)' : 'var(--green)',
+    l.connected ? `${l.name} · ${vence ? `vence ${prazo(l.dias)}: reconecte para continuar publicando` : 'válido até ' + quando(l.expiresAt)}` : contas.length ? `O acesso de ${contas.find(c => c.ativa)?.nome || contas[0].nome} venceu: reconecte para publicar.` : 'Não conectado: sem isso nada vai ao ar.',
+    l.connected || contas.length ? `<button class="btn sm${vence || !l.connected ? ' accent' : ''}" data-act="li-again">Reconectar</button><button class="link" data-act="li-add">Outra conta</button><button class="link soft" data-act="li-off">Desconectar</button>` : '<button class="btn sm accent" data-act="li-again">Conectar</button>')
+  // várias contas: lista com "Usar" (a conta em uso é a que publica)
+  const box = $('[data-li-contas]')
+  box.hidden = contas.length < 2
+  box.innerHTML = contas.map(c => `<div class="acc${c.ativa ? ' on' : ''}"><span class="avatar sm" style="${c.foto ? `background-image:url('${esc(c.foto)}');color:transparent` : ''}">${inicial(c.nome)}</span><span class="c-t"><b>${esc(c.nome)}</b><small>${c.valida ? 'válido até ' + quando(c.expiresAt) : 'acesso vencido'}</small></span>${c.ativa ? '<span class="ok-badge">em uso</span>' : `<button class="link" data-usar="${esc(c.id)}">Usar esta</button>`}</div>`).join('')
   $('[data-conn=agente] [data-conn-ic]').innerHTML = glifo(a ? a.id : '?')
   $('[data-conn=agente] [data-conn-n]').textContent = a ? `${a.nome} · ${a.via}` : 'IA'
   linha('agente', a && a.conectado ? 'var(--green)' : 'var(--amber)', a ? (a.conectado ? `${a.conta || 'conectado'}${a.sincronizado ? ' · sincronizado em ' + quando(Date.parse(a.sincronizado)) : ' · falta sincronizar'}` : 'Falta entrar na conta') : 'Nenhuma IA escolhida.',
@@ -499,6 +542,7 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-run]')) return rodar(t.dataset.run)
   if (t.matches('[data-agent]')) return entrarCom(t.dataset.agent)
   if (t.matches('[data-fmt]')) return alternarFormato(+t.dataset.i)
+  if (t.matches('[data-usar]')) { try { await api('/api/linkedin/usar', { id: t.dataset.usar }); Som.liga(); await status(); pill('Conta em uso', `Os posts saem como ${ST.linkedin.name}`, 'var(--green)') } catch (err) { falha(err) } return }
   if (t.matches('[data-copy]')) { try { await navigator.clipboard.writeText(t.dataset.copy); Som.tique(); pill('Copiado') } catch { pill('Não consegui copiar', 'Selecione o texto e copie à mão.', 'var(--amber)') } return }
   if (t.matches('[data-close]')) return t.closest('dialog').close()
   if (t.id === 'back') return voltar()
@@ -509,7 +553,12 @@ document.addEventListener('click', async e => {
     if (act === 'li-cancel') return cancelarLinkedin()
     if (act === 'li-proprio') return $('#proprio').showModal()
     if (act === 'li-again') { voltarPara = atual.dataset.scene; cena('linkedin'); return setTimeout(conectarLinkedin, 450) }
-    if (act === 'li-off') { if (await confirmar('Desconectar o LinkedIn?', 'O Farol para de conseguir publicar até você conectar de novo.', 'Desconectar')) { await api('/api/linkedin/disconnect', {}); Som.desliga(); status() } return }
+    if (act === 'li-add') { if (await confirmar('Entrar com outra conta?', 'Antes, saia do LinkedIn no navegador (ou use outro perfil do navegador). Senão o LinkedIn entra direto com a conta que já está aberta.', 'Continuar')) { voltarPara = atual.dataset.scene; cena('linkedin'); setTimeout(conectarLinkedin, 450) } return }
+    if (act === 'li-off') {
+      const c = (ST?.linkedin?.contas || []).find(x => x.ativa), varias = (ST?.linkedin?.contas || []).length > 1
+      if (await confirmar(`Desconectar ${c ? c.nome : 'o LinkedIn'}?`, varias ? 'A outra conta conectada passa a ser a usada para publicar.' : 'O Farol para de conseguir publicar até você conectar de novo.', 'Desconectar')) { await api('/api/linkedin/disconnect', c ? { id: c.id } : {}); Som.desliga(); status() }
+      return
+    }
     if (act === 'outros') return menuOutros()
     if (act === 'login-console') return LOGIN && entrarCom(LOGIN.id, { console: true })
     if (act === 'login-cancel') return cancelarLogin()

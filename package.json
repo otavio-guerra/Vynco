@@ -4,13 +4,16 @@
   "description": "Farol: motor de conteúdo para LinkedIn. o Claude Code gera posts, Daily UI e carrosséis no seu design system, o Desigma monta o projeto e um painel local cuida da aprovação e da publicação.",
   "private": true,
   "license": "MIT",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node app/server.js",
     "painel": "node app/server.js",
     "serie": "node engine/series/gen.js && node engine/exportar-png.js series",
     "daily": "node engine/dailyui/dia.js hoje",
     "png:daily": "node engine/exportar-png.js dailyui",
-    "exe": "node app/exe/build.js"
+    "exe": "node app/exe/build.js",
+    "ponte:ativar": "node engine/linkedin/ativar-ponte.js"
   }
 }

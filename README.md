@@ -29,7 +29,8 @@ Nasceu para o meu próprio perfil ([portfolio-otavio-guerra.vercel.app](https://
 - **Pauta com checagem.** A rotina de notícias procura os assuntos do dia, confere em fonte primária ou em dois veículos sérios e mostra "o outro lado" quando o dado é disputado.
 - **Daily UI com decisões de UX.** Cada tela vem com as decisões numeradas (foco visível, estados, microcopy, acessibilidade), não só o visual.
 - **Projeto editável no Desigma.** Cada peça vira um quadro na página certa do seu `.desigma`, sem perder o que você editou à mão.
-- **Imagem, GIF, carrossel e vídeo.** PNG/JPG e GIF vão pela Images API, carrossel em PDF pela Documents API e MP4 pela Videos API.
+- **Todos os formatos de post que a API aceita para pessoas:** só texto, imagem (PNG/JPG), GIF (até 250 quadros), várias imagens (2 a 20), documento/carrossel (PDF, PPT ou DOC, até 100 MB e 300 páginas), vídeo (MP4, de 3 s a 30 min, até 500 MB) e artigo (link com título, descrição e miniatura). Texto alternativo nas imagens e limite de 3.000 caracteres conferido antes de enviar. Carrossel nativo e enquete ficam de fora: o LinkedIn só libera o carrossel em anúncio pago, e a enquete por API não é confirmada para perfis pessoais.
+- **Várias contas.** Conecte mais de um perfil e escolha em Ajustes qual publica. O app avisa uma semana antes do acesso vencer (o LinkedIn não renova sozinho para apps comuns).
 - **Você aprova, ele publica.** A publicação usa a API oficial do LinkedIn. Nenhuma rotina publica sozinha: sem aprovação, nada vai ao ar.
 
 ## O app
@@ -58,9 +59,11 @@ Tudo isso é gerado dentro da pasta do Farol a partir de `agent/` e fica fora do
 ### Login do LinkedIn em um clique (ponte do Farol)
 O LinkedIn exige um app com Client Secret, que não pode ir dentro de um programa baixado. Por isso o botão passa por uma ponte pequena na Vercel (`api/linkedin`): ela guarda o segredo, troca o código pelo token e devolve o token direto para o seu Farol em `127.0.0.1`, num fragmento de URL que não passa por servidor nenhum. O Farol confere o token com o próprio LinkedIn antes de salvar.
 
-Para ligar a ponte (uma vez, por quem publica o Farol):
-1. No app do LinkedIn, em **Auth**, adicione o redirect `https://farol-otavio-guerra.vercel.app/api/linkedin/callback`.
-2. Na Vercel, crie as variáveis `LINKEDIN_CLIENT_ID` e `LINKEDIN_CLIENT_SECRET` e publique de novo.
+Para ligar a ponte (uma vez, por quem publica o Farol), com as chaves do seu app já salvas no Farol e a Vercel CLI logada:
+```bash
+npm run ponte:ativar
+```
+O script manda as chaves do cofre direto para a Vercel (sem mostrar na tela), publica e confere se a ponte respondeu. Depois, no app do LinkedIn (**Auth → Authorized redirect URLs**), adicione `https://farol-otavio-guerra.vercel.app/api/linkedin/callback`.
 
 Enquanto a ponte não estiver ligada, o botão avisa e oferece "Usar meu próprio app do LinkedIn", o jeito antigo, com as suas chaves.
 
@@ -100,7 +103,8 @@ Depois é seguir a entrada. Para mudar caminhos à mão, copie `config/engine.co
 - **A IA não publica e não abre o cofre.** Nas rotinas, ela só pode ler, pesquisar, usar o Desigma, escrever em `engine/dailyui/dias` e `engine/noticias/pautas` e rodar os scripts das rotinas (`SCRIPTS` em `engine/agentes.js`). Ler `config/`, rodar `node -e`, PowerShell ou o script de publicação fica bloqueado.
 - **Caixa de permissões** (`engine/caixa.js`): o código que a IA escreve (um dia do Daily UI, uma pauta) roda dentro do modelo de permissões do Node, sem abrir processos, sem rede e lendo só o motor, as imagens e a configuração. Se uma página da web induzir a IA a escrever algo malicioso, esse código não consegue rodar programas, abrir o cofre nem publicar. Precisa do Node 22.13 ou mais novo (no Node 25+ a rede também fica bloqueada).
 - O Claude tem o isolamento mais forte (a lista fechada impede editar o resto do motor). As outras IAs podem editar qualquer arquivo do projeto; para elas a caixa protege o código das rotinas, mas uma IA mal-intencionada poderia desligá-la editando o motor.
-- O token do LinkedIn vence em cerca de 60 dias. O app mostra a data, e reconectar leva um clique.
+- O token do LinkedIn vence em 60 dias e não renova sozinho (a renovação automática é só para parceiros aprovados pelo LinkedIn). O app avisa uma semana antes, e reconectar leva um clique.
+- Sem a permissão restrita `r_member_social`, a API não deixa ler os próprios posts. Por isso o histórico fica em `workspace/publicados.json`: data, formato, arquivos, identificador e link de cada post, e quem publicou.
 
 ## Estrutura
 ```
@@ -119,7 +123,11 @@ agent/          regras e skills que o Farol entrega à sua IA (fonte única)
 api/linkedin/   ponte do login de um clique (Vercel)
 prompts/        instruções das rotinas (viram comandos /farol-* na IA)
 examples/assets imagens de exemplo (pixel art do meu portfólio)
-workspace/      tudo o que é gerado (fora do Git); avulsos/ aceita qualquer imagem, GIF, vídeo ou PDF com uma legenda .txt de mesmo nome
+workspace/      tudo o que é gerado (fora do Git). Em avulsos/, cada post é:
+                  nome.png|gif|jpg|mp4|pdf + nome.txt      um arquivo com legenda
+                  nome.txt                                 só texto
+                  pasta/ imagens + legenda.txt             várias imagens (2 a 20; <imagem>.alt.txt = texto alternativo)
+                  pasta/ link.json + legenda.txt           artigo ({"url", "titulo", "descricao"}; miniatura.png opcional)
 config/         configuração local e o cofre segredos.dat (fora do Git)
 
 FAROL_DATA      variável opcional: muda a pasta de config/ e workspace/ (a versão instalada vai usar a pasta do usuário)

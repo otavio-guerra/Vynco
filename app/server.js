@@ -10,6 +10,8 @@ const { spawn, execFile } = require('child_process')
 const C = require('../engine/config.js')
 const AG = require('../engine/agentes.js')
 const S = require('../engine/segredos.js')
+const CONTAS = require('../engine/linkedin/contas.js')
+const PUB_LI = require('../engine/linkedin/publicar.js')
 
 const ROOT = C.ROOT, PUB = path.join(__dirname, 'public')
 const TOKEN = crypto.randomBytes(24).toString('hex')
@@ -28,9 +30,10 @@ const publicados = () => readJSON(C.PUBLICADOS, [])
 const agenteId = () => (C.load().agente || {}).id || null
 
 // ---------------------------------------------------------------- LinkedIn
+// a conta ativa vem nos campos de sempre (connected, name...); todas as contas vão em "contas", sem token
 function linkedinStatus() {
-  const k = S.get('linkedin.app'), t = S.get('linkedin.token')
-  return { proprio: !!(k && k.client_id && k.client_secret), connected: !!(t && t.access_token && t.expires_at > Date.now()), name: t && t.nome, expiresAt: t && t.expires_at, via: t && t.via, redirectUri: C.cfg.linkedin.redirectUri, aguardando: !!(LI && LI.expira > Date.now()) }
+  const k = S.get('linkedin.app'), lista = CONTAS.lista(), a = lista.find(c => c.ativa)
+  return { proprio: !!(k && k.client_id && k.client_secret), connected: !!(a && a.valida), name: a && a.nome, foto: a && a.foto, expiresAt: a && a.expiresAt, dias: a ? a.dias : null, via: a && a.via, contas: lista, redirectUri: C.cfg.linkedin.redirectUri, aguardando: !!(LI && LI.expira > Date.now()) }
 }
 // login em andamento pela ponte do Farol (o state confere que o token que volta é deste pedido)
 let LI = null
@@ -39,7 +42,7 @@ async function salvarToken(access_token, expires_in, via) {
   // confere o token com o próprio LinkedIn (nome e id vêm de lá, não do navegador)
   const me = await fetch('https://api.linkedin.com/v2/userinfo', { headers: { Authorization: `Bearer ${access_token}` } }).then(r => r.ok ? r.json() : null).catch(() => null)
   if (!me || !me.sub) throw new Error('O LinkedIn não confirmou o acesso. Tente de novo.')
-  S.set('linkedin.token', { access_token, expires_at: Date.now() + (+expires_in || 5184000) * 1000, author: `urn:li:person:${me.sub}`, nome: me.name, foto: me.picture || null, via })
+  CONTAS.salvar({ access_token, expires_at: Date.now() + (+expires_in || 5184000) * 1000, author: `urn:li:person:${me.sub}`, nome: me.name, foto: me.picture || null, via })
   return me.name
 }
 const PAGINA_VOLTA = () => `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Farol · LinkedIn</title>
@@ -100,17 +103,32 @@ function queue() {
     const id = f.replace('.txt', '')
     add('series', id, `Série ${id.slice(0, 2)}`, preferirGif(se, id), path.join(se, 'png', id + '.png'), path.join(se, 'legendas', f), null)
   }
-  // avulsos: qualquer imagem, GIF, vídeo ou PDF com uma legenda de mesmo nome (workspace/avulsos/nome.mp4 + nome.txt)
-  const av = C.ws('avulsos')
-  for (const f of ls(av).filter(f => MIDIA.test(f))) {
+  // avulsos (workspace/avulsos), em qualquer formato que a API aceita:
+  //   nome.png|gif|jpg|mp4|pdf + nome.txt   → um arquivo         nome.txt sozinho  → só texto
+  //   pasta/ com imagens + legenda.txt      → várias imagens     pasta/ com link.json + legenda.txt → artigo
+  const av = C.ws('avulsos'), noAv = ls(av)
+  const okAv = id => path.join(av, 'aprovados', id + '.ok')
+  for (const f of noAv.filter(f => MIDIA.test(f))) {
     const id = f.replace(MIDIA, ''), file = path.join(av, f)
-    add('avulsos', id, id, file, /\.(png|gif|jpe?g)$/i.test(f) ? file : null, path.join(av, id + '.txt'), path.join(av, 'aprovados', id + '.ok'))
+    add('avulsos', id, id, file, /\.(png|gif|jpe?g)$/i.test(f) ? file : null, path.join(av, id + '.txt'), okAv(id))
   }
+  const comMidia = new Set(noAv.filter(f => MIDIA.test(f)).map(f => f.replace(MIDIA, '')))
+  for (const f of noAv.filter(f => f.endsWith('.txt') && !f.endsWith('.alt.txt') && !comMidia.has(f.slice(0, -4)))) {
+    const id = f.slice(0, -4), file = path.join(av, f)
+    add('avulsos', id, id, file, null, file, okAv(id), { formato: 'texto' })
+  }
+  for (const d of noAv.filter(d => d !== 'aprovados' && fs.statSync(path.join(av, d)).isDirectory())) {
+    const dir = path.join(av, d)
+    let p; try { p = PUB_LI.montar(dir) } catch { continue }   // pasta sem legenda.txt ou sem imagens: ainda não é um post
+    if (p.formato === 'texto') continue
+    add('avulsos', d, d, dir, p.arquivos[0] || null, path.join(dir, 'legenda.txt'), okAv(d), { formato: p.formato, arquivos: p.arquivos.map(f => path.relative(C.WS, f)), artigo: p.artigo || undefined })
+  }
+  for (const it of items) it.caracteres = it.caption.trim().length
   return items.sort((a, b) => (a.published ? 1 : 0) - (b.published ? 1 : 0) || a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
 }
 function ls(d) { try { return fs.readdirSync(d).sort() } catch { return [] } }
 const findItem = (kind, id) => queue().find(i => i.kind === kind && i.id === id)
-const legendaDe = it => it.kind === 'avulsos' ? C.ws('avulsos', it.id + '.txt') : C.ws(it.kind, 'legendas', it.id + '.txt')
+const legendaDe = it => it.kind !== 'avulsos' ? C.ws(it.kind, 'legendas', it.id + '.txt') : ['multi', 'artigo'].includes(it.formato) || (it.formato === 'imagem' && it.arquivos) ? C.ws('avulsos', it.id, 'legenda.txt') : C.ws('avulsos', it.id + '.txt')
 
 // ---------------------------------------------------------------- rotinas (o agente escolhido, em modo não interativo)
 const RUNS = []
@@ -134,7 +152,7 @@ function startRun(rid) {
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.gif': 'image/gif', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.pdf': 'application/pdf', '.txt': 'text/plain; charset=utf-8', '.log': 'text/plain; charset=utf-8', '.woff2': 'font/woff2' }
 const DEMO_STATUS = () => ({
   agente: { id: 'claude', nome: 'Claude', via: 'Claude Code', instalado: true, conectado: true, conta: 'voce@exemplo.com', sincronizado: new Date().toISOString() },
-  linkedin: { proprio: false, connected: true, name: 'Seu Nome', expiresAt: Date.now() + 59 * 864e5, via: 'farol', redirectUri: C.cfg.linkedin.redirectUri },
+  linkedin: { proprio: false, connected: true, name: 'Seu Nome', expiresAt: Date.now() + 59 * 864e5, dias: 59, via: 'farol', contas: [{ id: 'demo', nome: 'Seu Nome', expiresAt: Date.now() + 59 * 864e5, dias: 59, valida: true, ativa: true }], redirectUri: C.cfg.linkedin.redirectUri },
   desigma: { exe: 'C:\\Programas\\desigma\\desigma.exe', mcpExe: 'C:\\Programas\\desigma\\desigma-mcp.exe', workspace: 'C:\\Users\\voce\\Documents\\desigma', project: '', exeOk: true, mcpOk: true, workspaceOk: true, projectOk: false, registered: true },
   config: { assetsDir: 'examples/assets', workspaceDir: 'workspace', dailyUiStart: '2026-11-03' },
 })
@@ -237,7 +255,8 @@ const server = http.createServer(async (req, res) => {
         S.set('linkedin.app', { client_id: id, client_secret: sec })
         return send(res, 200, { ok: true })
       }
-      case '/api/linkedin/disconnect': S.del('linkedin.token'); return send(res, 200, { ok: true })
+      case '/api/linkedin/disconnect': CONTAS.remover(typeof b.id === 'string' ? b.id : undefined); return send(res, 200, { ok: true })
+      case '/api/linkedin/usar': { try { CONTAS.usar(String(b.id || '')); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       // ---- Desigma
       case '/api/desigma/config': {
         const patch = {}
@@ -259,7 +278,9 @@ const server = http.createServer(async (req, res) => {
         if (!it.approved) return send(res, 400, { erro: 'Aprove o post antes de publicar.' })
         if (it.published) return send(res, 409, { erro: 'Esse post já foi publicado.' })
         if (!linkedinStatus().connected) return send(res, 400, { erro: 'Conecte o LinkedIn antes.' })
-        const r = await run(process.execPath, [path.join(ROOT, 'engine', 'linkedin', 'postar.js'), path.join(C.WS, it.file), legendaDe(it), '--confirmo'], { timeout: 600000 })
+        if (it.caracteres > PUB_LI.LIMITE) return send(res, 400, { erro: `O texto tem ${it.caracteres} caracteres; o LinkedIn aceita até ${PUB_LI.LIMITE}.` })
+        const alvo = it.formato === 'texto' ? '-' : path.join(C.WS, it.file)
+        const r = await run(process.execPath, [path.join(ROOT, 'engine', 'linkedin', 'postar.js'), alvo, legendaDe(it), '--confirmo'], { timeout: 600000 })
         const j = readJSONText(r.out)
         return send(res, r.code === 0 && j && j.ok ? 200 : 500, r.code === 0 && j ? j : { erro: (r.err || r.out).slice(0, 400) })
       }
