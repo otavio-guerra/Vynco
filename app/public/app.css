@@ -430,6 +430,18 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .es-vazio { display: grid; justify-items: center; gap: 8px; padding: 18px; border: 1px dashed var(--edge-2); border-radius: 14px; text-align: center } .es-vazio .wf { width: 90px; border-radius: 10px } .es-vazio p { margin: 0; color: var(--soft); font-size: 13px; max-width: 300px }
 .c-ic.mg { color: #fff; background: linear-gradient(135deg, var(--violet), var(--accent)) }
 
+/* ----- assistente do app próprio do LinkedIn */
+.assist { gap: 12px }
+.as-trilha { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--faint) }
+.as-trilha li { display: flex; align-items: center; gap: 6px } .as-trilha li.run { color: var(--text) } .as-trilha li.ok { color: var(--soft) }
+.as-passo { display: grid; gap: 10px; padding: 14px 16px; border-radius: 12px; background: var(--glass); border: 1px solid var(--edge) }
+.as-passo h4 { margin: 0; font-size: 16px } .as-passo p { margin: 0; color: var(--soft); font-size: 14px } .as-passo b { color: var(--text) }
+.as-passo ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px } .as-passo .btn { justify-self: start }
+.as-copia { display: flex; gap: 8px; align-items: center; flex-wrap: wrap } .as-copia code { font: 13px var(--mono); padding: 8px 10px; border-radius: 8px; background: var(--bg-2); border: 1px solid var(--edge-2) }
+.as-val { margin: 0; color: var(--amber); font-size: 13px } .as-val:empty { display: none }
+.as-salvo { font-size: 12px; margin-right: auto }
+.li-dica { max-width: 420px; margin-top: -4px }
+
 /* ----- triagem da entrada (quem é você) */
 .vc-quem { display: grid; justify-items: center; gap: 6px; margin-bottom: -2px }
 .vc-av { flex-basis: auto; width: 72px; height: 72px; font-size: 26px; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--li), 0 14px 40px rgba(0, 0, 0, .35) }

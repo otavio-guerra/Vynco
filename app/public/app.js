@@ -288,12 +288,14 @@ function desenharContaLi(l) {
 async function entrarLinkedin() {
   const s = await status(); if (!s) return
   if (s.linkedin.connected) { desenharContaLi(s.linkedin); liEstado('ok') } else if (!LI_POLL) liEstado('idle')
-  $('[data-redirect]').textContent = s.linkedin.redirectUri
+  LI_REDIRECT = s.linkedin.redirectUri || LI_REDIRECT
+  // sem a ponte do Farol ligada, o primeiro acesso passa pelo assistente: avisa antes, sem susto
+  if (!DEMO && !s.linkedin.connected && !s.linkedin.proprio) api('/api/linkedin/ponte').then(p => { $('[data-li-dica]').hidden = p.pronto }).catch(() => {})
 }
 async function conectarLinkedin(proprio = false) {
   try {
     const r = await api('/api/linkedin/connect', proprio ? { proprio: true } : {})
-    if (r.precisaChaves) { pill('Login de um clique indisponível', 'Use o seu próprio app do LinkedIn por enquanto.', 'var(--amber)'); return $('#proprio').showModal() }
+    if (r.precisaChaves) return abrirAssistente()
     liEstado('wait'); Som.tique()
     // ao reconectar ou entrar com outra conta, só vale quando o acesso muda de verdade (conta nova ou validade nova)
     const marca = s => JSON.stringify((s?.linkedin?.contas || []).map(c => [c.id, c.expiresAt]))
@@ -311,6 +313,46 @@ async function conectarLinkedin(proprio = false) {
     }, DEMO ? 400 : 2000)
   } catch (e) { falha(e) }
 }
+// ---------------------------------------------------------------- assistente do app próprio do LinkedIn (quando a ponte não está ligada)
+let LI_REDIRECT = 'http://localhost:8765/callback', AS = 0
+const PASSOS_AS = [
+  { t: 'Uma Página de empresa', txt: 'O LinkedIn só deixa criar apps ligados a uma Página de empresa. Se você já administra uma (pode ser a sua página de freelancer ou estúdio), pule este passo.', abrir: ['Criar uma Página', 'https://www.linkedin.com/company/setup/new/'], dica: 'Nome: o seu nome ou "Estúdio" + o seu nome. Tamanho: o menor. Não precisa publicar nada nela.' },
+  { t: 'Criar o app', txt: 'Na página que abrir, preencha: <b>App name</b> "Farol de" + o seu nome; <b>LinkedIn Page</b> a página do passo 1; um <b>logo</b> qualquer (pode ser a sua foto); marque que aceita os termos e clique em <b>Create app</b>.', abrir: ['Abrir a criação do app', 'https://www.linkedin.com/developers/apps/new'] },
+  { t: 'Ligar 2 produtos', txt: 'No app recém-criado, abra a aba <b>Products</b> e clique em <b>Request access</b> nestes dois. Eles são liberados na hora:', lista: ['Share on LinkedIn', 'Sign In with LinkedIn using OpenID Connect'], abrir: ['Abrir os meus apps', 'https://www.linkedin.com/developers/apps'] },
+  { t: 'Endereço de retorno', txt: 'Abra a aba <b>Auth</b>. Em <b>Authorized redirect URLs for your app</b>, clique no lápis, cole o endereço abaixo e clique em <b>Update</b>.', copiar: true },
+  { t: 'Copiar as chaves', txt: 'Ainda na aba <b>Auth</b>, copie o <b>Client ID</b> e o <b>Primary Client Secret</b> (clique no olho para ver) e cole aqui. Pronto: o Farol abre o LinkedIn para você clicar em Permitir.', form: true },
+]
+function abrirAssistente() { AS = Math.min(+store.get('assist', 0) || 0, PASSOS_AS.length - 1); desenharAssistente(); $('#proprio').showModal() }
+function desenharAssistente() {
+  const p = PASSOS_AS[AS], ultimo = AS === PASSOS_AS.length - 1
+  store.set('assist', AS)
+  $('[data-as-n]').textContent = `Passo ${AS + 1} de ${PASSOS_AS.length}`
+  $('[data-as-intro]').hidden = AS > 0
+  $('[data-as-trilha]').innerHTML = PASSOS_AS.map((x, i) => `<li class="${i < AS ? 'ok' : i === AS ? 'run' : ''}"><span class="ic"></span>${x.t}</li>`).join('')
+  $('[data-as-passo]').innerHTML = `<h4>${AS + 1}. ${p.t}</h4><p>${p.txt}</p>${p.lista ? `<ul>${p.lista.map(x => `<li><b>${x}</b> <button class="link" type="button" data-as-copia="${x}">copiar</button></li>`).join('')}</ul>` : ''}
+    ${p.copiar ? `<div class="as-copia"><code>${esc(LI_REDIRECT)}</code><button class="btn sm accent" type="button" data-as-copia="${esc(LI_REDIRECT)}">Copiar</button></div>` : ''}
+    ${p.abrir ? `<a class="btn sm" href="${p.abrir[1]}" target="_blank" rel="noopener">${p.abrir[0]} ↗</a>` : ''}${p.dica ? `<p class="fine">${p.dica}</p>` : ''}`
+  $('[data-form=linkedin-keys]').hidden = !p.form
+  $('[data-as=voltar]').disabled = AS === 0
+  $('[data-as=proximo]').textContent = ultimo ? 'Salvar e conectar' : AS === 0 ? 'Já tenho uma Página / Próximo' : 'Feito, próximo'
+  if (p.form) setTimeout(() => $('[data-form=linkedin-keys] [name=client_id]').focus(), 50)
+}
+function validarChavesAs() {
+  const f = $('[data-form=linkedin-keys]'), id = f.client_id.value.trim(), sec = f.client_secret.value.trim()
+  const msg = !id ? 'Cole o Client ID.' : !/^[A-Za-z0-9]{8,40}$/.test(id) ? 'O Client ID tem só letras e números (de 8 a 40). Confira se copiou inteiro.' : !sec ? 'Cole o Primary Client Secret.' : sec.length < 8 ? 'O Client Secret parece incompleto.' : ''
+  $('[data-as-val]').textContent = msg; return !msg
+}
+$('#proprio').addEventListener('click', async e => {
+  const c = e.target.closest('[data-as-copia]'); if (c) { try { await navigator.clipboard.writeText(c.dataset.asCopia); Som.tique(); pill('Copiado', c.dataset.asCopia.slice(0, 60)) } catch { pill('Não consegui copiar', 'Selecione e copie à mão.', 'var(--amber)') } return }
+  const b = e.target.closest('[data-as]'); if (!b) return
+  if (b.dataset.as === 'voltar' && AS > 0) { AS--; return desenharAssistente() }
+  if (b.dataset.as === 'proximo') {
+    if (AS < PASSOS_AS.length - 1) { AS++; Som.tique(); return desenharAssistente() }
+    if (validarChavesAs()) { store.set('assist', 0); $('[data-form=linkedin-keys]').requestSubmit() }
+  }
+})
+$('[data-form=linkedin-keys]').addEventListener('input', () => { if ($('[data-as-val]').textContent) validarChavesAs() })
+
 function cancelarLinkedin() { clearInterval(LI_POLL); LI_POLL = null; api('/api/linkedin/cancelar', {}).catch(() => {}); liEstado('idle') }
 
 // ---------------------------------------------------------------- 1b. triagem: quem é você (vira o perfil; a IA completa depois)
@@ -1212,7 +1254,7 @@ document.addEventListener('click', async e => {
   try {
     if (act === 'li-connect' || act === 'li-reopen') return conectarLinkedin()
     if (act === 'li-cancel') return cancelarLinkedin()
-    if (act === 'li-proprio') return $('#proprio').showModal()
+    if (act === 'li-proprio') return abrirAssistente()
     if (act === 'li-again') { voltarPara = atual.dataset.scene; cena('linkedin'); return setTimeout(conectarLinkedin, 450) }
     if (act === 'li-add') { if (await confirmar('Entrar com outra conta?', 'Antes, saia do LinkedIn no navegador (ou use outro perfil do navegador). Senão o LinkedIn entra direto com a conta que já está aberta.', 'Continuar')) { voltarPara = atual.dataset.scene; cena('linkedin'); setTimeout(conectarLinkedin, 450) } return }
     if (act === 'li-off') {
@@ -1224,7 +1266,6 @@ document.addEventListener('click', async e => {
     if (act === 'login-console') return LOGIN && entrarCom(LOGIN.id, { console: true })
     if (act === 'login-cancel') return cancelarLogin()
     if (act === 'sync-again') { if (atual.dataset.scene === 'sync') { $('[data-sync-cta]').hidden = true; return entrarSync() } voltarPara = atual.dataset.scene; return cena('sync') }
-    if (act === 'copy-redirect') { await navigator.clipboard.writeText($('[data-redirect]').textContent); Som.tique(); pill('Copiado') }
   } catch (err) { falha(err) }
 })
 const form = (sel, fn) => $(sel).addEventListener('submit', async e => { e.preventDefault(); try { await fn(e.target); Som.liga(); status() } catch (err) { falha(err) } })

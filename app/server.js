@@ -45,7 +45,8 @@ function linkedinStatus() {
 }
 // login em andamento pela ponte do Farol (o state confere que o token que volta é deste pedido)
 let LI = null
-async function ponteOk() { try { const r = await fetch(PONTE + '/api/linkedin/ping', { signal: AbortSignal.timeout(6000) }); const j = await r.json(); return !!j.pronto } catch { return false } }
+let ponteCache = { t: 0, ok: false }
+async function ponteOk() { if (Date.now() - ponteCache.t < 60000) return ponteCache.ok; try { const r = await fetch(PONTE + '/api/linkedin/ping', { signal: AbortSignal.timeout(6000) }); const j = await r.json(); ponteCache = { t: Date.now(), ok: !!j.pronto }; return ponteCache.ok } catch { ponteCache = { t: Date.now(), ok: false }; return false } }
 async function salvarToken(access_token, expires_in, via) {
   // confere o token com o próprio LinkedIn (nome e id vêm de lá, não do navegador)
   const me = await fetch('https://api.linkedin.com/v2/userinfo', { headers: { Authorization: `Bearer ${access_token}` } }).then(r => r.ok ? r.json() : null).catch(() => null)
@@ -228,6 +229,7 @@ const server = http.createServer(async (req, res) => {
           const ativo = perfilAtivo(), id = u.searchParams.get('id') || ativo
           try { return send(res, 200, { perfil: PERFIS.carregar(id), ativo, perfis: PERFIS.lista(CONTAS.lista()), analise: PERFIS.estadoAnalise(), agente: agenteId() && AG.AGENTES[agenteId()].nome }) } catch (e) { return send(res, 400, { erro: e.message }) }
         }
+        case '/api/linkedin/ponte': return send(res, 200, { pronto: await ponteOk() })
         case '/api/perfil/analise': return send(res, 200, PERFIS.estadoAnalise() || {})
         case '/api/runs': {
           const ag = agenteId()

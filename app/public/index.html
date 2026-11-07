@@ -55,6 +55,7 @@
         <span class="ok-badge"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Conectado</span>
       </div>
     </div>
+    <p class="fine li-dica" data-in data-li-dica hidden>Na primeira vez, o LinkedIn pede uns 5 minutos de passo a passo (criar um "app" seu). O Farol guia cada clique.</p>
     <ul class="perms" data-in>
       <li class="yes">Publicar no seu perfil quando você mandar</li>
       <li class="yes">Ver o seu nome e foto</li>
@@ -62,7 +63,7 @@
       <li class="no">Publicar sem a sua aprovação</li>
     </ul>
     <div class="cta" data-in data-li-next hidden><button class="btn accent lg" data-next>Continuar</button><span class="hint"><kbd class="sm">Enter</kbd></span></div>
-    <div class="cta small" data-in><button class="link" data-act="li-proprio">Usar meu próprio app do LinkedIn</button><span class="sep" aria-hidden="true"></span><button class="link soft" data-next data-li-skip>Fazer depois</button></div>
+    <div class="cta small" data-in><button class="link" data-act="li-proprio">Conectar pelo passo a passo</button><span class="sep" aria-hidden="true"></span><button class="link soft" data-next data-li-skip>Fazer depois</button></div>
   </section>
 
   <section class="scene" data-scene="voce" hidden>
@@ -290,20 +291,17 @@
 
 <dialog id="dlg"><form method="dialog" class="glass"><h3 id="dlg-t"></h3><p id="dlg-p"></p><div class="cta"><button class="btn" value="nao">Cancelar</button><button class="btn accent" value="sim" id="dlg-ok">Confirmar</button></div></form></dialog>
 
-<dialog id="proprio"><div class="glass sheet">
-  <h3>Meu próprio app do LinkedIn</h3>
-  <p class="soft">Para quem prefere não usar o login do Farol. Você cria um app seu no LinkedIn uma vez só.</p>
-  <ol class="guide">
-    <li>Abra <a href="https://www.linkedin.com/developers/apps/new" target="_blank" rel="noopener">linkedin.com/developers/apps/new</a> (o LinkedIn pede uma Página de empresa ligada ao app).</li>
-    <li>Em <b>Products</b>, adicione <b>Share on LinkedIn</b> e <b>Sign In with LinkedIn using OpenID Connect</b>.</li>
-    <li>Em <b>Auth</b>, adicione o redirect <code data-redirect>http://localhost:8765/callback</code> <button class="link" data-act="copy-redirect" type="button">copiar</button></li>
-    <li>Cole o Client ID e o Client Secret aqui.</li>
-  </ol>
-  <form class="fields two" data-form="linkedin-keys" autocomplete="off">
-    <label><span>Client ID</span><input name="client_id" spellcheck="false" placeholder="77abc12xyz" required></label>
-    <label><span>Client Secret</span><input name="client_secret" type="password" spellcheck="false" placeholder="fica só neste computador" required></label>
-    <div class="f-act"><button class="btn" type="button" data-close>Fechar</button><button class="btn accent" type="submit">Salvar e conectar</button></div>
+<dialog id="proprio"><div class="glass sheet sheet-lg assist">
+  <header class="ed-box-h"><h3>Conectar o LinkedIn passo a passo</h3><span class="tag" data-as-n>Passo 1 de 5</span></header>
+  <p class="soft" data-as-intro>O LinkedIn pede que cada pessoa crie um "app" uma vez só. Parece técnico, mas são 5 passos de clicar e copiar, uns 5 minutos. Vamos juntos.</p>
+  <ol class="as-trilha" data-as-trilha></ol>
+  <div class="as-passo" data-as-passo></div>
+  <form class="fields two" data-form="linkedin-keys" autocomplete="off" hidden>
+    <label><span>Client ID <small>aba Auth, no topo</small></span><input name="client_id" spellcheck="false" placeholder="ex.: 77abc12xyz34" required></label>
+    <label><span>Primary Client Secret <small>clique no olho para ver e copie</small></span><input name="client_secret" type="password" spellcheck="false" placeholder="fica só no cofre deste computador" required></label>
+    <p class="full as-val" data-as-val></p>
   </form>
+  <div class="f-act"><button class="btn" type="button" data-as="voltar">Voltar</button><span class="soft as-salvo">Dá para fechar e continuar depois: o Farol lembra o passo.</span><button class="btn accent" type="button" data-as="proximo">Próximo</button></div>
 </div></dialog>
 <dialog id="picker"><div class="glass sheet sheet-lg">
   <header class="ed-box-h"><h3>Escolher da biblioteca</h3><div class="filters chips" data-pk-filtro><button data-v="todas" class="on">Todas</button><button data-v="imagem">Imagens</button><button data-v="video">Vídeos</button><button data-v="documento">Documentos</button></div></header>
