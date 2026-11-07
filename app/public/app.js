@@ -379,48 +379,194 @@ $('[data-form=linkedin-keys]').addEventListener('input', () => { if ($('[data-as
 
 function cancelarLinkedin() { clearInterval(LI_POLL); LI_POLL = null; api('/api/linkedin/cancelar', {}).catch(() => {}); liEstado('idle') }
 
-// ---------------------------------------------------------------- 1b. triagem: quem é você (vira o perfil; a IA completa depois)
-// O LinkedIn só entrega nome, foto e e-mail a apps (login OpenID): cargo e experiência não vêm. O resto são três toques.
-const AREAS = ['Design', 'Desenvolvimento', 'Produto', 'Marketing', 'Vendas', 'Dados', 'Recrutamento e RH', 'Consultoria', 'Educação', 'Empreendedorismo']
-const FREQUENCIAS = ['1 vez por semana', '2 a 3 vezes por semana', 'Todo dia útil']
+// ---------------------------------------------------------------- 1b. triagem: quem é você (uma pergunta por vez; vira o perfil e a IA completa depois)
+// O LinkedIn só entrega nome, foto e e-mail a apps (login OpenID): cargo e experiência não vêm. O resto sai destes toques.
+const ICO = {
+  design: '<path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3"/><circle cx="18" cy="18" r="2"/>',
+  tec: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+  produto: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5M8 17h3"/>',
+  marketing: '<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>',
+  vendas: '<path d="M4 17l5-5 4 4 7-7M15 9h5v5"/>',
+  rh: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c.7-3 3-4.5 6-4.5s5.3 1.5 6 4.5M15 14.6c2.6-.3 4.6 1 5.2 3.6"/>',
+  financas: '<path d="M4 20V10M10 20V5M16 20v-7M22 20H2"/>',
+  saude: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  direito: '<path d="M12 4v16M5 20h14M6 8h12M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z"/>',
+  educacao: '<path d="M2 9l10-5 10 5-10 5zM6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>',
+  engenharia: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.2 2.2M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/>',
+  negocio: '<path d="M12 3c3 2.5 4.5 6 4 10l-4 3-4-3c-.5-4 1-7.5 4-10z"/><circle cx="12" cy="10" r="1.6"/><path d="M8 13l-3 3 3 1M16 13l3 3-3 1"/>',
+  criativo: '<rect x="3" y="6" width="18" height="13" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',
+  outra: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  estudante: '<path d="M4 6h7a3 3 0 0 1 1 .2V20a3 3 0 0 0-1-.2H4zM20 6h-7a3 3 0 0 0-1 .2V20a3 3 0 0 1 1-.2h7z"/>',
+  comeco: '<path d="M5 19c4-1 6-4 6-8M11 11c0-3 2-6 6-7-1 4-3 6-6 7z"/>',
+  pleno: '<path d="M4 18l6-6 3 3 7-7"/>',
+  senior: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
+  lider: '<circle cx="12" cy="7" r="3"/><path d="M6 20c.6-3.5 3-5.5 6-5.5s5.4 2 6 5.5M4 11l2 1M20 11l-2 1"/>',
+  dono: '<path d="M3 10l9-6 9 6M5 9v11h14V9M10 20v-6h4v6"/>',
+  freela: '<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 7V5h8v2M3 12h18"/>',
+  vaga: '<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 7V5h8v2M12 11v4"/>',
+  clientes: '<path d="M7 11l3-3c1-1 2.5-1 3.5 0L18 12.5M3 12l4-4M21 12l-4-4M9 15l2 2M12 13l2.5 2.5"/>',
+  referencia: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
+  rede: '<circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 7.5l3 8.5M16 7.5l-3 8.5M8.4 6h7.2"/>',
+  divulgar: '<path d="M4 10v4h3l6 4V6L7 10zM17 9a4 4 0 0 1 0 6"/>',
+  mudar: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  aprender: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z"/>',
+  recrutador: '<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/>',
+  gestor: '<path d="M4 20V9l8-5 8 5v11M9 20v-5h6v5"/>',
+  empresa: '<rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h6v12h-6M7 7h4M7 11h4M7 15h4"/>',
+  colegas: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c.7-3 3-4.5 6-4.5s5.3 1.5 6 4.5"/>',
+  iniciante: '<path d="M5 19c4-1 6-4 6-8M11 11c0-3 2-6 6-7-1 4-3 6-6 7z"/>',
+  investidor: '<circle cx="12" cy="12" r="8"/><path d="M14.5 9.5c-.5-1-1.5-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.6 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1.2 0-2.2-.6-2.6-1.6M12 6.5V8M12 16v1.5"/>',
+  leve: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4"/>',
+  medio: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+  intenso: '<path d="M13 3 5 13h6l-1 8 8-10h-6z"/>',
+}
+const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICO[k] || ICO.outra}</svg>`
+// [valor salvo, descrição curta, ícone]
+const VC_AREAS = [['Design', 'UX, UI, produto, gráfico, motion', 'design'], ['Tecnologia', 'desenvolvimento, dados, infraestrutura', 'tec'], ['Produto e projetos', 'PM, PO, agilidade, gestão de projetos', 'produto'], ['Marketing e comunicação', 'growth, conteúdo, marca, social', 'marketing'], ['Vendas e atendimento', 'comercial, sucesso do cliente, parcerias', 'vendas'], ['Pessoas e RH', 'recrutamento, cultura, desenvolvimento', 'rh'], ['Finanças e negócios', 'finanças, contabilidade, estratégia', 'financas'], ['Saúde', 'medicina, psicologia, nutrição, bem-estar', 'saude'], ['Direito', 'advocacia, jurídico de empresas, compliance', 'direito'], ['Educação', 'aulas, cursos, mentoria, pesquisa', 'educacao'], ['Engenharia e indústria', 'civil, produção, qualidade, logística', 'engenharia'], ['Empreendedorismo', 'negócio próprio, startup, franquia', 'negocio'], ['Arte e conteúdo', 'foto, vídeo, escrita, criação de conteúdo', 'criativo'], ['Outra área', 'conte qual é', 'outra']]
+const VC_ESPEC = {
+  'Design': ['Designer de produto (UX/UI)', 'Pesquisa com usuários (UX research)', 'Design gráfico e marca', 'Motion e animação', 'Design de serviços', 'Direção de arte', 'Liderança de design'],
+  'Tecnologia': ['Front-end', 'Back-end', 'Mobile', 'Full-stack', 'Dados e IA', 'DevOps e nuvem', 'Segurança da informação', 'QA e testes', 'Liderança técnica'],
+  'Produto e projetos': ['Product manager', 'Product owner', 'Agilidade (scrum, kanban)', 'Gestão de projetos', 'Operações de produto'],
+  'Marketing e comunicação': ['Marketing digital e growth', 'Conteúdo e redes sociais', 'Branding', 'Performance e mídia paga', 'SEO', 'Assessoria de imprensa', 'CRM e e-mail'],
+  'Vendas e atendimento': ['Vendas B2B', 'Pré-vendas (SDR/BDR)', 'Sucesso do cliente', 'Parcerias e canais', 'Varejo', 'Liderança comercial'],
+  'Pessoas e RH': ['Recrutamento e seleção', 'Business partner (BP)', 'Treinamento e desenvolvimento', 'Cultura e clima', 'Remuneração e benefícios', 'Departamento pessoal'],
+  'Finanças e negócios': ['Contabilidade', 'Finanças corporativas', 'Investimentos', 'Controladoria', 'Consultoria', 'Estratégia e planejamento'],
+  'Saúde': ['Medicina', 'Enfermagem', 'Psicologia', 'Nutrição', 'Fisioterapia', 'Odontologia', 'Gestão em saúde'],
+  'Direito': ['Advocacia empresarial', 'Trabalhista', 'Tributário', 'Digital e proteção de dados', 'Compliance', 'Jurídico interno'],
+  'Educação': ['Professor(a)', 'Coordenação pedagógica', 'Cursos online', 'Mentoria e carreira', 'Pesquisa acadêmica', 'Educação corporativa'],
+  'Engenharia e indústria': ['Engenharia civil', 'Produção e processos', 'Qualidade', 'Logística e supply chain', 'Manutenção', 'Engenharia elétrica'],
+  'Empreendedorismo': ['Fundador(a) de startup', 'Pequeno negócio', 'E-commerce', 'Prestação de serviços', 'Franquia', 'Negócio de impacto'],
+  'Arte e conteúdo': ['Fotografia', 'Vídeo e edição', 'Escrita e redação', 'Ilustração', 'Música', 'Criador(a) de conteúdo'],
+}
+const VC_NIVEIS = [['Estudante', 'ainda na faculdade ou num curso', 'estudante'], ['Começando', 'primeiro emprego, júnior ou mudando de área', 'comeco'], ['Pleno', 'já faz o trabalho com autonomia', 'pleno'], ['Sênior ou especialista', 'referência no que faz', 'senior'], ['Liderança', 'coordena ou gere pessoas', 'lider'], ['Dono(a) de negócio', 'tem a própria empresa', 'dono'], ['Autônomo(a) ou freelancer', 'atende clientes por conta', 'freela']]
+const VC_OBJ = [['Conseguir uma vaga', 'ser encontrado por recrutadores', 'vaga'], ['Conseguir clientes', 'gerar oportunidades de negócio', 'clientes'], ['Ser referência na área', 'ser lembrado pelo que sabe', 'referencia'], ['Fazer networking', 'conhecer gente da área', 'rede'], ['Divulgar meu negócio', 'mostrar produto ou serviço', 'divulgar'], ['Mudar de área', 'mostrar que está em transição', 'mudar'], ['Aprender em público', 'compartilhar o que estuda', 'aprender']]
+const VC_PUB = [['Recrutadores', 'quem contrata', 'recrutador'], ['Lideranças', 'gestores que decidem nas empresas', 'gestor'], ['Clientes', 'pessoas e empresas que compram de você', 'empresa'], ['Colegas da área', 'quem faz o mesmo que você', 'colegas'], ['Quem está começando', 'estudantes e juniores', 'iniciante'], ['Investidores', 'e possíveis parceiros de negócio', 'investidor']]
+const VC_TONS = [['Direto', 'Três erros que vejo toda semana, e como evitar.'], ['Didático', 'Vou explicar, passo a passo, como eu faço isso.'], ['Próximo', 'Hoje quero contar uma coisa que aconteceu comigo.'], ['Inspirador', 'Ninguém começa pronto. Eu também não comecei.'], ['Bem-humorado', 'Spoiler: aquela reunião podia ter sido um e-mail.'], ['Técnico', 'Os números por trás da decisão, sem rodeio.']]
+const VC_FREQ = [['1 vez por semana', 'leve, para começar', 'leve'], ['2 a 3 vezes por semana', 'o ritmo que mais cresce', 'medio'], ['Todo dia útil', 'para quem quer acelerar', 'intenso']]
+const VC_PASSOS = [
+  { k: 'area', t: n => `Prazer${n ? ', ' + n : ''}! Em que área você trabalha?`, s: 'Escolha a mais próxima. Na próxima pergunta você detalha.' },
+  { k: 'esp', t: () => 'E o que você faz, exatamente?', s: 'Escolha uma opção ou escreva o seu cargo do seu jeito.' },
+  { k: 'nivel', t: () => 'Em que momento da carreira você está?', s: 'Isso muda o tom dos posts e as vagas que a gente sugere.' },
+  { k: 'objetivo', t: () => 'O que você quer conseguir com o LinkedIn?', s: 'Escolha até 3. É isso que guia os assuntos dos posts.', multi: 3 },
+  { k: 'publico', t: () => 'Quem você quer que leia os seus posts?', s: 'Escolha até 3. A IA escreve pensando nessas pessoas.', multi: 3 },
+  { k: 'tom', t: () => 'Como você quer soar?', s: 'Escolha até 2. Cada um vem com um exemplo de começo de post.', multi: 2 },
+  { k: 'frequencia', t: () => 'Com que frequência quer postar?', s: 'Dá para mudar quando quiser.' },
+  { k: 'fim', t: () => 'Pronto. É assim que a sua IA vai te ver.', s: 'Toque em qualquer parte para mudar.' },
+]
 let VC = null
+const vcPrimeiro = () => (VC.nome || '').split(' ')[0]
+const casa = (lista, txt) => lista.map(o => o[0]).filter(v => String(txt || '').toLowerCase().includes(v.toLowerCase()))
 async function entrarVoce() {
   let p = null; try { p = (await api('/api/perfil')).perfil } catch { }
   if (!ST) await status()
   const l = ST?.linkedin || {}, nome = p?.nome || l.name || ''
-  const chip = AREAS.find(a => (p?.area || '') === a)
-  VC = { perfil: p, nome, area: chip || '', frase: chip ? '' : p?.area || '', objetivo: (p?.objetivo || '').split(/,\s*/).filter(Boolean), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
+  // o que já estiver salvo volta marcado (perfil salvo como "Especialidade · Área")
+  const [esp0, area0] = String(p?.area || '').includes(' · ') ? p.area.split(' · ') : ['', p?.area || '']
+  const areaOk = VC_AREAS.some(a => a[0] === area0)
+  VC = { perfil: p, nome, passo: 0, area: areaOk ? area0 : area0 ? 'Outra área' : '', outra: areaOk ? '' : area0, esp: esp0, nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
   const av = $('[data-vc-av]'); av.textContent = l.foto ? '' : inicial(nome || '?'); av.style.backgroundImage = l.foto ? `url("${l.foto}")` : ''
   $('[data-vc-li]').hidden = !l.connected
-  $('[data-vc-t]').textContent = nome ? `Prazer, ${nome.split(' ')[0]}! Conta um pouco de você.` : 'Prazer! Conta um pouco de você.'
-  $('[data-vc-nota]').textContent = l.connected ? 'Do LinkedIn vieram o seu nome e a sua foto. O LinkedIn não compartilha cargo nem experiência com outros apps, então o resto vem destes toques (e do seu link, que a sua IA lê).' : 'O LinkedIn ainda não está conectado: tudo bem, dá para conectar depois em Ajustes.'
-  $('[data-vc=frase]').value = VC.frase; $('[data-vc=site]').value = VC.site
   desenharVoce()
 }
-function desenharVoce() {
-  const grupo = (k, ops, multi) => $(`[data-vc-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${esc(o)}" class="${(multi ? VC[k].includes(o) : VC[k] === o) ? 'on' : ''}" aria-pressed="${multi ? VC[k].includes(o) : VC[k] === o}">${o}</button>`).join('')
-  grupo('area', AREAS); grupo('objetivo', OBJETIVOS, true); grupo('frequencia', FREQUENCIAS)
-  const feito = !!(VC.area || VC.frase.trim()) + !!VC.objetivo.length + !!VC.frequencia
-  $('[data-vc-ok]').textContent = feito ? 'Continuar' : 'Continuar sem preencher'
+const vcValor = k => VC[k]
+const vcRespondido = k => k === 'area' ? !!(VC.area && (VC.area !== 'Outra área' || VC.outra.trim())) : k === 'esp' ? !!VC.esp.trim() : k === 'fim' ? true : Array.isArray(VC[k]) ? VC[k].length > 0 : !!VC[k]
+function vcTiles(k, ops, multi) {
+  const sel = v => multi ? VC[k].includes(v) : VC[k] === v
+  return `<div class="vc-tiles${ops.length <= 3 ? ' tres' : ''}" role="${multi ? 'group' : 'radiogroup'}">${ops.map(([v, d, i], n) => `<button type="button" class="vc-tile${sel(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${sel(v)}">
+    <span class="vc-tic">${ico(i)}</span><b>${esc(v)}</b><small>${esc(d)}</small>${n < 9 ? `<kbd class="vc-k">${n + 1}</kbd>` : ''}<span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
 }
+function desenharVoce() {
+  const P = VC_PASSOS[VC.passo], total = VC_PASSOS.length - 1
+  $('[data-vc-t]').textContent = P.t(vcPrimeiro())
+  $('[data-vc-s]').textContent = P.s
+  $('[data-vc-passo]').textContent = P.k === 'fim' ? 'Revisão' : `Pergunta ${VC.passo + 1} de ${total}`
+  const prog = $('[data-vc-prog]'); prog.style.setProperty('--p', (Math.min(VC.passo, total) / total * 100) + '%'); prog.setAttribute('aria-valuenow', VC.passo + 1)
+  let h = ''
+  if (P.k === 'area') h = vcTiles('area', VC_AREAS) + (VC.area === 'Outra área' ? `<label class="vc-campo"><span>Qual é a sua área?</span><input class="vc-in" data-vc="outra" maxlength="80" placeholder="Ex.: Arquitetura, Agronegócio, Turismo" value="${esc(VC.outra)}"></label>` : '')
+  if (P.k === 'esp') {
+    const ops = VC_ESPEC[VC.area] || []
+    h = (ops.length ? `<div class="vc-chips">${ops.map(o => `<button type="button" class="${VC.esp === o ? 'on' : ''}" data-vc-esp="${esc(o)}" aria-pressed="${VC.esp === o}">${esc(o)}</button>`).join('')}</div><div class="or vc-or">ou escreva</div>` : '')
+      + `<label class="vc-campo"><span>Seu cargo ou o que você faz</span><input class="vc-in" data-vc="esp" maxlength="120" placeholder="${esc(ops.length ? 'Ex.: ' + ops[0] + ' em fintech' : 'Ex.: Arquiteto de interiores residenciais')}" value="${esc(VC.esp)}"></label>`
+  }
+  if (P.k === 'nivel') h = vcTiles('nivel', VC_NIVEIS)
+  if (P.k === 'objetivo') h = vcTiles('objetivo', VC_OBJ, true)
+  if (P.k === 'publico') h = vcTiles('publico', VC_PUB, true)
+  if (P.k === 'tom') h = `<div class="vc-tons" role="group">${VC_TONS.map(([v, ex], n) => `<button type="button" class="vc-tom${VC.tom.includes(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="checkbox" aria-checked="${VC.tom.includes(v)}"><b>${esc(v)}</b><q>${esc(ex)}</q><kbd class="vc-k">${n + 1}</kbd><span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
+  if (P.k === 'frequencia') h = vcTiles('frequencia', VC_FREQ) + `<label class="vc-campo"><span>Tem site ou portfólio? <small class="soft">opcional</small></span><input class="vc-in" data-vc="site" type="url" placeholder="https://" spellcheck="false" value="${esc(VC.site)}"><small class="fine">A sua IA lê o link (só leitura) e sugere temas e as cores da sua marca.</small></label>`
+  if (P.k === 'fim') {
+    const parte = (passo, txt, vazio) => `<button type="button" class="vc-parte${txt ? '' : ' vazio'}" data-vc-ir="${passo}">${esc(txt || vazio)}</button>`
+    const areaTxt = VC.area === 'Outra área' ? VC.outra : VC.area, lista = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || ''
+    h = `<div class="vc-resumo glass">
+      <div class="vc-r-h"><span class="avatar" style="${$('[data-vc-av]').style.backgroundImage ? `background-image:${$('[data-vc-av]').style.backgroundImage};color:transparent` : ''}">${inicial(VC.nome || '?')}</span><span><b>${esc(VC.nome || 'Você')}</b><small>${esc([VC.esp, areaTxt].filter(Boolean).join(' · ') || 'área a definir')}</small></span></div>
+      <p>${parte(1, VC.esp, 'o que você faz')} em ${parte(0, areaTxt, 'sua área')}, ${parte(2, VC.nivel && VC.nivel.toLowerCase(), 'momento da carreira')}. Quer ${parte(3, lista(VC.objetivo.map(o => o.toLowerCase())), 'um objetivo')}, falando com ${parte(4, lista(VC.publico.map(o => o.toLowerCase())), 'o seu público')}, num tom ${parte(5, lista(VC.tom.map(o => o.toLowerCase())), 'do seu jeito')}, ${parte(6, VC.frequencia && VC.frequencia.toLowerCase(), 'na frequência que quiser')}.</p>
+      ${VC.site ? `<small class="fine">A sua IA também vai ler ${esc(dominio(VC.site) || VC.site)} para sugerir temas e cores.</small>` : ''}</div>
+      <p class="fine vc-nota">${ST?.linkedin?.connected ? 'Do LinkedIn vieram o seu nome e a sua foto. O LinkedIn não compartilha cargo nem experiência com outros apps, por isso as perguntas.' : 'O LinkedIn ainda não está conectado: tudo bem, dá para conectar depois em Ajustes.'}</p>`
+  }
+  // a entrada animada só quando muda de pergunta (marcar uma opção não pisca a tela)
+  const corpo = $('[data-vc-corpo]'), mudou = VC.mostrado !== VC.passo; VC.mostrado = VC.passo
+  corpo.classList.remove('troca'); if (mudou) void corpo.offsetWidth
+  corpo.innerHTML = h; if (mudou) corpo.classList.add('troca')
+  const ok = $('[data-vc-ok]'), resp = vcRespondido(P.k)
+  ok.textContent = P.k === 'fim' ? 'Está ótimo, continuar' : resp ? 'Continuar' : 'Pular esta'
+  ok.classList.toggle('accent', resp)
+  $('[data-vc-voltar]').hidden = VC.passo === 0
+}
+function vcIr(n) { VC.passo = Math.max(0, Math.min(VC_PASSOS.length - 1, n)); Som.tique(); desenharVoce(); $('[data-vc-corpo] input, [data-vc-corpo] button')?.focus({ preventScroll: true }) }
+let vcAuto = null
+function vcEscolher(v) {
+  const P = VC_PASSOS[VC.passo], k = P.k
+  if (P.multi) {
+    if (VC[k].includes(v)) VC[k] = VC[k].filter(x => x !== v)
+    else if (VC[k].length >= P.multi) return pill(`Escolha até ${P.multi}`, 'Tire uma opção para marcar outra.', 'var(--amber)')
+    else VC[k] = [...VC[k], v]
+    Som.tique(); return desenharVoce()
+  }
+  const era = VC[k] === v
+  VC[k] = era ? '' : v
+  if (k === 'area' && !era && VC.esp && !(VC_ESPEC[v] || []).includes(VC.esp)) VC.esp = ''   // trocou de área: a especialidade antiga não vale mais
+  Som.liga(); desenharVoce()
+  // escolha única avança sozinha (menos "Outra área", que pede o nome)
+  clearTimeout(vcAuto)
+  if (!era && !(k === 'area' && v === 'Outra área') && k !== 'frequencia') vcAuto = setTimeout(() => VC_PASSOS[VC.passo].k === k && vcIr(VC.passo + 1), 380)
+  if (k === 'area' && v === 'Outra área') setTimeout(() => $('[data-vc=outra]')?.focus(), 50)
+}
+function vcAvancar() { if (VC_PASSOS[VC.passo].k === 'fim') return salvarVoce(); vcIr(VC.passo + 1) }
+function vcVoltar() { if (VC.passo > 0) vcIr(VC.passo - 1) }
 $('[data-scene=voce]').addEventListener('click', e => {
-  const b = e.target.closest('[data-vc-chips] button'); if (!b) return
-  const k = b.closest('[data-vc-chips]').dataset.vcChips, v = b.dataset.v
-  if (k === 'objetivo') VC.objetivo = VC.objetivo.includes(v) ? VC.objetivo.filter(x => x !== v) : [...VC.objetivo, v]
-  else VC[k] = VC[k] === v ? '' : v
-  Som.tique(); desenharVoce()
+  const op = e.target.closest('[data-vc-op]'); if (op) return vcEscolher(op.dataset.vcOp)
+  const es = e.target.closest('[data-vc-esp]'); if (es) { VC.esp = VC.esp === es.dataset.vcEsp ? '' : es.dataset.vcEsp; Som.liga(); desenharVoce(); clearTimeout(vcAuto); if (VC.esp) vcAuto = setTimeout(() => VC_PASSOS[VC.passo].k === 'esp' && vcIr(VC.passo + 1), 380); return }
+  const ir = e.target.closest('[data-vc-ir]'); if (ir) return vcIr(+ir.dataset.vcIr)
+  if (e.target.closest('[data-vc-ok]')) return vcAvancar()
+  if (e.target.closest('[data-vc-voltar]')) return vcVoltar()
 })
-$('[data-scene=voce]').addEventListener('input', e => { const k = e.target.dataset.vc; if (k) { VC[k] = e.target.value; desenharVoce() } })
-$('[data-vc-ok]').addEventListener('click', () => salvarVoce())
+$('[data-scene=voce]').addEventListener('input', e => {
+  const k = e.target.dataset.vc; if (!k) return
+  VC[k] = e.target.value
+  const ok = $('[data-vc-ok]'), resp = vcRespondido(VC_PASSOS[VC.passo].k); ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp)
+  if (k === 'esp') $$('[data-vc-esp]').forEach(b => { b.classList.toggle('on', b.dataset.vcEsp === VC.esp); b.setAttribute('aria-pressed', b.dataset.vcEsp === VC.esp) })
+})
+// teclado na triagem: 1 a 9 escolhem, Enter continua, Esc volta uma pergunta
+function teclaVoce(e, k) {
+  if (!VC) return false
+  const P = VC_PASSOS[VC.passo]
+  if (k === 'Escape' && VC.passo > 0) { vcVoltar(); return true }
+  if (k === 'Enter') { e.preventDefault(); vcAvancar(); return true }
+  if (/^[1-9]$/.test(k) && !e.target.closest('input')) {
+    const ops = $$('[data-vc-op], [data-vc-esp]', $('[data-vc-corpo]')), b = ops[+k - 1]
+    if (b) { b.click(); return true }
+  }
+  return P && false
+}
 async function salvarVoce() {
   if (!VC) return proximaCena()
-  const area = VC.frase.trim() ? (VC.area ? `${VC.area}: ${VC.frase.trim()}` : VC.frase.trim()) : VC.area
+  const areaNome = VC.area === 'Outra área' ? VC.outra.trim() : VC.area
+  const area = [VC.esp.trim(), areaNome].filter(Boolean).join(' · ')
   const site = /^https?:\/\/\S+\.\S+/i.test(VC.site.trim()) ? VC.site.trim() : ''
-  if (VC.site.trim() && !site) return pill('Confira o link', 'Ele precisa começar com http:// ou https://', 'var(--amber)')
+  if (VC.site.trim() && !site) { vcIr(VC_PASSOS.findIndex(p => p.k === 'frequencia')); return pill('Confira o link', 'Ele precisa começar com http:// ou https://', 'var(--amber)') }
   const p = VC.perfil || {}
-  if (area || VC.objetivo.length || VC.frequencia || site) {
+  if (area || VC.nivel || VC.objetivo.length || VC.publico.length || VC.tom.length || VC.frequencia || site) {
     try {
-      await api('/api/perfil/salvar', { id: p.id, perfil: { ...p, nome: p.nome || VC.nome, area: area || p.area || '', objetivo: VC.objetivo.join(', '), frequencia: VC.frequencia, links: { ...(p.links || {}), site } } })
+      await api('/api/perfil/salvar', { id: p.id, perfil: { ...p, nome: p.nome || VC.nome, area: area || p.area || '', nivel: VC.nivel, objetivo: VC.objetivo.join(', '), publico: VC.publico.join(', '), tom: VC.tom.join(', '), frequencia: VC.frequencia, links: { ...(p.links || {}), site } } })
       Som.liga(); pill('Perfil começado', 'A sua IA vai usar isso em cada post.', 'var(--green)')
       if (area || site) store.set('analisarDepois', '1')   // quando a IA estiver pronta, ela completa o perfil
     } catch (e) { return falha(e) }
@@ -1568,6 +1714,7 @@ const lit = (k, on) => $$(`kbd[data-k="${k}"]`).forEach(x => x.classList.toggle(
 // Ctrl+S salva o rascunho no editor (vale também com o cursor no texto)
 addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && ['editor', 'perfil'].includes(atual?.dataset.scene)) { e.preventDefault(); atual.dataset.scene === 'editor' ? salvarEd() : salvarPerfil() } })
 addEventListener('keydown', e => {
+  if (atual?.dataset.scene === 'voce' && !$('dialog[open]') && !e.target.closest('textarea, select')) { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if ((k !== 'Enter' || !e.target.closest('button, a')) && teclaVoce(e, k)) return }
   if (e.target.closest('input, textarea, select') || $('dialog[open]')) return
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key
   const nome = atual?.dataset.scene
@@ -1576,7 +1723,6 @@ addEventListener('keydown', e => {
   if (k === 'Enter' && ONB.includes(nome) && !e.target.closest('button, a, summary')) {
     e.preventDefault()
     if (nome === 'ola') return proximaCena()
-    if (nome === 'voce') return salvarVoce()
     if (nome === 'linkedin') return $('[data-li]').dataset.li === 'ok' ? proximaCena() : $('[data-li]').dataset.li === 'idle' ? conectarLinkedin() : null
     if (nome === 'sync') return !$('[data-sync-cta]').hidden && $('[data-sync-cta] [data-next]') ? proximaCena() : null
     if (nome === 'formatos') return terminar()

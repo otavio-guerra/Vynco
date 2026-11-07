@@ -64,7 +64,7 @@ function buscar(id, agente, perguntar, { tipo = 'ambos', local = '', modalidade 
   if (JOB && JOB.estado === 'rodando') throw new Error('Já tem uma busca em andamento.')
   const p = PERFIS.carregar(id)
   if (!p.area && !p.temas.length && !p.sobre) throw new Error('Conte a sua área no Perfil antes: é dela que saem as sugestões.')
-  const prefs = { local: txt(local, 80), modalidade: txt(modalidade, 40), senioridade: txt(senioridade, 40) }
+  const prefs = { local: txt(local, 80), modalidade: txt(modalidade, 40), senioridade: txt(senioridade || p.nivel, 40) }
   JOB = { id, tipo, estado: 'rodando', inicio: Date.now() }
   const J = JOB
   perguntar(agente, prompt(p, tipo, prefs), { timeout: 420000 }).then(async saida => {

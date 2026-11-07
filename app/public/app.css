@@ -296,9 +296,9 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 @keyframes anel { from { opacity: .8; transform: scale(1) } to { opacity: 0; transform: scale(1.7) } }
 
 /* ----- fila: cartões + prévia no feed */
-.view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 18px }
+.view-head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; margin-bottom: 22px } .view-head .sub { margin-inline: auto }
 .fila-grid { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 22px; align-items: start }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 14px; outline: none; align-content: start; border-radius: 14px } .cards:focus-visible { box-shadow: 0 0 0 2px var(--accent) }
+.cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; outline: none; align-content: start; border-radius: 14px } .cards:focus-visible { box-shadow: 0 0 0 2px var(--accent) }
 .post { position: relative; border-radius: 14px; overflow: hidden; cursor: pointer; background: var(--glass); border: 1px solid var(--edge); transition: transform .3s var(--ease), border-color .25s, box-shadow .3s; text-align: left; padding: 0; color: var(--text) }
 .post:hover { transform: translateY(-2px); border-color: var(--edge-2) }
 .post.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 16px 40px rgba(0, 0, 0, .3) }
@@ -334,13 +334,13 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .empty p { color: var(--soft); margin: 0 0 6px; max-width: 360px }
 
 /* ----- cabeçalho das telas com ações (fila, biblioteca, editor) */
-.head-a { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end }
+.head-a { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center }
 .btn svg { width: 15px; height: 15px; flex: none }
 .state.draft { --c: var(--faint) } .state.draft::before { box-shadow: none }
 
 /* ----- biblioteca */
 .bib-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start }
-.midias { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; outline: none; border-radius: 16px; transition: box-shadow .2s, background .2s; min-height: 200px }
+.midias { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; align-content: start; outline: none; border-radius: 16px; transition: box-shadow .2s, background .2s; min-height: 200px }
 .midia { position: relative; padding: 0; text-align: left; color: var(--text); cursor: pointer; border-radius: 12px; overflow: hidden; background: var(--glass); border: 1px solid var(--edge); transition: transform .25s var(--ease), border-color .2s, box-shadow .25s }
 .midia:hover { transform: translateY(-2px); border-color: var(--edge-2) }
 .midia.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) }
@@ -392,7 +392,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .ed-acoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center }
 .ed-salvo { font-size: 12.5px; color: var(--faint) }
 .sheet.sheet-lg { width: min(880px, calc(100vw - 32px)); max-width: none }
-.midias.pk { max-height: min(56vh, 520px); overflow-y: auto; padding: 2px; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) }
+.midias.pk { max-height: min(56vh, 520px); overflow-y: auto; padding: 2px; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); justify-content: stretch }
 .pk-n { position: absolute; right: 8px; top: 8px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: var(--accent-ink); background: var(--accent) }
 
 /* ----- estúdio de imagens */
@@ -432,6 +432,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 
 /* ----- rede */
 .rd-prefs { margin-bottom: 14px } .rd-prefs .chips { justify-content: flex-start }
+.rd-prefs .ed-acoes { justify-content: center } .rd-prefs > .fine { text-align: center; max-width: 760px; margin-inline: auto }
 .rd-estado:empty { display: none } .rd-estado { margin-bottom: 14px } .rd-estado .steps { width: 100%; margin: 0; list-style: none }
 .rd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start }
 .rd-lista { display: grid; gap: 10px }
@@ -479,14 +480,42 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .vc-quem { display: grid; justify-items: center; gap: 6px; margin-bottom: -2px }
 .vc-av { flex-basis: auto; width: 72px; height: 72px; font-size: 26px; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--li), 0 14px 40px rgba(0, 0, 0, .35) }
 .vc-li { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--soft); padding: 3px 9px; border-radius: 99px; background: var(--glass); border: 1px solid var(--edge) } .vc-li svg { width: 11px; height: 11px; color: var(--li-hi) }
-.vc { display: grid; gap: 10px; width: min(640px, 100%); text-align: left; margin-top: 4px }
-.vc-p { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 16px; background: var(--glass); border: 1px solid var(--edge) }
-.vc-p > div { flex: 1; display: grid; gap: 8px; min-width: 0 } .vc-p b { font-size: 14.5px; font-weight: 600 }
-.vc-n { flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); margin-top: 1px }
 .vc-in { font: 14px var(--font); color: var(--text); background: var(--glass); border: 1px solid var(--edge-2); border-radius: 10px; padding: 9px 12px; min-height: 42px; width: 100% }
 .vc-in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent) }
-.vc .chips { justify-content: flex-start }
 .vc-nota { max-width: 560px }
+.vc-top { display: grid; justify-items: center; gap: 10px; margin-bottom: 4px }
+.vc-prog { width: min(320px, 70vw); height: 6px; border-radius: 99px; background: var(--glass-2); overflow: hidden }
+.vc-prog i { display: block; height: 100%; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--violet)); transition: width .45s var(--ease) }
+.vc-passo { color: var(--faint); font-size: 12.5px; font-weight: 600; letter-spacing: .03em }
+.vc-corpo { width: min(960px, 100%); display: grid; justify-items: center; gap: 14px; margin-top: 6px }
+.vc-corpo.troca > * { animation: entra .35s var(--ease) both }
+.vc-tiles { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 10px }
+.vc-tiles.tres { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); max-width: 700px }
+.vc-tile, .vc-tom { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; padding: 16px 12px 14px; min-height: 118px; text-align: center; color: var(--text); font: inherit; background: var(--glass); border: 1.5px solid var(--edge); border-radius: 16px; cursor: pointer; transition: transform .18s var(--spring), border-color .2s, background .2s, box-shadow .2s }
+.vc-tile:hover, .vc-tom:hover { transform: translateY(-2px); background: var(--glass-2); border-color: var(--edge-2) }
+.vc-tile.on, .vc-tom.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--glass)); box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 18%, transparent) }
+.vc-tile b, .vc-tom b { font-size: 14.5px; font-weight: 650; line-height: 1.25 } .vc-tile small { color: var(--faint); font-size: 12.5px; line-height: 1.3 }
+.vc-tic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); margin-bottom: 4px; transition: background .2s, color .2s }
+.vc-tic svg { width: 22px; height: 22px } .vc-tile.on .vc-tic { color: var(--accent-ink); background: var(--accent) }
+.vc-k { position: absolute; top: 8px; left: 8px; min-width: 20px; height: 20px; padding: 0 5px; font-size: 11px; border-width: 1px 1px 2px; border-radius: 6px; opacity: .55 }
+.vc-ok { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--edge-2); transition: all .2s var(--ease) }
+.on > .vc-ok { border-color: var(--accent); background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 8 3 3 5-6' fill='none' stroke='%23052033' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat }
+.vc-tons { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px }
+.vc-tom { min-height: 104px; padding: 18px 16px 14px; gap: 8px }
+.vc-tom q { color: var(--soft); font-size: 13.5px; font-style: italic; quotes: '“' '”'; line-height: 1.4 }
+.vc-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 720px }
+.vc-chips button { font: 600 14px var(--font); color: var(--soft); background: var(--glass); border: 1.5px solid var(--edge-2); padding: 10px 16px; min-height: 44px; border-radius: 999px; cursor: pointer; transition: all .2s var(--ease) }
+.vc-chips button:hover { color: var(--text); transform: translateY(-1px) }
+.vc-chips button.on { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent) }
+.vc-or { width: min(420px, 100%) }
+.vc-campo { display: grid; gap: 6px; width: min(480px, 100%); text-align: left; font-size: 13.5px; color: var(--soft); font-weight: 600 }
+.vc-campo .vc-in { font-size: 15px; padding: 12px 14px; min-height: 46px }
+.vc-cta { margin-top: 8px }
+.vc-resumo { width: min(620px, 100%); padding: 22px 24px; text-align: left; display: grid; gap: 14px }
+.vc-r-h { display: flex; align-items: center; gap: 12px } .vc-r-h b { display: block; font-size: 16px } .vc-r-h small { color: var(--faint); font-size: 13px }
+.vc-resumo p { margin: 0; font-size: 17px; line-height: 1.75; color: var(--soft) }
+.vc-parte { font: inherit; color: var(--text); font-weight: 650; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 0; border-bottom: 2px dotted var(--accent); border-radius: 6px 6px 2px 2px; padding: 0 5px; cursor: pointer; transition: background .2s }
+.vc-parte:hover { background: color-mix(in srgb, var(--accent) 24%, transparent) } .vc-parte.vazio { color: var(--faint); font-weight: 500; font-style: italic; border-bottom-color: var(--faint) }
 
 /* ----- perfil */
 .pf-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 22px; align-items: start }
@@ -534,7 +563,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .cr-acao:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 45%, var(--edge)); background: var(--glass-2) }
 .cr-acao b { display: block; font-size: 14.5px } .cr-acao small { display: block; color: var(--faint); font-size: 12.5px; line-height: 1.3 }
 .cr-ic { flex: 0 0 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent) } .cr-ic svg { width: 18px; height: 18px }
-.cr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 6px 0 12px } .cr-head h2 { margin: 0; font-size: 19px; font-weight: 650 }
+.cr-head { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 6px 0 12px } .cr-head h2 { margin: 0; font-size: 19px; font-weight: 650 }
 .cr-avisos:empty { display: none } .cr-avisos { display: grid; gap: 8px; margin-bottom: 14px }
 .cr-aviso { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 14px; border-radius: 12px; font-size: 13.5px; background: var(--glass); border: 1px solid var(--edge); --c: var(--green) } .cr-aviso.bad { --c: var(--amber) }
 .cr-aviso .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c) } .cr-aviso > span:nth-child(2) { flex: 1; color: var(--soft) } .cr-aviso b { color: var(--text) }
@@ -579,9 +608,9 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 
 /* calendário */
 .cal-nav .icon { width: 34px; padding: 0 } .cal-nav .icon svg { width: 16px; height: 16px }
-.cal-legenda { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: 12.5px; color: var(--soft) }
+.cal-legenda { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 12.5px; color: var(--soft) }
 .cl { display: inline-flex; align-items: center; gap: 6px } .cl::before { content: ''; width: 10px; height: 10px; border-radius: 3px; background: var(--c) }
-.cl.pub { --c: var(--accent) } .cl.ag { --c: var(--violet) } .cl.rot { --c: var(--green) } .cal-legenda .fine { margin: 0 0 0 auto }
+.cl.pub { --c: var(--accent) } .cl.ag { --c: var(--violet) } .cl.rot { --c: var(--green) } .cal-legenda .fine { margin: 0 }
 .cal-grid { display: grid; grid-template-columns: 1fr 330px; gap: 16px; align-items: start }
 .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; padding: 10px }
 .cal-dow { text-align: center; font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); padding: 4px 0 6px }
@@ -621,7 +650,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .tag { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--faint) }
 
 /* ----- ajustes */
-.settings { display: grid; gap: 16px; max-width: 860px }
+.settings { display: grid; gap: 16px; max-width: 860px; width: 100%; margin-inline: auto }
 .set { padding: 18px 20px; display: grid; gap: 12px }
 .conn-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-top: 1px solid var(--edge) }
 .set h3 + .conn-row { border-top: 0 }
@@ -675,3 +704,8 @@ dialog p { color: var(--soft); margin: 0 }
 /* ?captura=1: tudo já no lugar (capturas de tela automáticas não rodam as animações) */
 .static [data-in] { opacity: 1 !important; transform: none !important; filter: none !important; animation: none !important }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important } .appicon .beam { display: none } }
+
+/* fila e biblioteca: linhas centralizadas, inclusive a última (nada sobrando encostado à esquerda) */
+.cards > .post { flex: 0 0 184px } .cards > :not(.post) { flex: 1 1 100% }
+.midias:not(.pk) { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start } .midias:not(.pk) > .midia { flex: 0 0 156px } .midias:not(.pk) > :not(.midia) { flex: 1 1 100% }
+@media (max-width: 700px) { .vc-tiles, .vc-tiles.tres { grid-template-columns: 1fr 1fr } .vc-tile { min-height: 0; padding: 14px 8px 12px } .vc-tile small { font-size: 12px } .vc-k { display: none } .vc-tons { grid-template-columns: 1fr } .vc-resumo p { font-size: 15.5px } }

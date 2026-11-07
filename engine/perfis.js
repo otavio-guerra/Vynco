@@ -14,7 +14,7 @@ const HEX = /^#[0-9a-f]{6}$/i
 const CORES = ['principal', 'secundaria', 'acento', 'fundo', 'texto']
 
 const vazio = id => ({
-  id, nome: '', area: '', publico: '', objetivo: '', tom: '', frequencia: '', temas: [], evitar: [], links: { site: '', portfolio: '' }, sobre: '',
+  id, nome: '', area: '', nivel: '', publico: '', objetivo: '', tom: '', frequencia: '', temas: [], evitar: [], links: { site: '', portfolio: '' }, sobre: '',
   pilares: [],
   marca: { cores: Object.fromEntries(CORES.map(c => [c, ''])), fontes: { titulo: '', texto: '' }, estilo: '', referencias: [], aplicarNoMotor: false, usarNoEstudio: true },
   analise: null, atualizado: null,
@@ -35,7 +35,7 @@ function carregar(id) {
 function limpar(p) {
   const m = p.marca || {}, cores = m.cores || {}
   return {
-    nome: txt(p.nome, 80), area: txt(p.area, 200), publico: txt(p.publico, 300), objetivo: txt(p.objetivo, 200), tom: txt(p.tom, 200), frequencia: txt(p.frequencia, 40),
+    nome: txt(p.nome, 80), area: txt(p.area, 200), nivel: txt(p.nivel, 60), publico: txt(p.publico, 300), objetivo: txt(p.objetivo, 200), tom: txt(p.tom, 200), frequencia: txt(p.frequencia, 40),
     temas: lista_(p.temas), evitar: lista_(p.evitar),
     links: { site: /^https?:\/\//i.test(p.links?.site || '') ? txt(p.links.site, 300) : '', portfolio: /^https?:\/\//i.test(p.links?.portfolio || '') ? txt(p.links.portfolio, 300) : '' },
     sobre: txt(p.sobre, 3000),
@@ -78,7 +78,7 @@ function resumo(p) {
   return `<!-- gerado pelo Farol a partir do perfil "${p.id}". Edite na tela Perfil. -->
 # Perfil de quem publica
 
-${l('Nome', p.nome)}${l('Área de atuação', p.area)}${l('Público', p.publico)}${l('Objetivo no LinkedIn', p.objetivo)}${l('Tom de voz', p.tom)}${l('Frequência de posts', p.frequencia)}${l('Temas', p.temas)}${l('Evitar', p.evitar)}${l('Site', p.links.site)}${l('Portfólio', p.links.portfolio)}
+${l('Nome', p.nome)}${l('Área de atuação', p.area)}${l('Momento da carreira', p.nivel)}${l('Público', p.publico)}${l('Objetivo no LinkedIn', p.objetivo)}${l('Tom de voz', p.tom)}${l('Frequência de posts', p.frequencia)}${l('Temas', p.temas)}${l('Evitar', p.evitar)}${l('Site', p.links.site)}${l('Portfólio', p.links.portfolio)}
 ${p.pilares.length ? `## Pilares de conteúdo\n${p.pilares.map(x => `- **${x.tema}**${x.por_que ? `: ${x.por_que}` : ''}${x.ideias.length ? `\n${x.ideias.map(i => `  - ${i}`).join('\n')}` : ''}`).join('\n')}\n` : ''}
 ## Identidade visual
 ${l('Cores', cores)}${l('Fontes', [p.marca.fontes.titulo && `títulos em ${p.marca.fontes.titulo}`, p.marca.fontes.texto && `texto em ${p.marca.fontes.texto}`].filter(Boolean).join(', '))}${l('Estilo', p.marca.estilo)}
