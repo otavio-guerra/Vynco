@@ -99,7 +99,7 @@ Depois é seguir a entrada. Para mudar caminhos à mão, copie `config/engine.co
 O app desktop é uma janela nativa do Windows (WebView2) em volta do mesmo painel. Não há uma segunda interface: o que funciona no `npm start` funciona no app.
 
 - **Desenvolver:** `npm run desktop:dev` abre a janela nativa apontando para o servidor local (`npm start`, em `127.0.0.1:4800`). Também dá para continuar só no navegador, como sempre.
-- **Gerar o instalador:** `npm run desktop:build` cria `src-tauri/target/release/bundle/nsis/Farol_<versão>_x64-setup.exe`. A instalação é por usuário, sem pedir administrador, e baixa o WebView2 se faltar.
+- **Gerar o instalador:** `npm run desktop:build` cria `src-tauri/target/release/bundle/nsis/Farol_<versão>_x64-setup.exe` (cerca de 30 MB). A instalação é por usuário, em `%LOCALAPPDATA%Farol`, sem pedir administrador, e baixa o WebView2 se faltar. Para instalar sem perguntas: `Farol_<versão>_x64-setup.exe /S`.
 - **Precisa, só para compilar:** Rust (rustup), Visual Studio Build Tools com C++ e Node 22.13 ou mais novo. Quem instala o Farol não precisa de nada disso.
 
 Como o app funciona por dentro:
