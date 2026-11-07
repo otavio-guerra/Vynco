@@ -44,6 +44,12 @@ Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fi
 
 - **Biblioteca:** tudo o que pode ir num post, num lugar só. Ficam ali o que você envia (arraste para a tela ou use "Enviar arquivos") e o que as rotinas geram (Daily UI, série, carrosséis). Cada mídia mostra medidas, tamanho e origem e avisa se passar dos limites do LinkedIn. As imagens ganham **texto alternativo**, que vai junto para o post. Excluir manda para a lixeira do workspace e não quebra posts que já usam o arquivo.
 - **Editor:** "Novo post" na fila (ou "Usar em novo post" na biblioteca) abre o editor: título, texto com contador de 3.000 caracteres, mídias da biblioteca ou enviadas na hora, ordem com ‹ e ›, texto alternativo por imagem e link com cartão (artigo). O formato sai sozinho das mídias (só texto, imagem, várias imagens, vídeo, documento ou artigo), e as regras do LinkedIn são conferidas enquanto você escreve. A prévia ao lado é o mesmo cartão da fila.
+- **Estúdio de imagens (Magnific):** em "Gerar imagem" (Biblioteca), "Gerar com IA" (Editor) ou "Melhorar" e "Refinar" (numa imagem da biblioteca).
+  - **Gerar:** cria imagens a partir de um texto com o Mystic, com proporção, resolução, estilo do modelo e de 1 a 4 versões para escolher.
+  - **Melhorar:** aumenta 2x, 4x, 8x ou 16x (Upscaler Creative). O Farol mostra o tamanho final e trava o que passaria de 25,3 milhões de pixels.
+  - **Refinar:** nitidez, granulação e ultra detalhe (Upscaler Precision).
+  - Antes de gastar, o Farol mostra o número de operações e o custo estimado, quando a documentação publica o preço (o do upscale vem pelo tamanho final; o do Mystic não é publicado), e pede confirmação.
+  - O resultado é baixado na hora para a biblioteca, porque os links do Magnific vencem em 30 minutos. Vai com o prompt, a imagem de origem e o custo, e de lá segue para o post com um clique.
 - **Rascunhos:** salvar (`Ctrl S`) guarda um rascunho, que fica na fila em "Rascunhos" até você mandar para aprovação. Sair do editor com algo escrito salva sozinho. Editar um post que já estava aprovado pede a aprovação de novo.
 
 - **Teclado:** `A` aprova, `P` publica, `←` e `→` navegam, `Enter` avança e `Esc` volta na entrada.
@@ -59,6 +65,13 @@ Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fi
 | Gemini (Gemini CLI) | `GEMINI.md` | `.gemini/skills` | `.gemini/commands` | `.gemini/settings.json` | `tools.allowed` só com os scripts das rotinas |
 
 Tudo isso é gerado dentro da pasta do Farol a partir de `agent/` e fica fora do Git. Para mudar uma regra ou skill, edite `agent/` e clique em "Sincronizar de novo" em Ajustes. O mapa completo, com as IAs em beta, está em `engine/agentes.js`.
+
+### Imagens com IA (provedores)
+- **Chave:** a do Magnific é criada no painel dele e colada em Ajustes → Imagens com IA. O Farol confere a chave com uma leitura que não gasta créditos e guarda no cofre. A chave nunca volta para a tela nem chega à IA.
+- **Créditos:** a API do Magnific cobra créditos à parte da assinatura do site. Os planos "ilimitados" valem só no app web do Magnific.
+- **Limites:** em Ajustes ficam um limite de operações por mês (cada versão conta uma) e um orçamento em euros, somado pelas estimativas. A API não informa o saldo, então o Farol mantém o próprio livro em `workspace/imagens/custos.json`.
+- **Tarefas:** cada pedido vira uma tarefa no provedor. O Farol consulta até ficar pronta (`workspace/imagens/tarefas.json`) e retoma as que estavam em andamento se o app for reaberto.
+- **Outros provedores:** um provedor novo é um arquivo em `engine/imagem/provedores/` com a mesma interface (`validar`, `estimar`, `iniciar`, `consultar`). O resto do Farol não muda.
 
 ### Login do LinkedIn em um clique (ponte do Farol)
 O LinkedIn exige um app com Client Secret, que não pode ir dentro de um programa baixado. Por isso o botão passa por uma ponte pequena na Vercel (`api/linkedin`): ela guarda o segredo, troca o código pelo token e devolve o token direto para o seu Farol em `127.0.0.1`, num fragmento de URL que não passa por servidor nenhum. O Farol confere o token com o próprio LinkedIn antes de salvar.
@@ -142,6 +155,7 @@ engine/
   segredos.js   cofre cifrado (DPAPI) para tokens e chaves
   midia.js      biblioteca de mídia (envio, medidas, limites, texto alternativo, origem)
   posts.js      posts do editor (rascunhos em workspace/avulsos/<id>/)
+  imagem/       geração e melhoria de imagens: index.js (tarefas, custos, limites) e provedores/ (magnific.js)
   caixa.js      caixa de permissões para o código escrito pela IA
 agent/          regras e skills que o Farol entrega à sua IA (fonte única)
 api/linkedin/   ponte do login de um clique (Vercel)

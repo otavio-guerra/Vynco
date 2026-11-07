@@ -51,7 +51,7 @@ const D = DEMO && (() => {
     agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
     escolhido: ja ? 'claude' : null, sincronizado: ja,
     lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
-    jobs: {}, sync: null, posts: {},
+    jobs: {}, sync: null, posts: {}, tarefas: [], ops: 0, gasto: 0,
     // biblioteca de exemplo: imagens desenhadas aqui mesmo (wireframes), nenhuma peça real
     midia: [['#4cc2ff', 'tela-de-login.png', 'envio', 'Tela de login com campos de e-mail e senha.'], ['#8b7cff', 'antes.png', 'envio', ''], ['#3ddc84', 'depois.png', 'envio', ''], ['#ffb547', 'daily-ui-003.png', 'dailyui', '']].map(([cor, nome, origem, alt], k) => ({
       arquivo: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect width="400" height="500" fill="#16203a"/><rect x="40" y="40" width="320" height="260" rx="18" fill="${cor}" opacity=".22"/><circle cx="112" cy="112" r="30" fill="${cor}"/><path d="M40 280 150 175l70 60 50-40 90 80v5H40z" fill="${cor}" opacity=".6"/><rect x="40" y="340" width="230" height="22" rx="11" fill="#fff" opacity=".35"/><rect x="40" y="380" width="300" height="16" rx="8" fill="#fff" opacity=".18"/><rect x="40" y="410" width="200" height="16" rx="8" fill="#fff" opacity=".18"/></svg>`),
@@ -70,6 +70,14 @@ const D = DEMO && (() => {
   }
 })()
 const ag = id => D.lista.find(a => a.id === id)
+// imagem de exemplo desenhada na hora (wireframe colorido), para a demonstração
+const svgDemo = cor => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><radialGradient id="c" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="${cor}" stop-opacity=".55"/><stop offset="1" stop-color="#0e1524"/></radialGradient></defs><rect width="400" height="500" fill="url(#c)"/><path d="M0 380 120 300l80 50 90-70 110 90v130H0z" fill="${cor}" opacity=".45"/><path d="M186 170h28l10 120h-48z" fill="#eef1f8"/><circle cx="200" cy="155" r="14" fill="#ffb547"/><path d="M200 155 400 110v90z" fill="#ffb547" opacity=".22"/></svg>`)
+const usoDemo = () => ({ mes: new Date().toISOString().slice(0, 7), operacoes: D.ops, gasto: D.gasto, semPreco: D.tarefas.filter(t => t.op !== 'melhorar').reduce((s, t) => s + t.itens.length, 0), limiteMensal: 30, orcamentoMensal: 10 })
+const RECURSOS_DEMO = {
+  gerar: { proporcoes: [['social_post_4_5', '4:5 · feed'], ['square_1_1', '1:1'], ['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story']], resolucoes: [['1k', '1K'], ['2k', '2K'], ['4k', '4K']], modelos: [['realism', 'Realismo'], ['fluid', 'Fluido'], ['zen', 'Zen'], ['flexible', 'Flexível'], ['super_real', 'Super real'], ['editorial_portraits', 'Retratos editoriais']], maxVersoes: 4 },
+  melhorar: { fatores: ['2x', '4x', '8x', '16x'], maxPixels: 25.3e6, otimizado: [['standard', 'Padrão'], ['art_n_illustration', 'Arte e ilustração'], ['films_n_photography', 'Cinema e fotografia'], ['3d_renders', 'Renders 3D']] },
+  refinar: {},
+}
 async function apiDemo(path, data) {
   await espera(160)
   const q = new URL(path, 'http://x'), id = q.searchParams.get('id') || (data && data.id)
@@ -122,6 +130,18 @@ async function apiDemo(path, data) {
       return p
     }
     case '/api/post/enviar': { const it = D.fila.find(x => x.id === id); if (it) it.rascunho = false; return { ok: true } }
+    // estúdio de imagens simulado: as "imagens geradas" são desenhos feitos aqui mesmo
+    case '/api/imagem': return { provedores: [{ id: 'magnific', nome: 'Magnific', chaveUrl: 'https://www.magnific.com/user/organization/api-keys', nota: 'Demonstração: nada é pedido ao Magnific de verdade.', recursos: RECURSOS_DEMO, temChave: true }], uso: usoDemo(), tarefas: D.tarefas }
+    case '/api/imagem/tarefas': return { tarefas: D.tarefas, uso: usoDemo() }
+    case '/api/imagem/estimar': { const n = data.op === 'gerar' ? data.versoes || 1 : 1, v = data.op === 'melhorar' ? ({ '2x': 0.2, '4x': 0.5 }[data.params.scale_factor] ?? 0.5) : null; return { valor: v, total: v == null ? null : v * n, versoes: n, aPartir: data.op === 'melhorar' && !['2x'].includes(data.params.scale_factor), nota: v == null ? 'demonstração: o preço real é o do painel do Magnific' : 'demonstração: estimativa pelos exemplos de preço', uso: usoDemo() } }
+    case '/api/imagem/pedir': {
+      const n = data.op === 'gerar' ? data.versoes || 1 : 1, cores = ['#8b7cff', '#4cc2ff', '#3ddc84', '#ffb547']
+      const job = { id: 'j' + Date.now().toString(36), provedor: 'magnific', op: data.op, estado: 'rodando', criado: Date.now(), prompt: data.params.prompt || null, origem: data.origem || null, itens: Array.from({ length: n }, () => ({ estado: 'rodando' })) }
+      D.tarefas.unshift(job); D.ops += n; if (data.op === 'melhorar') D.gasto += 0.2
+      setTimeout(() => { job.itens.forEach((it, k) => { const m = { arquivo: svgDemo(cores[k % 4]), nome: `${(job.prompt || 'imagem').slice(0, 24)}-${k + 1}.png`, tipo: 'imagem', bytes: 900000, largura: 2048, altura: 2560, criado: Date.now(), origem: 'magnific', provedor: 'Magnific', prompt: job.prompt, mae: job.origem, alt: '', avisos: [], apagavel: true }; D.midia.unshift(m); Object.assign(it, { estado: 'pronto', arquivos: [m.arquivo] }) }); job.estado = 'pronto' }, 2600)
+      return job
+    }
+    case '/api/imagem/chave': case '/api/imagem/config': return { ok: true }
     case '/api/post/excluir': D.fila = D.fila.filter(x => x.id !== id); delete D.posts[id]; return { ok: true }
     default: return { ok: true, msg: 'Demonstração: nada foi alterado de verdade.' }
   }
@@ -218,7 +238,7 @@ function voltar() {
 function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila') }
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
-  fila: () => carregarFila(), rotinas: () => carregarRotinas(), ajustes: () => status(),
+  fila: () => carregarFila(), rotinas: () => carregarRotinas(), ajustes: () => { status(); carregarImgAjustes() },
   biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(),
 }
 
@@ -515,7 +535,9 @@ let BIB = [], BIB_F = 'todas', BIB_SEL = null
 const ORIGEM = { envio: 'Enviado por você', dailyui: 'Daily UI', serie: 'Série', noticias: 'Carrossel de notícias' }
 const TIPO_M = { imagem: 'Imagem', gif: 'GIF', video: 'Vídeo', documento: 'Documento' }
 const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'
-const filtroBib = (m, f) => f === 'todas' || (f === 'ia' ? m.origem !== 'envio' : m.tipo === f)
+const filtroBib = (m, f) => f === 'todas' || (f === 'rotinas' ? ['dailyui', 'serie', 'noticias'].includes(m.origem) : f === 'gerada' ? !!m.provedor : m.tipo === f)
+const origemTxt = m => m.provedor ? `Gerada com ${m.provedor}` : ORIGEM[m.origem] || m.origem
+const euro = v => '€' + Number(v).toFixed(2).replace('.', ',')
 function miniatura(m, { controles = false } = {}) {
   if (m.tipo === 'imagem' || m.tipo === 'gif') return `<img src="${arquivo(m.arquivo)}" alt="${esc(m.alt || '')}" loading="lazy">`
   if (m.tipo === 'video' && !DEMO && !String(m.arquivo).startsWith('blob:')) return `<video src="${arquivo(m.arquivo)}" muted preload="metadata"${controles ? ' controls' : ''}></video>`
@@ -530,7 +552,7 @@ function desenharBiblioteca() {
   $$('[data-bib-filtro] button').forEach(b => { b.classList.toggle('on', b.dataset.v === BIB_F); const n = BIB.filter(m => filtroBib(m, b.dataset.v)).length; b.innerHTML = `${b.textContent.replace(/\d+$/, '').trim()}<span class="n">${n}</span>` })
   $('[data-bib-sub]').textContent = BIB.length ? `${BIB.length} ${BIB.length === 1 ? 'mídia' : 'mídias'}. Arraste arquivos para cá para enviar; clique numa para ver detalhes e escrever o texto alternativo.` : 'Tudo o que pode ir num post: o que você envia e o que a sua IA gera.'
   if (!BIB.find(m => m.arquivo === BIB_SEL)) BIB_SEL = v[0]?.arquivo || null
-  $('[data-midias]').innerHTML = v.length ? v.map(m => `<button class="midia${m.arquivo === BIB_SEL ? ' focus' : ''}" data-m="${esc(m.arquivo)}"><div class="shot">${miniatura(m)}<span class="wf-badge">${TIPO_M[m.tipo]}</span>${m.avisos?.length ? '<span class="m-aviso" title="Tem um aviso">!</span>' : ''}</div><footer><b>${esc(m.nome)}</b><small>${esc(ORIGEM[m.origem] || m.origem)}${m.alt ? ' · com texto alternativo' : ''}</small></footer></button>`).join('')
+  $('[data-midias]').innerHTML = v.length ? v.map(m => `<button class="midia${m.arquivo === BIB_SEL ? ' focus' : ''}" data-m="${esc(m.arquivo)}"><div class="shot">${miniatura(m)}<span class="wf-badge">${TIPO_M[m.tipo]}</span>${m.avisos?.length ? '<span class="m-aviso" title="Tem um aviso">!</span>' : ''}</div><footer><b>${esc(m.nome)}</b><small>${esc(origemTxt(m))}${m.alt ? ' · com texto alternativo' : ''}</small></footer></button>`).join('')
     : `<div class="empty"><div class="wf-row">${wire('imagem')}${wire('gif')}${wire('video')}</div><h3>${BIB.length ? 'Nada neste filtro.' : 'A biblioteca está vazia.'}</h3><p>Arraste fotos, GIFs, vídeos ou PDFs para cá, ou use "Enviar arquivos". O que as rotinas gerarem também aparece aqui.</p></div>`
   detalheMidia()
 }
@@ -538,17 +560,20 @@ function detalheMidia() {
   const m = BIB.find(x => x.arquivo === BIB_SEL), d = $('[data-midia-det]')
   if (!m) { d.hidden = true; return } d.hidden = false
   const visual = m.tipo === 'imagem' || m.tipo === 'gif'
-  d.innerHTML = `<div class="fp-label"><span>${TIPO_M[m.tipo]}</span><span>${esc(ORIGEM[m.origem] || m.origem)}</span></div>
+  d.innerHTML = `<div class="fp-label"><span>${TIPO_M[m.tipo]}</span><span>${esc(origemTxt(m))}</span></div>
     <div class="md-prev">${miniatura(m, { controles: true })}</div>
     <div class="md-info">
       <b>${esc(m.nome)}</b>
       <small>${[m.largura ? `${m.largura} × ${m.altura}` : '', m.quadros > 1 ? `${m.quadros} quadros` : '', tamanho(m.bytes), quando(m.criado)].filter(Boolean).join(' · ')}</small>
       ${(m.avisos || []).map(a => `<p class="md-aviso">${esc(a)}</p>`).join('')}
       ${m.prompt ? `<p class="soft"><b>Prompt:</b> ${esc(m.prompt)}</p>` : ''}
+      ${m.mae ? `<p class="soft"><b>Feita a partir de:</b> ${esc(m.mae.split('/').pop())}</p>` : ''}
+      ${m.custo && m.custo.valor != null ? `<p class="soft"><b>Custo estimado:</b> ${euro(m.custo.valor)}</p>` : ''}
     </div>
     ${visual ? `<label class="ed-campo md-alt"><span>Texto alternativo <small>descreve a imagem para quem usa leitor de tela</small></span><textarea data-alt rows="3" maxlength="4086" placeholder="Ex.: Tela de cadastro com campos de nome e e-mail e um botão roxo.">${esc(m.alt || '')}</textarea></label>` : ''}
     <div class="fp-actions">
       <button class="btn accent" data-mq="usar">Usar em novo post</button>
+      ${visual ? `<button class="btn" data-mq="melhorar">Melhorar</button><button class="btn" data-mq="refinar">Refinar</button>` : ''}
       <a class="link" href="${arquivo(m.arquivo)}" target="_blank" rel="noopener">Abrir o arquivo</a>
       ${m.apagavel ? `<button class="link soft" data-mq="excluir">Excluir</button>` : ''}
     </div>`
@@ -557,6 +582,7 @@ async function acaoMidia(q) {
   const m = BIB.find(x => x.arquivo === BIB_SEL); if (!m) return
   try {
     if (q === 'usar') return abrirEditor({ midias: [{ arquivo: m.arquivo, alt: m.alt || '', tipo: m.tipo, nome: m.nome }] })
+    if (q === 'melhorar' || q === 'refinar') return abrirEstudio({ op: q, origem: m })
     if (q === 'excluir') {
       if (!(await confirmar('Excluir da biblioteca?', `"${m.nome}" vai para a lixeira do workspace. Posts que já usam este arquivo continuam com a cópia deles.`, 'Excluir'))) return
       await api('/api/midia/excluir', { arquivo: m.arquivo }); Som.desliga(); pill('Excluído', m.nome, 'var(--amber)'); BIB_SEL = null; carregarBiblioteca()
@@ -656,7 +682,7 @@ function desenharEditor() {
       <div class="shot">${miniatura({ ...m, tipo: tipoM(m) })}<span class="wf-badge">${k + 1}</span></div>
       <div class="ed-m-a"><button class="ic-btn" data-em="esq" data-k="${k}" title="Mover para a esquerda" ${k ? '' : 'disabled'}>‹</button><button class="ic-btn" data-em="dir" data-k="${k}" title="Mover para a direita" ${k < ED.midias.length - 1 ? '' : 'disabled'}>›</button><button class="ic-btn" data-em="tirar" data-k="${k}" title="Tirar do post">×</button></div>
       ${['imagem', 'gif'].includes(tipoM(m)) ? `<input class="ed-m-alt" data-em-alt="${k}" value="${esc(m.alt || '')}" maxlength="4086" placeholder="Texto alternativo" aria-label="Texto alternativo da mídia ${k + 1}">` : `<small class="soft">${TIPO_M[tipoM(m)]}</small>`}
-    </div>`).join('') + `<div class="ed-add"><button class="ed-add-b" data-ed="biblioteca"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 11 6 7.5l3 3 2-2 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Da biblioteca</button><label class="ed-add-b"><svg viewBox="0 0 16 16"><path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Enviar arquivo<input type="file" multiple hidden data-ed-enviar accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.ppt,.pptx,.doc,.docx"></label></div>`
+    </div>`).join('') + `<div class="ed-add"><button class="ed-add-b" data-ed="gerar"><svg viewBox="0 0 16 16"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg>Gerar com IA</button><button class="ed-add-b" data-ed="biblioteca"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 11 6 7.5l3 3 2-2 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Da biblioteca</button><label class="ed-add-b"><svg viewBox="0 0 16 16"><path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Enviar arquivo<input type="file" multiple hidden data-ed-enviar accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.ppt,.pptx,.doc,.docx"></label></div>`
   const erro = $('[data-ed-erro]'); erro.hidden = !erros.length; erro.innerHTML = erros.map(esc).join('<br>')
   $('[data-ed=enviar]').disabled = !!erros.length
   $('[data-ed=enviar]').textContent = ED.rascunho ? 'Enviar para aprovação' : 'Salvar e voltar para a fila'
@@ -711,13 +737,153 @@ async function abrirPicker() {
 function desenharPicker() {
   const v = PK.filter(m => PK_F === 'todas' || (PK_F === 'imagem' ? ['imagem', 'gif'].includes(m.tipo) : m.tipo === PK_F))
   $$('[data-pk-filtro] button').forEach(b => b.classList.toggle('on', b.dataset.v === PK_F))
-  $('[data-pk-lista]').innerHTML = v.length ? v.map(m => { const i = PK_SEL.indexOf(m.arquivo); return `<button class="midia${i >= 0 ? ' focus' : ''}" data-pk="${esc(m.arquivo)}" aria-pressed="${i >= 0}"><div class="shot">${miniatura(m)}${i >= 0 ? `<span class="pk-n">${i + 1}</span>` : ''}</div><footer><b>${esc(m.nome)}</b><small>${TIPO_M[m.tipo]} · ${esc(ORIGEM[m.origem] || m.origem)}</small></footer></button>` }).join('') : '<p class="soft">Nada aqui ainda. Envie arquivos na Biblioteca ou arraste para o editor.</p>'
+  $('[data-pk-lista]').innerHTML = v.length ? v.map(m => { const i = PK_SEL.indexOf(m.arquivo); return `<button class="midia${i >= 0 ? ' focus' : ''}" data-pk="${esc(m.arquivo)}" aria-pressed="${i >= 0}"><div class="shot">${miniatura(m)}${i >= 0 ? `<span class="pk-n">${i + 1}</span>` : ''}</div><footer><b>${esc(m.nome)}</b><small>${TIPO_M[m.tipo]} · ${esc(origemTxt(m))}</small></footer></button>` }).join('') : '<p class="soft">Nada aqui ainda. Envie arquivos na Biblioteca ou arraste para o editor.</p>'
   $('[data-pk-n]').textContent = PK_SEL.length ? `${PK_SEL.length} ${PK_SEL.length === 1 ? 'escolhida' : 'escolhidas'} (na ordem do clique)` : 'Nada escolhido'
   $('[data-pk-ok]').disabled = !PK_SEL.length
 }
 $('[data-pk-lista]').addEventListener('click', e => { const b = e.target.closest('[data-pk]'); if (!b) return; const a = b.dataset.pk, i = PK_SEL.indexOf(a); i >= 0 ? PK_SEL.splice(i, 1) : PK_SEL.push(a); Som.tique(); desenharPicker() })
 $$('[data-pk-filtro] button').forEach(b => b.addEventListener('click', () => { PK_F = b.dataset.v; desenharPicker() }))
 $('[data-pk-ok]').addEventListener('click', () => { ED.midias.push(...PK_SEL.map(a => { const m = PK.find(x => x.arquivo === a); return { arquivo: m.arquivo, alt: m.alt || '', tipo: m.tipo, nome: m.nome } })); $('#picker').close(); Som.liga(); edMudou() })
+
+// ---------------------------------------------------------------- estúdio de imagens (provedores em engine/imagem; hoje, Magnific)
+let IMG = null, ES = null, esTimer = null, esEstimarT = null
+const OP_TXT = { gerar: 'Gerar', melhorar: 'Melhorar', refinar: 'Refinar' }
+const prov = () => IMG?.provedores?.[0]
+async function abrirEstudio(o = {}) {
+  try { IMG = await api('/api/imagem') } catch (e) { return falha(e) }
+  if (!BIB.length) { try { BIB = (await api('/api/midia')).itens } catch { } }
+  ES = { op: o.op || 'gerar', origem: o.origem || null, contexto: o.contexto || (atual?.dataset.scene === 'editor' ? 'editor' : null), jobs: [], descartados: new Set(),
+    p: { prompt: o.prompt || '', aspect_ratio: 'social_post_4_5', resolution: '2k', model: 'realism', versoes: 2, scale_factor: '2x', optimized_for: 'standard', creativity: 0, resemblance: 0, hdr: 0, prompt_m: '', sharpen: 50, smart_grain: 7, ultra_detail: 30 } }
+  desenharEstudio(); $('#estudio').showModal(); estimarEs()
+}
+const imagensBib = () => BIB.filter(m => ['imagem', 'gif'].includes(m.tipo))
+const deslize = (k, rot, min, max, dica) => `<label class="es-sl"><span>${rot} <b data-es-v="${k}">${ES.p[k]}</b></span><input type="range" min="${min}" max="${max}" step="1" value="${ES.p[k]}" data-es="${k}"><small>${dica}</small></label>`
+function desenharEstudio() {
+  const p = prov(), r = p.recursos, op = ES.op
+  $$('[data-es-op] button').forEach(b => b.classList.toggle('on', b.dataset.v === op))
+  $('[data-es-chave]').hidden = p.temChave; $('[data-es-prov]').textContent = p.nome
+  const escolher = `<div class="es-orig">${ES.origem ? `<div class="es-orig-img"><img src="${arquivo(ES.origem.arquivo)}" alt=""><span><b>${esc(ES.origem.nome || ES.origem.arquivo.split('/').pop())}</b><small>${ES.origem.largura ? `${ES.origem.largura} × ${ES.origem.altura}` : ''}</small></span><button class="link" type="button" data-es-trocar>Trocar</button></div>`
+    : `<p class="soft">Escolha a imagem que vai ser ${op === 'melhorar' ? 'melhorada' : 'refinada'}:</p><div class="es-mini">${imagensBib().slice(0, 18).map(m => `<button type="button" data-es-orig="${esc(m.arquivo)}" title="${esc(m.nome)}"><img src="${arquivo(m.arquivo)}" alt=""></button>`).join('') || '<span class="soft">Nenhuma imagem na biblioteca ainda.</span>'}</div>`}</div>`
+  let f = ''
+  if (op === 'gerar') {
+    f = `<label class="ed-campo"><span>O que você quer ver <small>descreva cena, estilo, luz e cores</small></span><textarea data-es="prompt" rows="4" maxlength="4000" placeholder="Ex.: um farol pixel art num arquipélago ao entardecer, tons de roxo e menta, céu estrelado">${esc(ES.p.prompt)}</textarea></label>
+      <div class="es-linha"><span>Proporção</span><div class="chips">${r.gerar.proporcoes.slice(0, 4).map(([v, t]) => `<button type="button" data-es-chip="aspect_ratio" data-v="${v}" class="${ES.p.aspect_ratio === v ? 'on' : ''}">${t}</button>`).join('')}</div></div>
+      <div class="fields two"><label><span>Resolução</span><select data-es="resolution">${r.gerar.resolucoes.map(([v, t]) => `<option value="${v}"${ES.p.resolution === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label><span>Estilo do modelo</span><select data-es="model">${r.gerar.modelos.map(([v, t]) => `<option value="${v}"${ES.p.model === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>
+      <div class="es-linha"><span>Versões para escolher</span><div class="chips">${[1, 2, 3, 4].slice(0, r.gerar.maxVersoes).map(n => `<button type="button" data-es-chip="versoes" data-v="${n}" class="${ES.p.versoes === n ? 'on' : ''}">${n}</button>`).join('')}</div></div>`
+  } else if (op === 'melhorar') {
+    const o = ES.origem, max = r.melhorar.maxPixels
+    f = escolher + `<div class="es-linha"><span>Aumentar</span><div class="chips">${r.melhorar.fatores.map(v => { const k = parseInt(v), px = o?.largura ? o.largura * k * o.altura * k : 0, passa = px > max; return `<button type="button" data-es-chip="scale_factor" data-v="${v}" class="${ES.p.scale_factor === v ? 'on' : ''}" ${passa ? 'disabled title="passaria do máximo de 25,3 milhões de pixels"' : ''}>${v}${o?.largura ? `<small>${o.largura * k} × ${o.altura * k}</small>` : ''}</button>` }).join('')}</div></div>
+      <label class="ed-campo"><span>Tipo de imagem</span><select data-es="optimized_for">${r.melhorar.otimizado.map(([v, t]) => `<option value="${v}"${ES.p.optimized_for === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      ${deslize('creativity', 'Criatividade', -10, 10, 'mais alto inventa mais detalhes')}${deslize('resemblance', 'Semelhança', -10, 10, 'mais alto fica mais fiel ao original')}${deslize('hdr', 'Definição (HDR)', -10, 10, 'contraste e nitidez')}
+      <label class="ed-campo"><span>Orientação <small>opcional: o que realçar</small></span><input data-es="prompt_m" maxlength="1000" value="${esc(ES.p.prompt_m)}" placeholder="Ex.: texturas de pixel art nítidas"></label>`
+  } else {
+    f = escolher + `${deslize('sharpen', 'Nitidez', 0, 100, 'bordas mais definidas')}${deslize('ultra_detail', 'Ultra detalhe', 0, 100, 'acrescenta detalhes finos')}${deslize('smart_grain', 'Granulação', 0, 100, 'textura de foto')}`
+  }
+  $('[data-es-form]').innerHTML = f
+  const ok = p.temChave && (op === 'gerar' ? ES.p.prompt.trim().length > 2 : !!ES.origem)
+  const ir = $('[data-es-ir]'); ir.disabled = !ok
+  ir.textContent = op === 'gerar' ? `Gerar ${ES.p.versoes} ${ES.p.versoes === 1 ? 'versão' : 'versões'}` : op === 'melhorar' ? `Melhorar ${ES.p.scale_factor}` : 'Refinar'
+  desenharResultados()
+}
+function paramsEs() {
+  const p = ES.p
+  if (ES.op === 'gerar') return { prompt: p.prompt, aspect_ratio: p.aspect_ratio, resolution: p.resolution, model: p.model }
+  if (ES.op === 'melhorar') return { scale_factor: p.scale_factor, optimized_for: p.optimized_for, creativity: +p.creativity, resemblance: +p.resemblance, hdr: +p.hdr, ...(p.prompt_m ? { prompt: p.prompt_m } : {}) }
+  return { sharpen: +p.sharpen, smart_grain: +p.smart_grain, ultra_detail: +p.ultra_detail }
+}
+const pedidoEs = () => ({ provedor: prov().id, op: ES.op, params: paramsEs(), origem: ES.op === 'gerar' ? undefined : ES.origem?.arquivo, versoes: ES.op === 'gerar' ? ES.p.versoes : 1 })
+function estimarEs() {
+  clearTimeout(esEstimarT)
+  esEstimarT = setTimeout(async () => {
+    if (ES.op !== 'gerar' && !ES.origem) { $('[data-es-custo]').innerHTML = ''; return }
+    try {
+      const e = await api('/api/imagem/estimar', pedidoEs()); ES.est = e
+      const u = e.uso
+      $('[data-es-custo]').innerHTML = `<b>${e.total != null ? `Custo estimado: ${e.aPartir ? 'a partir de ' : ''}${euro(e.total)}` : 'Custo: não informado'}</b><small>${esc(e.nota)}</small>
+        <span class="es-uso"><span><i style="width:${Math.min(100, (u.operacoes / Math.max(1, u.limiteMensal)) * 100)}%"></i></span>Este mês: ${u.operacoes} de ${u.limiteMensal} operações · ~${euro(u.gasto)} de ${euro(u.orcamentoMensal)}${u.semPreco ? ` (+${u.semPreco} sem preço publicado)` : ''}</span>`
+    } catch (err) { $('[data-es-custo]').innerHTML = `<small class="bad">${esc(err.message)}</small>` }
+  }, 250)
+}
+async function irEs() {
+  const p = prov(), e = ES.est, n = ES.op === 'gerar' ? ES.p.versoes : 1
+  const custo = e && e.total != null ? `Custo estimado: ${e.aPartir ? 'a partir de ' : ''}${euro(e.total)}.` : 'O preço desta operação não é publicado pelo Magnific: confira no painel dele.'
+  if (!(await confirmar(`Usar créditos do ${p.nome}?`, `${OP_TXT[ES.op]}: ${n} ${n === 1 ? 'operação' : 'operações'}. ${custo} O resultado fica na sua biblioteca.`, OP_TXT[ES.op]))) return
+  try {
+    const job = await api('/api/imagem/pedir', pedidoEs())
+    ES.jobs.unshift(job.id); IMG.tarefas = [job, ...(IMG.tarefas || []).filter(j => j.id !== job.id)]
+    Som.tique(); pill(ES.op === 'gerar' ? `Gerando ${n} ${n === 1 ? 'versão' : 'versões'}…` : `${OP_TXT[ES.op]}…`, 'Leva de alguns segundos a um minuto.', 'var(--violet)')
+    desenharResultados(); estimarEs(); acompanharEs()
+  } catch (err) { falha(err) }
+}
+function acompanharEs() {
+  clearTimeout(esTimer)
+  esTimer = setTimeout(async () => {
+    try {
+      const antes = Object.fromEntries((IMG.tarefas || []).map(j => [j.id, j.estado]))
+      const r = await api('/api/imagem/tarefas'); IMG.tarefas = r.tarefas
+      for (const j of r.tarefas.filter(j => ES?.jobs.includes(j.id) && antes[j.id] === 'rodando' && j.estado !== 'rodando')) {
+        if (j.estado === 'pronto') { Som.liga(); pill('Pronto', 'As imagens já estão na biblioteca.', 'var(--green)') } else { Som.erro(); pill('Não deu certo', (j.itens.find(i => i.erro) || {}).erro || '', 'var(--red)') }
+        if (atual?.dataset.scene === 'biblioteca') carregarBiblioteca(); else api('/api/midia').then(x => (BIB = x.itens)).catch(() => {})
+      }
+      if ($('#estudio').open) desenharResultados()
+      if (r.tarefas.some(j => j.estado === 'rodando')) acompanharEs()
+    } catch { acompanharEs() }
+  }, DEMO ? 700 : 2000)
+}
+function desenharResultados() {
+  const jobs = (IMG?.tarefas || []).filter(j => ES?.jobs.includes(j.id))
+  $('[data-es-res]').innerHTML = jobs.length ? jobs.map(j => `<div class="es-job"><header><span class="${j.estado === 'rodando' ? 'run' : j.estado === 'pronto' ? 'ok' : 'bad'}"><span class="ic"></span></span><b>${OP_TXT[j.op]}${j.prompt ? ` · ${esc(j.prompt.slice(0, 50))}${j.prompt.length > 50 ? '…' : ''}` : ''}</b></header>
+      <div class="es-tiles">${j.itens.map(i => i.estado === 'rodando' ? '<div class="es-tile carregando"><span class="spin"></span></div>'
+        : i.estado === 'falhou' ? `<div class="es-tile erro"><small>${esc(i.erro || 'falhou')}</small></div>`
+        : (i.arquivos || []).filter(a => !ES.descartados.has(a)).map(a => `<div class="es-tile"><img src="${arquivo(a)}" alt=""><div class="es-tile-a"><button class="btn sm accent" data-es-usar="${esc(a)}">${ES.contexto === 'editor' ? 'Usar no post' : 'Usar em post'}</button><button class="ic-btn" data-es-mais="${esc(a)}" title="Melhorar esta imagem">↑</button><button class="ic-btn" data-es-fora="${esc(a)}" title="Descartar (vai para a lixeira)">×</button></div></div>`).join('')).join('')}</div></div>`).join('')
+    : `<div class="es-vazio">${wire(ES?.op === 'gerar' ? 'imagem' : 'gif')}<p>${ES?.op === 'gerar' ? 'As versões aparecem aqui. Cada uma vai direto para a biblioteca, com o prompt guardado.' : 'O resultado aparece aqui e vai para a biblioteca, ligado à imagem original.'}</p></div>`
+}
+const atualizaEs = () => { desenharEstudio(); estimarEs() }
+$('[data-es-op]').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; ES.op = b.dataset.v; Som.tique(); atualizaEs() })
+$('[data-es-form]').addEventListener('click', e => {
+  const c = e.target.closest('[data-es-chip]'); if (c) { ES.p[c.dataset.esChip] = c.dataset.esChip === 'versoes' ? +c.dataset.v : c.dataset.v; Som.tique(); return atualizaEs() }
+  const o = e.target.closest('[data-es-orig]'); if (o) { ES.origem = BIB.find(m => m.arquivo === o.dataset.esOrig); return atualizaEs() }
+  if (e.target.closest('[data-es-trocar]')) { ES.origem = null; return atualizaEs() }
+})
+$('[data-es-form]').addEventListener('input', e => {
+  const k = e.target.dataset.es; if (!k) return
+  ES.p[k] = e.target.value
+  const v = $(`[data-es-v="${k}"]`); if (v) v.textContent = e.target.value
+  if (k === 'prompt') { const ir = $('[data-es-ir]'); ir.disabled = !(prov().temChave && ES.p.prompt.trim().length > 2) }
+  estimarEs()
+})
+$('[data-es-form]').addEventListener('change', e => { if (e.target.matches('select')) { ES.p[e.target.dataset.es] = e.target.value; estimarEs() } })
+$('[data-es-ir]').addEventListener('click', irEs)
+$('[data-es-res]').addEventListener('click', async e => {
+  const usar = e.target.closest('[data-es-usar]'), mais = e.target.closest('[data-es-mais]'), fora = e.target.closest('[data-es-fora]')
+  if (usar) {
+    const m = { arquivo: usar.dataset.esUsar, alt: '', tipo: 'imagem', nome: usar.dataset.esUsar.split('/').pop() }
+    if (ES.contexto === 'editor' && ED) { ED.midias.push(m); edMudou(); Som.liga(); return pill('Imagem no post', 'Escreva o texto alternativo no editor.', 'var(--green)') }
+    $('#estudio').close(); return abrirEditor({ midias: [m] })
+  }
+  if (mais) { try { BIB = (await api('/api/midia')).itens } catch { } ES.origem = BIB.find(m => m.arquivo === mais.dataset.esMais) || { arquivo: mais.dataset.esMais }; ES.op = 'melhorar'; Som.tique(); return atualizaEs() }
+  if (fora) { try { await api('/api/midia/excluir', { arquivo: fora.dataset.esFora }); ES.descartados.add(fora.dataset.esFora); Som.desliga(); desenharResultados(); if (atual?.dataset.scene === 'biblioteca') carregarBiblioteca() } catch (err) { falha(err) } }
+})
+
+// Ajustes → Imagens com IA
+async function carregarImgAjustes() {
+  try { IMG = await api('/api/imagem') } catch { return }
+  const p = prov(), u = IMG.uso
+  $('[data-img-ic]').style.setProperty('--c', p.temChave ? 'var(--green)' : 'var(--faint)')
+  $('[data-img-st]').textContent = p.temChave ? 'Chave conferida e guardada no cofre.' : 'Sem chave: crie uma no site do Magnific e cole abaixo.'
+  $('[data-img-a]').innerHTML = p.temChave ? '<button class="link soft" type="button" data-img-remover>Remover a chave</button>' : ''
+  $('[data-img-criar]').href = p.chaveUrl
+  $('[data-form=img-chave] input').placeholder = p.temChave ? 'salva (cole outra para trocar)' : 'cole a chave aqui'
+  const f = $('[data-form=img-config]'); if (document.activeElement !== f.limiteMensal) f.limiteMensal.value = u.limiteMensal; if (document.activeElement !== f.orcamentoMensal) f.orcamentoMensal.value = u.orcamentoMensal
+  $('[data-img-uso]').textContent = `Este mês: ${u.operacoes} ${u.operacoes === 1 ? 'operação' : 'operações'}, ~${euro(u.gasto)} estimados${u.semPreco ? ` (+${u.semPreco} sem preço publicado)` : ''}.`
+  $('[data-img-nota]').textContent = p.nota
+}
+$('[data-img-ajustes]').addEventListener('click', async e => {
+  if (!e.target.closest('[data-img-remover]')) return
+  if (!(await confirmar('Remover a chave do Magnific?', 'O Farol para de conseguir gerar e melhorar imagens até você salvar outra.', 'Remover'))) return
+  try { await api('/api/imagem/chave', { provedor: prov().id, chave: '' }); Som.desliga(); pill('Chave removida', '', 'var(--amber)'); carregarImgAjustes() } catch (err) { falha(err) }
+})
 
 // ---------------------------------------------------------------- rotinas
 async function carregarRotinas() {
@@ -795,11 +961,14 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-agent]')) return entrarCom(t.dataset.agent)
   if (t.matches('[data-fmt]')) return alternarFormato(+t.dataset.i)
   if (t.matches('[data-novo-post]')) return abrirEditor({})
+  if (t.matches('[data-gerar-img]')) return abrirEstudio({ op: 'gerar' })
+  if (t.matches('[data-es-ajustes]')) { $('#estudio').close(); voltarPara = null; return cena('ajustes') }
   if (t.matches('[data-ed]')) {
     const q = t.dataset.ed
     if (q === 'salvar') return salvarEd()
     if (q === 'enviar') return salvarEd({ enviar: true })
     if (q === 'biblioteca') return abrirPicker()
+    if (q === 'gerar') return abrirEstudio({ op: 'gerar', contexto: 'editor', prompt: (ED?.legenda || '').split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).slice(0, 2).join(' ').slice(0, 300) })
     if (q === 'descartar') {
       if (ED?.sujo && !(await confirmar('Descartar as mudanças?', ED.id ? 'O post volta a ser como estava da última vez que foi salvo.' : 'O que você escreveu aqui não será salvo.', 'Descartar'))) return
       ED = null; const v = voltarPara || 'fila'; voltarPara = null; return cena(v)
@@ -839,6 +1008,9 @@ form('[data-form=linkedin-keys]', async f => {
 })
 form('[data-form=desigma]', async f => { await api('/api/desigma/config', { exe: f.exe.value, mcpExe: f.mcpExe.value, workspace: f.workspace.value, project: f.project.value }); pill('Caminhos salvos', 'Sincronizando com a sua IA…', 'var(--green)'); if (ST?.agente) { voltarPara = 'ajustes'; cena('sync') } })
 form('[data-form=config]', async f => { const r = await api('/api/config', { assetsDir: f.assetsDir.value, dailyUiStart: f.dailyUiStart.value }); pill('Salvo', r.msg, 'var(--green)') })
+// a chave é conferida com o Magnific (sem gastar créditos) antes de ir para o cofre; o campo é limpo em seguida
+form('[data-form=img-chave]', async f => { if (!f.chave.value.trim()) return pill('Cole a chave antes', '', 'var(--amber)'); pill('Conferindo a chave…', '', 'var(--violet)'); try { await api('/api/imagem/chave', { provedor: 'magnific', chave: f.chave.value }) } finally { f.chave.value = '' } pill('Chave conferida e salva', 'Fica só no cofre deste computador.', 'var(--green)'); carregarImgAjustes() })
+form('[data-form=img-config]', async f => { await api('/api/imagem/config', { limiteMensal: f.limiteMensal.value, orcamentoMensal: f.orcamentoMensal.value }); pill('Limites salvos', '', 'var(--green)'); carregarImgAjustes() })
 
 // ---------------------------------------------------------------- teclado (Enter avança; Esc volta; A, P, ← e → na fila)
 const lit = (k, on) => $$(`kbd[data-k="${k}"]`).forEach(x => x.classList.toggle('lit', on))

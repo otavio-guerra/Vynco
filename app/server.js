@@ -14,6 +14,7 @@ const CONTAS = require('../engine/linkedin/contas.js')
 const PUB_LI = require('../engine/linkedin/publicar.js')
 const BIBLIOTECA = require('../engine/midia.js')
 const POSTS = require('../engine/posts.js')
+const IMAGEM = require('../engine/imagem/index.js')
 
 const ROOT = C.ROOT, PUB = path.join(__dirname, 'public')
 const TOKEN = crypto.randomBytes(24).toString('hex')
@@ -217,6 +218,8 @@ const server = http.createServer(async (req, res) => {
         case '/api/queue': return send(res, 200, queue())
         case '/api/midia': return send(res, 200, { itens: BIBLIOTECA.listar(), limites: BIBLIOTECA.LIMITES })
         case '/api/post': { try { return send(res, 200, POSTS.carregar(u.searchParams.get('id'))) } catch (e) { return send(res, 404, { erro: e.message }) } }
+        case '/api/imagem': return send(res, 200, { provedores: IMAGEM.provedores(), uso: IMAGEM.uso(), tarefas: IMAGEM.lista() })
+        case '/api/imagem/tarefas': return send(res, 200, { tarefas: IMAGEM.lista(), uso: IMAGEM.uso() })
         case '/api/runs': {
           const ag = agenteId()
           return send(res, 200, {
@@ -284,6 +287,15 @@ const server = http.createServer(async (req, res) => {
       case '/api/post/salvar': { try { return send(res, 200, POSTS.salvar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/post/enviar': { try { POSTS.enviar(String(b.id || '')); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/post/excluir': { try { POSTS.excluir(String(b.id || '')); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      // ---- imagens com IA (provedores em engine/imagem/provedores; a chave nunca volta para a tela)
+      case '/api/imagem/chave': { try { return send(res, 200, await IMAGEM.salvarChave(String(b.provedor || ''), b.chave)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/imagem/config': {
+        const lim = Math.round(+b.limiteMensal), orc = Math.round(+b.orcamentoMensal * 100) / 100
+        if (!(lim >= 0 && lim <= 10000) || !(orc >= 0 && orc <= 100000)) return send(res, 400, { erro: 'Confira o limite de operações e o orçamento.' })
+        C.save({ imagens: { limiteMensal: lim, orcamentoMensal: orc } }); return send(res, 200, { ok: true, uso: IMAGEM.uso() })
+      }
+      case '/api/imagem/estimar': { try { return send(res, 200, IMAGEM.estimar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/imagem/pedir': { try { return send(res, 200, await IMAGEM.pedir(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       // ---- fila
       case '/api/approve': case '/api/unapprove': {
         const it = findItem(b.kind, b.id); if (!it || it.kind === 'series') return send(res, 400, { erro: 'Item não encontrado.' })
@@ -327,7 +339,7 @@ const server = http.createServer(async (req, res) => {
   } catch (e) { return send(res, 500, { erro: e.message }) }
 })
 // a linha "Farol: http://..." é lida pela versão desktop para abrir a janela na porta certa
-server.on('listening', () => console.log(`Farol: http://127.0.0.1:${porta()}/`))
+server.on('listening', () => { console.log(`Farol: http://127.0.0.1:${porta()}/`); IMAGEM.retomar() })
 server.on('error', e => {
   if (e.code === 'EADDRINUSE' && process.env.FAROL_PORTA_LIVRE && server.listening === false && !server._tentouLivre) { server._tentouLivre = true; return server.listen(0, '127.0.0.1') }
   console.error('Farol: não consegui abrir o painel:', e.message); process.exit(1)

@@ -101,6 +101,15 @@ function receber(original, stream, { maxBytes = 600 * MB, meta = {} } = {}) {
     stream.pipe(out)
   })
 }
+// grava na biblioteca um arquivo que já está na memória (ex.: imagem baixada de um provedor), com os metadados dele
+function guardar(original, buffer, meta = {}) {
+  if (!tipoDe(original)) throw new Error('formato não aceito')
+  fs.mkdirSync(DIR, { recursive: true })
+  const nome = nomeNovo(original), final = path.join(DIR, nome)
+  fs.writeFileSync(final, buffer)
+  registrar(rel(final), meta)
+  return listar().find(i => i.arquivo === rel(final))
+}
 // metadados de um arquivo (texto alternativo, origem, prompt, provedor, custo, mãe)
 function registrar(r, meta) { caminho(r); const idx = lerIndex(); idx[r] = { ...(idx[r] || {}), ...meta }; gravarIndex(idx) }
 function definirAlt(r, alt) {
@@ -118,4 +127,4 @@ function excluir(r) {
 }
 const altDe = r => (lerIndex()[r] || {}).alt || ''
 
-module.exports = { listar, receber, registrar, definirAlt, excluir, altDe, caminho, tipoDe, LIMITES, TIPO }
+module.exports = { listar, receber, guardar, registrar, definirAlt, excluir, altDe, caminho, tipoDe, LIMITES, TIPO }
