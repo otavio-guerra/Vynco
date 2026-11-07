@@ -467,7 +467,7 @@ async function acao(q) {
       if (!(await confirmar('Publicar no LinkedIn agora?', `"${i.title}" vai para o seu perfil, visível para todo mundo.`, 'Publicar'))) return
       pill('Publicando…', i.formato === 'video' ? 'Vídeos levam um ou dois minutos.' : i.title, 'var(--violet)')
       const r = await api('/api/publish', item); Som.publica(); humor('live'); pill('No ar', i.title, 'var(--accent)')
-      if (r.link && !DEMO) window.open(r.link, '_blank', 'noopener')
+      if (r.link && !DEMO) abrirFora(r.link)
     }
     await carregarFila()
   } catch (e) { falha(e) }
@@ -531,6 +531,15 @@ $$('[data-pref] button').forEach(b => b.addEventListener('click', () => {
 }))
 
 // ---------------------------------------------------------------- cliques e formulários
+// na versão desktop (janela do Tauri), links externos e arquivos abrem fora do app: no navegador e no programa padrão
+function abrirFora(url) {
+  if (!ST?.desktop) return window.open(url, '_blank', 'noopener')
+  api('/api/abrir', { url: new URL(url, location.href).origin === location.origin ? new URL(url, location.href).pathname : url }).catch(falha)
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[target=_blank]')
+  if (a && ST?.desktop && !e.defaultPrevented) { e.preventDefault(); abrirFora(a.getAttribute('href')) }
+}, true)
 document.addEventListener('click', async e => {
   if (!e.target.closest('.dd')) menuOutros(false)
   const t = e.target.closest('button, a'); if (!t) return

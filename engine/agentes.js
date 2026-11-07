@@ -49,7 +49,8 @@ function console_(titulo, bin, args) {
   if (IS_WIN) spawn('cmd.exe', ['/c', 'start', `"${titulo}"`, 'cmd', '/k', linha], { cwd: ROOT, detached: true, stdio: 'ignore', windowsVerbatimArguments: true }).unref()
   else spawn('sh', ['-c', linha], { cwd: ROOT, detached: true, stdio: 'ignore' }).unref()
 }
-const abrirUrl = u => IS_WIN ? spawn('cmd', ['/c', 'start', '', u.replace(/&/g, '^&')], { detached: true, stdio: 'ignore', windowsHide: true }).unref() : spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [u], { detached: true, stdio: 'ignore' }).unref()
+// abre um link no navegador padrão (ou um arquivo no programa padrão) sem passar pelo shell: nada no endereço vira comando
+const abrirUrl = u => spawn(IS_WIN ? 'explorer.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open', [u], { detached: true, stdio: 'ignore', windowsHide: true }).on('error', () => {}).unref()
 const lerJSON = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')) } catch { return d } }
 const lerTexto = t => { try { return JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)) } catch { return null } }
 const escrever = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s, 'utf8') }

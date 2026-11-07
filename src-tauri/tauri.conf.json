@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Farol",
+  "version": "../package.json",
+  "identifier": "app.farol.desktop",
+  "build": {
+    "frontendDist": "../app/desktop/janela",
+    "devUrl": "http://127.0.0.1:4800",
+    "beforeDevCommand": { "script": "npm start", "wait": false }
+  },
+  "app": {
+    "windows": [],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Otavio Guerra",
+    "copyright": "MIT",
+    "category": "Productivity",
+    "shortDescription": "Seus posts no LinkedIn, feitos pela sua IA e aprovados por você",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico", "icons/icon.png"],
+    "externalBin": ["binaries/farol-node"],
+    "resources": {
+      "../app/server.js": "farol/app/server.js",
+      "../app/public/": "farol/app/public/",
+      "../app/desktop/backend.js": "farol/app/desktop/backend.js",
+      "../engine/": "farol/engine/",
+      "../prompts/": "farol/prompts/",
+      "../agent/": "farol/agent/",
+      "../examples/": "farol/examples/",
+      "../package.json": "farol/package.json",
+      "../LICENSE": "farol/LICENSE"
+    },
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": { "installMode": "currentUser" }
+    }
+  }
+}

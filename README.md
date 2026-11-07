@@ -95,6 +95,22 @@ npm start
 ```
 Depois é seguir a entrada. Para mudar caminhos à mão, copie `config/engine.config.example.json` para `config/engine.config.json`.
 
+### Versão desktop (Tauri 2, instalador .exe)
+O app desktop é uma janela nativa do Windows (WebView2) em volta do mesmo painel. Não há uma segunda interface: o que funciona no `npm start` funciona no app.
+
+- **Desenvolver:** `npm run desktop:dev` abre a janela nativa apontando para o servidor local (`npm start`, em `127.0.0.1:4800`). Também dá para continuar só no navegador, como sempre.
+- **Gerar o instalador:** `npm run desktop:build` cria `src-tauri/target/release/bundle/nsis/Farol_<versão>_x64-setup.exe`. A instalação é por usuário, sem pedir administrador, e baixa o WebView2 se faltar.
+- **Precisa, só para compilar:** Rust (rustup), Visual Studio Build Tools com C++ e Node 22.13 ou mais novo. Quem instala o Farol não precisa de nada disso.
+
+Como o app funciona por dentro:
+1. O Tauri abre a tela "Abrindo o Farol…" e inicia o Node que vem dentro do app (`farol-node`, copiado do seu Node por `app/desktop/preparar.js`).
+2. Esse Node roda `app/desktop/backend.js`, que copia o motor para a pasta de trabalho `DocumentosFarol`. Ali ficam também a configuração, o cofre e os posts. Uma atualização troca o motor, mas nunca apaga o seu conteúdo nem o que a IA escreveu em `dias/` e `pautas/`.
+3. O painel sobe em `127.0.0.1:4800` (ou outra porta livre, se a 4800 estiver ocupada) e a janela vai para lá.
+4. As rotinas encontram um `node` mesmo sem Node instalado no computador, e a caixa de permissões continua valendo.
+5. Links abrem no navegador padrão e arquivos no programa padrão. Abrir o app de novo traz a janela que já existe. Fechar a janela encerra o backend.
+
+O `Farol.exe` portátil (`npm run exe`) continua existindo, para quem prefere não instalar.
+
 ## Segurança
 - O app escuta só em `127.0.0.1` e toda ação exige um token novo a cada vez que ele sobe. Assim, um site aberto no navegador não consegue agir por você.
 - O painel só responde a quem chama pelo endereço local exato (`127.0.0.1:<porta>` ou `localhost:<porta>`). Isso barra o "DNS rebinding", em que um site aponta o próprio domínio para o seu computador para ler o painel.
@@ -109,6 +125,8 @@ Depois é seguir a entrada. Para mudar caminhos à mão, copie `config/engine.co
 ## Estrutura
 ```
 app/            o app local (server.js sem dependências + public/)
+  desktop/      versão desktop: backend.js (o que o app roda), preparar.js (build) e janela/ (tela de espera)
+src-tauri/      projeto Tauri 2: janela nativa, Node embutido (sidecar), ícones e instalador NSIS
 engine/
   brand/        tokens e peças do design system (lib.js, kit.js)
   series/       série de posts próprios
@@ -130,7 +148,8 @@ workspace/      tudo o que é gerado (fora do Git). Em avulsos/, cada post é:
                   pasta/ link.json + legenda.txt           artigo ({"url", "titulo", "descricao"}; miniatura.png opcional)
 config/         configuração local e o cofre segredos.dat (fora do Git)
 
-FAROL_DATA      variável opcional: muda a pasta de config/ e workspace/ (a versão instalada vai usar a pasta do usuário)
+FAROL_DATA      variável opcional: muda a pasta de config/ e workspace/
+FAROL_HOME      na versão desktop: a pasta de trabalho do usuário (DocumentosFarol)
 ```
 
 ## Agendar

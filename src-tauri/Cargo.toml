@@ -1,0 +1,24 @@
+[package]
+name = "farol"
+version = "0.2.0"
+description = "Farol: seus posts no LinkedIn, feitos pela sua IA e aprovados por você"
+authors = ["Otavio Guerra"]
+license = "MIT"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-single-instance = "2"
+serde_json = "1"
+
+# executável menor: o trabalho pesado fica no backend Node
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+panic = "abort"

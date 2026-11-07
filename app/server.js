@@ -15,7 +15,9 @@ const PUB_LI = require('../engine/linkedin/publicar.js')
 
 const ROOT = C.ROOT, PUB = path.join(__dirname, 'public')
 const TOKEN = crypto.randomBytes(24).toString('hex')
-const PORT = +process.env.PORT || C.cfg.app.port
+// PORT=0 pede uma porta livre; sem PORT, a do config (4800). Na versão desktop (FAROL_PORTA_LIVRE), se a 4800 estiver ocupada, usa outra.
+const PORT = process.env.PORT != null && process.env.PORT !== '' ? +process.env.PORT : C.cfg.app.port
+const porta = () => server.address().port
 const IS_WIN = process.platform === 'win32'
 const PONTE = (C.cfg.linkedin && C.cfg.linkedin.ponte) || 'https://farol-otavio-guerra.vercel.app'
 
@@ -163,7 +165,7 @@ const hostOk = h => { const p = server.address().port; return h === `127.0.0.1:$
 
 const server = http.createServer(async (req, res) => {
   if (!hostOk(String(req.headers.host || '').toLowerCase())) return send(res, 403, 'endereço não permitido', 'text/plain; charset=utf-8')
-  const u = new URL(req.url, `http://127.0.0.1:${PORT}`)
+  const u = new URL(req.url, `http://127.0.0.1:${porta()}`)
   try {
     // volta do login do LinkedIn pela ponte (a página lê o token do fragmento e manda para /api/linkedin/salvar)
     if (req.method === 'GET' && u.pathname === '/linkedin/done') return send(res, 200, PAGINA_VOLTA(), 'text/html; charset=utf-8')
@@ -193,7 +195,7 @@ const server = http.createServer(async (req, res) => {
           if (process.env.ENGINE_DEMO) return send(res, 200, DEMO_STATUS())
           const ag = agenteId(), cfg = C.load()
           const agente = ag ? { ...(await AG.status(ag)), nome: AG.AGENTES[ag].nome, via: AG.AGENTES[ag].via, sincronizado: cfg.agente.sincronizado } : null
-          return send(res, 200, { agente, linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() } })
+          return send(res, 200, { agente, linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() }, desktop: !!process.env.FAROL_DESKTOP })
         }
         case '/api/agentes': {
           const principais = ['claude', 'codex', 'gemini']
@@ -234,7 +236,7 @@ const server = http.createServer(async (req, res) => {
       case '/api/linkedin/connect': {
         if (await ponteOk() && !b.proprio) {
           LI = { state: crypto.randomBytes(16).toString('hex'), expira: Date.now() + 10 * 60000 }
-          const url = `${PONTE}/api/linkedin/start?` + new URLSearchParams({ state: LI.state, port: String(PORT) })
+          const url = `${PONTE}/api/linkedin/start?` + new URLSearchParams({ state: LI.state, port: String(porta()) })
           AG.abrirUrl(url)
           return send(res, 200, { ok: true, modo: 'ponte', url, msg: 'Abri o LinkedIn no navegador. Entre e clique em Permitir.' })
         }
@@ -290,8 +292,25 @@ const server = http.createServer(async (req, res) => {
         return send(res, r.code === 0 ? 200 : 500, r.code === 0 ? { ok: true } : { erro: (r.err || r.out).slice(0, 400) })
       }
       case '/api/run': { try { return send(res, 200, startRun(b.id)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      // versão desktop: links abrem no navegador padrão e arquivos do workspace no programa padrão (fora da janela do app)
+      case '/api/abrir': {
+        const alvo = String(b.url || '')
+        if (/^https?:\/\/[^\s"<>]+$/i.test(alvo)) { AG.abrirUrl(alvo); return send(res, 200, { ok: true }) }
+        if (alvo.startsWith('/files/')) {
+          const p = path.join(C.WS, path.normalize(decodeURIComponent(alvo.slice(7))))
+          if (!p.startsWith(C.WS + path.sep) || !exists(p)) return send(res, 404, { erro: 'arquivo não encontrado' })
+          AG.abrirUrl(p); return send(res, 200, { ok: true })
+        }
+        return send(res, 400, { erro: 'endereço não permitido' })
+      }
     }
     return send(res, 404, { erro: 'rota não encontrada' })
   } catch (e) { return send(res, 500, { erro: e.message }) }
 })
-server.listen(PORT, '127.0.0.1', () => console.log(`Farol: http://127.0.0.1:${PORT}`))
+// a linha "Farol: http://..." é lida pela versão desktop para abrir a janela na porta certa
+server.on('listening', () => console.log(`Farol: http://127.0.0.1:${porta()}/`))
+server.on('error', e => {
+  if (e.code === 'EADDRINUSE' && process.env.FAROL_PORTA_LIVRE && server.listening === false && !server._tentouLivre) { server._tentouLivre = true; return server.listen(0, '127.0.0.1') }
+  console.error('Farol: não consegui abrir o painel:', e.message); process.exit(1)
+})
+server.listen(PORT, '127.0.0.1')

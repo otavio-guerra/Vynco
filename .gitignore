@@ -37,3 +37,8 @@ dist/
 /.github/skills/
 /.github/prompts/
 /.github/copilot-instructions.md
+
+# versão desktop (Tauri): compilação, Node copiado pelo preparar.js e esquemas gerados
+/src-tauri/target/
+/src-tauri/binaries/
+/src-tauri/gen/
