@@ -430,6 +430,19 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .es-vazio { display: grid; justify-items: center; gap: 8px; padding: 18px; border: 1px dashed var(--edge-2); border-radius: 14px; text-align: center } .es-vazio .wf { width: 90px; border-radius: 10px } .es-vazio p { margin: 0; color: var(--soft); font-size: 13px; max-width: 300px }
 .c-ic.mg { color: #fff; background: linear-gradient(135deg, var(--violet), var(--accent)) }
 
+/* ----- triagem da entrada (quem é você) */
+.vc-quem { display: grid; justify-items: center; gap: 6px; margin-bottom: -2px }
+.vc-av { flex-basis: auto; width: 72px; height: 72px; font-size: 26px; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--li), 0 14px 40px rgba(0, 0, 0, .35) }
+.vc-li { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--soft); padding: 3px 9px; border-radius: 99px; background: var(--glass); border: 1px solid var(--edge) } .vc-li svg { width: 11px; height: 11px; color: var(--li-hi) }
+.vc { display: grid; gap: 10px; width: min(640px, 100%); text-align: left; margin-top: 4px }
+.vc-p { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 16px; background: var(--glass); border: 1px solid var(--edge) }
+.vc-p > div { flex: 1; display: grid; gap: 8px; min-width: 0 } .vc-p b { font-size: 14.5px; font-weight: 600 }
+.vc-n { flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); margin-top: 1px }
+.vc-in { font: 14px var(--font); color: var(--text); background: var(--glass); border: 1px solid var(--edge-2); border-radius: 10px; padding: 9px 12px; min-height: 42px; width: 100% }
+.vc-in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent) }
+.vc .chips { justify-content: flex-start }
+.vc-nota { max-width: 560px }
+
 /* ----- perfil */
 .pf-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 22px; align-items: start }
 .sel { font: 600 13px var(--font); color: var(--text); background: var(--glass); border: 1px solid var(--edge-2); border-radius: 999px; padding: 7px 12px; min-height: 36px }

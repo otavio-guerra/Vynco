@@ -30,7 +30,7 @@
     <h1 class="hero" data-in>Farol</h1>
     <p class="sub" data-in>Seus posts no LinkedIn, feitos pela sua IA e aprovados por você. Nada sai sem o seu ok.</p>
     <ol class="trio" data-in>
-      <li><span class="num">1</span><b>Conecte o LinkedIn</b><small>um botão</small></li>
+      <li><span class="num">1</span><b>Conecte o LinkedIn</b><small>um botão e três toques</small></li>
       <li><span class="num">2</span><b>Escolha sua IA</b><small>Claude, ChatGPT, Gemini…</small></li>
       <li><span class="num">3</span><b>Aprove e publique</b><small>uma tecla</small></li>
     </ol>
@@ -63,6 +63,23 @@
     </ul>
     <div class="cta" data-in data-li-next hidden><button class="btn accent lg" data-next>Continuar</button><span class="hint"><kbd class="sm">Enter</kbd></span></div>
     <div class="cta small" data-in><button class="link" data-act="li-proprio">Usar meu próprio app do LinkedIn</button><span class="sep" aria-hidden="true"></span><button class="link soft" data-next data-li-skip>Fazer depois</button></div>
+  </section>
+
+  <section class="scene" data-scene="voce" hidden>
+    <div class="vc-quem" data-in><span class="avatar vc-av" data-vc-av>?</span><span class="vc-li" data-vc-li hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3zm6.5 0h3.8v1.6h.06c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.77 2.6 4.77 6v5.46h-4v-4.84c0-1.16-.02-2.64-1.6-2.64-1.62 0-1.86 1.25-1.86 2.55v4.93h-4z"/></svg>do LinkedIn</span></div>
+    <h1 data-in data-vc-t>Prazer! Conta um pouco de você.</h1>
+    <p class="sub" data-in>Três toques e a sua IA já escreve com a sua cara. Dá para mudar tudo depois, na aba Perfil.</p>
+    <div class="vc" data-in>
+      <div class="vc-p"><span class="vc-n">1</span><div><b>O que você faz?</b><div class="chips" data-vc-chips="area"></div>
+        <input class="vc-in" data-vc="frase" maxlength="200" placeholder="Em uma frase, se quiser: ex. designer de produto para fintechs"></div></div>
+      <div class="vc-p"><span class="vc-n">2</span><div><b>O que você quer com o LinkedIn?</b><div class="chips" data-vc-chips="objetivo"></div></div></div>
+      <div class="vc-p"><span class="vc-n">3</span><div><b>Com que frequência quer postar?</b><div class="chips" data-vc-chips="frequencia"></div></div></div>
+      <div class="vc-p"><span class="vc-n">4</span><div><b>Tem site ou portfólio? <small class="soft">opcional</small></b>
+        <input class="vc-in" data-vc="site" type="url" placeholder="https://" spellcheck="false"><small class="fine">A sua IA lê o link (só leitura) e sugere tom, temas e as cores da sua marca.</small></div></div>
+    </div>
+    <p class="fine vc-nota" data-in data-vc-nota></p>
+    <div class="cta" data-in><button class="btn accent lg" data-vc-ok>Continuar</button><span class="hint"><kbd class="sm">Enter</kbd></span></div>
+    <div class="cta small" data-in><button class="link soft" data-next>Pular por agora</button></div>
   </section>
 
   <section class="scene" data-scene="agente" hidden>
@@ -268,7 +285,7 @@
 </main>
 
 <footer class="stepper" id="stepper" hidden aria-label="Progresso"><ol>
-  <li data-s="linkedin"><i></i><span>LinkedIn</span></li><li data-s="agente"><i></i><span>IA</span></li><li data-s="sync"><i></i><span>Sincronizar</span></li><li data-s="formatos"><i></i><span>Formatos</span></li>
+  <li data-s="linkedin"><i></i><span>LinkedIn</span></li><li data-s="voce"><i></i><span>Você</span></li><li data-s="agente"><i></i><span>IA</span></li><li data-s="sync"><i></i><span>Sincronizar</span></li><li data-s="formatos"><i></i><span>Formatos</span></li>
 </ol></footer>
 
 <dialog id="dlg"><form method="dialog" class="glass"><h3 id="dlg-t"></h3><p id="dlg-p"></p><div class="cta"><button class="btn" value="nao">Cancelar</button><button class="btn accent" value="sim" id="dlg-ok">Confirmar</button></div></form></dialog>

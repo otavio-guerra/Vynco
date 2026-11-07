@@ -216,7 +216,7 @@ matchMedia('(prefers-color-scheme: light)').addEventListener('change', aplicarTe
 aplicarTema()
 
 // ---------------------------------------------------------------- cenas
-const ONB = ['ola', 'linkedin', 'agente', 'sync', 'formatos']
+const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'formatos']
 let atual = null, voltarPara = null
 function cena(nome, { som = true } = {}) {
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
@@ -251,7 +251,7 @@ function voltar() {
 }
 function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila') }
 const ENTRAR = {
-  linkedin: () => entrarLinkedin(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
+  linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
   fila: () => carregarFila(), rotinas: () => carregarRotinas(), ajustes: () => { status(); carregarImgAjustes() },
   biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(),
 }
@@ -312,6 +312,61 @@ async function conectarLinkedin(proprio = false) {
   } catch (e) { falha(e) }
 }
 function cancelarLinkedin() { clearInterval(LI_POLL); LI_POLL = null; api('/api/linkedin/cancelar', {}).catch(() => {}); liEstado('idle') }
+
+// ---------------------------------------------------------------- 1b. triagem: quem é você (vira o perfil; a IA completa depois)
+// O LinkedIn só entrega nome, foto e e-mail a apps (login OpenID): cargo e experiência não vêm. O resto são três toques.
+const AREAS = ['Design', 'Desenvolvimento', 'Produto', 'Marketing', 'Vendas', 'Dados', 'Recrutamento e RH', 'Consultoria', 'Educação', 'Empreendedorismo']
+const FREQUENCIAS = ['1 vez por semana', '2 a 3 vezes por semana', 'Todo dia útil']
+let VC = null
+async function entrarVoce() {
+  let p = null; try { p = (await api('/api/perfil')).perfil } catch { }
+  if (!ST) await status()
+  const l = ST?.linkedin || {}, nome = p?.nome || l.name || ''
+  const chip = AREAS.find(a => (p?.area || '') === a)
+  VC = { perfil: p, nome, area: chip || '', frase: chip ? '' : p?.area || '', objetivo: (p?.objetivo || '').split(/,\s*/).filter(Boolean), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
+  const av = $('[data-vc-av]'); av.textContent = l.foto ? '' : inicial(nome || '?'); av.style.backgroundImage = l.foto ? `url("${l.foto}")` : ''
+  $('[data-vc-li]').hidden = !l.connected
+  $('[data-vc-t]').textContent = nome ? `Prazer, ${nome.split(' ')[0]}! Conta um pouco de você.` : 'Prazer! Conta um pouco de você.'
+  $('[data-vc-nota]').textContent = l.connected ? 'Do LinkedIn vieram o seu nome e a sua foto. O LinkedIn não compartilha cargo nem experiência com outros apps, então o resto vem destes toques (e do seu link, que a sua IA lê).' : 'O LinkedIn ainda não está conectado: tudo bem, dá para conectar depois em Ajustes.'
+  $('[data-vc=frase]').value = VC.frase; $('[data-vc=site]').value = VC.site
+  desenharVoce()
+}
+function desenharVoce() {
+  const grupo = (k, ops, multi) => $(`[data-vc-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${esc(o)}" class="${(multi ? VC[k].includes(o) : VC[k] === o) ? 'on' : ''}" aria-pressed="${multi ? VC[k].includes(o) : VC[k] === o}">${o}</button>`).join('')
+  grupo('area', AREAS); grupo('objetivo', OBJETIVOS, true); grupo('frequencia', FREQUENCIAS)
+  const feito = !!(VC.area || VC.frase.trim()) + !!VC.objetivo.length + !!VC.frequencia
+  $('[data-vc-ok]').textContent = feito ? 'Continuar' : 'Continuar sem preencher'
+}
+$('[data-scene=voce]').addEventListener('click', e => {
+  const b = e.target.closest('[data-vc-chips] button'); if (!b) return
+  const k = b.closest('[data-vc-chips]').dataset.vcChips, v = b.dataset.v
+  if (k === 'objetivo') VC.objetivo = VC.objetivo.includes(v) ? VC.objetivo.filter(x => x !== v) : [...VC.objetivo, v]
+  else VC[k] = VC[k] === v ? '' : v
+  Som.tique(); desenharVoce()
+})
+$('[data-scene=voce]').addEventListener('input', e => { const k = e.target.dataset.vc; if (k) { VC[k] = e.target.value; desenharVoce() } })
+$('[data-vc-ok]').addEventListener('click', () => salvarVoce())
+async function salvarVoce() {
+  if (!VC) return proximaCena()
+  const area = VC.frase.trim() ? (VC.area ? `${VC.area}: ${VC.frase.trim()}` : VC.frase.trim()) : VC.area
+  const site = /^https?:\/\/\S+\.\S+/i.test(VC.site.trim()) ? VC.site.trim() : ''
+  if (VC.site.trim() && !site) return pill('Confira o link', 'Ele precisa começar com http:// ou https://', 'var(--amber)')
+  const p = VC.perfil || {}
+  if (area || VC.objetivo.length || VC.frequencia || site) {
+    try {
+      await api('/api/perfil/salvar', { id: p.id, perfil: { ...p, nome: p.nome || VC.nome, area: area || p.area || '', objetivo: VC.objetivo.join(', '), frequencia: VC.frequencia, links: { ...(p.links || {}), site } } })
+      Som.liga(); pill('Perfil começado', 'A sua IA vai usar isso em cada post.', 'var(--green)')
+      if (area || site) store.set('analisarDepois', '1')   // quando a IA estiver pronta, ela completa o perfil
+    } catch (e) { return falha(e) }
+  }
+  proximaCena()
+}
+// depois que a IA é sincronizada, ela lê a triagem (e o link) e sugere o resto do perfil, sem aplicar nada sozinha
+function analisarDepoisDaTriagem() {
+  if (store.get('analisarDepois') !== '1') return
+  store.set('analisarDepois', '0')
+  api('/api/perfil/analisar', {}).then(() => setTimeout(() => pill('A sua IA está completando o seu perfil', 'As sugestões aparecem na aba Perfil, para você aplicar.', 'var(--violet)'), 1800)).catch(() => {})
+}
 
 // ---------------------------------------------------------------- 2. agente de IA
 let AGS = null, LOGIN = null
@@ -407,7 +462,7 @@ async function entrarSync() {
     $('[data-sync-t]').textContent = 'Faltou um passo.'; $('[data-sync-s]').textContent = falhou.detalhe
     $('[data-sync-cta]').innerHTML = `<button class="btn accent lg" data-act="sync-again">Tentar de novo</button><button class="link" data-goscene="agente">Escolher outra IA</button>`
   } else {
-    Som.publica(); humor('live'); ST = null; status()
+    Som.publica(); humor('live'); ST = null; status(); analisarDepoisDaTriagem()
     $('[data-sync-t]').innerHTML = `Pronto. <span class="soft">O ${esc(a.nome)} já conhece o Farol.</span>`
     $('[data-sync-s]').innerHTML = `<span class="summary"><span>${s.resumo.skills} skills</span><span>${s.resumo.prompts} prompts</span><span>${s.resumo.plugins ? '1 plugin' : 'sem plugins'}</span><span>publicação travada</span></span>${avisos.length ? `<br><small class="fine">${avisos.length === 1 ? 'Um aviso' : avisos.length + ' avisos'} acima: dá para resolver depois em Ajustes.</small>` : ''}`
     $('[data-sync-cta]').innerHTML = `<button class="btn accent lg" data-next>Continuar</button><span class="hint"><kbd class="sm">Enter</kbd></span>`
@@ -1198,6 +1253,7 @@ addEventListener('keydown', e => {
   if (k === 'Enter' && ONB.includes(nome) && !e.target.closest('button, a, summary')) {
     e.preventDefault()
     if (nome === 'ola') return proximaCena()
+    if (nome === 'voce') return salvarVoce()
     if (nome === 'linkedin') return $('[data-li]').dataset.li === 'ok' ? proximaCena() : $('[data-li]').dataset.li === 'idle' ? conectarLinkedin() : null
     if (nome === 'sync') return !$('[data-sync-cta]').hidden && $('[data-sync-cta] [data-next]') ? proximaCena() : null
     if (nome === 'formatos') return terminar()

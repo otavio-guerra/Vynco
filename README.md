@@ -34,11 +34,12 @@ Nasceu para o meu próprio perfil ([portfolio-otavio-guerra.vercel.app](https://
 - **Você aprova, ele publica.** A publicação usa a API oficial do LinkedIn. Nenhuma rotina publica sozinha: sem aprovação, nada vai ao ar.
 
 ## O app
-Uma ideia por tela, com o mínimo de atrito. A entrada tem quatro passos e nenhum comando fora do app:
+Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum comando fora do app:
 1. **LinkedIn:** um botão, "Continuar com LinkedIn", como em qualquer site. Você entra e clica em Permitir; o Farol nunca vê a sua senha.
-2. **Sua IA:** "Continuar com Claude", "com ChatGPT" (Codex) ou "com Gemini" (Gemini CLI), e um menu com outras (GitHub Copilot, Qwen Code, OpenCode, em beta). Se a ferramenta não estiver instalada, o Farol instala e abre o login no navegador.
-3. **Sincronização:** uma tela de carregamento mostra cada passo enquanto o Farol entrega à IA as regras (`agent/AGENTS.md`), as skills (`agent/skills`), os prompts das rotinas, o plugin do Desigma (MCP, se estiver instalado) e a trava que impede a IA de publicar. No fim, um teste rápido confere se ela responde.
-4. **Formatos:** os quatro formatos em wireframe (imagem, GIF, carrossel e vídeo) e como aprovar com `A`.
+2. **Você:** uma triagem em três toques, logo depois do LinkedIn: o que você faz, o que quer com o LinkedIn, com que frequência quer postar e, se quiser, o seu site. O nome e a foto vêm da sua conta do LinkedIn. O LinkedIn não compartilha cargo nem experiência com outros apps, então o resto vem desses toques. Tudo vira o seu perfil, e quando a IA termina de sincronizar ela lê a triagem e o link e sugere o resto na aba Perfil, sem aplicar nada sozinha.
+3. **Sua IA:** "Continuar com Claude", "com ChatGPT" (Codex) ou "com Gemini" (Gemini CLI), e um menu com outras (GitHub Copilot, Qwen Code, OpenCode, em beta). Se a ferramenta não estiver instalada, o Farol instala e abre o login no navegador.
+4. **Sincronização:** uma tela de carregamento mostra cada passo enquanto o Farol entrega à IA as regras (`agent/AGENTS.md`), as skills (`agent/skills`), os prompts das rotinas, o plugin do Desigma (MCP, se estiver instalado) e a trava que impede a IA de publicar. No fim, um teste rápido confere se ela responde.
+5. **Formatos:** os quatro formatos em wireframe (imagem, GIF, carrossel e vídeo) e como aprovar com `A`.
 
 Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fica no feed. **Rotinas** roda a sua IA e **Ajustes** troca de IA, reconecta o LinkedIn e liga o Desigma.
 
