@@ -15,11 +15,14 @@
   <div class="bar-l">
     <button class="back" id="back" hidden aria-label="Voltar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Voltar</button>
     <span class="wordmark" id="wordmark"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M27 22h10l3.5 28h-17z" fill="currentColor"/><rect x="25" y="16" width="14" height="7" rx="2" fill="currentColor" opacity=".7"/><circle cx="32" cy="11" r="5" fill="var(--amber)"/></svg>Farol</span>
-    <button class="conns" id="conns" hidden aria-label="Conexões"></button>
+    <div class="conta" id="conta">
+      <button class="conns" id="conns" hidden aria-label="Sua conta: perfil, conexões e ajustes" aria-haspopup="menu" aria-expanded="false"></button>
+      <div class="conta-menu" id="conta-menu" role="menu" hidden></div>
+    </div>
   </div>
   <div class="pill-zone" aria-live="polite"><div class="pill" id="pill" hidden><span class="dot"></span><span><b id="pill-t"></b><small id="pill-s"></small></span></div></div>
   <nav class="seg" id="nav" aria-label="Seções" hidden>
-    <button data-view="fila" aria-current="page">Fila</button><button data-view="biblioteca">Biblioteca</button><button data-view="perfil">Perfil</button><button data-view="rede">Rede</button><button data-view="rotinas">Rotinas</button><button data-view="ajustes">Ajustes</button>
+    <button data-view="fila" aria-current="page">Fila<span class="nav-n" data-nav-n="fila" hidden></span></button><button data-view="calendario">Calendário</button><button data-view="rotinas">Criar</button><button data-view="biblioteca">Biblioteca</button><button data-view="rede">Rede</button>
   </nav>
 </header>
 
@@ -69,7 +72,7 @@
   <section class="scene" data-scene="voce" hidden>
     <div class="vc-quem" data-in><span class="avatar vc-av" data-vc-av>?</span><span class="vc-li" data-vc-li hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3zm6.5 0h3.8v1.6h.06c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.77 2.6 4.77 6v5.46h-4v-4.84c0-1.16-.02-2.64-1.6-2.64-1.62 0-1.86 1.25-1.86 2.55v4.93h-4z"/></svg>do LinkedIn</span></div>
     <h1 data-in data-vc-t>Prazer! Conta um pouco de você.</h1>
-    <p class="sub" data-in>Três toques e a sua IA já escreve com a sua cara. Dá para mudar tudo depois, na aba Perfil.</p>
+    <p class="sub" data-in>Três toques e a sua IA já escreve com a sua cara. Dá para mudar tudo depois, em Perfil.</p>
     <div class="vc" data-in>
       <div class="vc-p"><span class="vc-n">1</span><div><b>O que você faz?</b><div class="chips" data-vc-chips="area"></div>
         <input class="vc-in" data-vc="frase" maxlength="200" placeholder="Em uma frase, se quiser: ex. designer de produto para fintechs"></div></div>
@@ -247,8 +250,36 @@
   </section>
 
   <section class="scene view" data-scene="rotinas" hidden>
-    <div class="view-head" data-in><div><h1>Rotinas.</h1><p class="sub" data-rot-sub>A sua IA gera as peças e para antes de publicar. O resto é com você.</p></div></div>
+    <div class="view-head" data-in>
+      <div><h1>Criar.</h1><p class="sub" data-rot-sub>Escolha um modelo e a sua IA cria a peça a partir do seu perfil. Nada vai ao ar sem você aprovar.</p></div>
+    </div>
+    <div class="cr-rapido" data-in>
+      <button class="cr-acao glass" data-novo-post><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13h2.5L13 5.5 10.5 3 3 10.5zM9.5 4l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><b>Escrever um post</b><small>texto, imagens, vídeo, PDF ou link, do seu jeito</small></span></button>
+      <button class="cr-acao glass" data-gerar-img><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg></span><span><b>Gerar uma imagem</b><small>com o estúdio de imagens</small></span></button>
+      <button class="cr-acao glass" data-view="calendario"><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><span><b>Ver o calendário</b><small>o que sai e quando</small></span></button>
+    </div>
+    <div class="cr-avisos" data-in data-rot-avisos></div>
+    <div class="cr-head" data-in><h2>Modelos de post</h2><div class="filters chips" data-rot-filtro><button data-v="todos" class="on">Todos</button><button data-v="carrossel">Carrosséis</button><button data-v="texto">Texto</button></div></div>
     <div class="rot-grid" data-in data-rotinas></div>
+  </section>
+
+  <section class="scene view" data-scene="calendario" hidden>
+    <div class="view-head" data-in>
+      <div><h1 data-cal-titulo>Calendário.</h1><p class="sub" data-cal-sub>O que já foi ao ar, o que está agendado e o que as suas rotinas vão criar.</p></div>
+      <div class="head-a cal-nav">
+        <button class="btn sm icon" data-cal="ant" aria-label="Mês anterior"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn sm" data-cal="hoje">Hoje</button>
+        <button class="btn sm icon" data-cal="prox" aria-label="Próximo mês"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+    <div class="cal-legenda" data-in><span class="cl pub">No ar</span><span class="cl ag">Agendado</span><span class="cl rot">Rotina vai criar</span><span class="fine">Arraste um post para um dia para agendar.</span></div>
+    <div class="cal-grid" data-in>
+      <div class="cal glass" data-cal-mes role="grid" aria-label="Mês"></div>
+      <aside class="cal-lado">
+        <section class="glass ed-box" data-cal-dia></section>
+        <section class="glass ed-box"><header class="ed-box-h"><h3>Sem data</h3><span class="tag" data-cal-nsem></span></header><p class="fine" style="margin:0 0 8px">Aprovados e esperando você. Arraste para um dia.</p><div class="cal-sem" data-cal-sem></div></section>
+      </aside>
+    </div>
   </section>
 
   <section class="scene view" data-scene="ajustes" hidden>

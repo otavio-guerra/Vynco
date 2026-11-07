@@ -45,13 +45,13 @@ function wire(f, o = {}) {
 const DEMO = TOKEN === '__' + 'TOKEN__'
 const arquivo = p => DEMO ? p : `/files/${encodeURI(String(p).replace(/\\/g, '/'))}`
 const D = DEMO && (() => {
-  const ja = store.get('onboarded') === '1' || ['fila', 'rotinas', 'ajustes'].includes(new URLSearchParams(location.search).get('tela'))
+  const ja = store.get('onboarded') === '1' || ['fila', 'rotinas', 'ajustes', 'calendario', 'rede', 'biblioteca', 'perfil'].includes(new URLSearchParams(location.search).get('tela'))
   return {
     linkedin: { proprio: false, connected: ja, name: ja ? 'Seu Nome' : null, expiresAt: Date.now() + 59 * 864e5, via: 'farol', redirectUri: 'http://localhost:8765/callback' },
     agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
     escolhido: ja ? 'claude' : null, sincronizado: ja,
     lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
-    jobs: {}, sync: null, posts: {}, tarefas: [], ops: 0, gasto: 0, analise: null, rede: { conexoes: [], seguir: [], vagas: [], prefs: {} }, redeEstado: null,
+    jobs: {}, sync: null, posts: {}, rotinas: { dicas: { ativo: true, dias: [2], hora: '08:00' }, pergunta: { ativo: true, dias: [5], hora: '09:00' } }, tarefas: [], ops: 0, gasto: 0, analise: null, rede: { conexoes: [], seguir: [], vagas: [], prefs: {} }, redeEstado: null,
     perfil: { id: 'principal', nome: 'Seu Nome', area: '', publico: '', objetivo: '', tom: '', temas: [], evitar: [], links: { site: '', portfolio: '' }, sobre: '', pilares: [], marca: { cores: { principal: '', secundaria: '', acento: '', fundo: '', texto: '' }, fontes: { titulo: '', texto: '' }, estilo: '', referencias: [], aplicarNoMotor: false, usarNoEstudio: true }, analise: null, atualizado: null },
     // biblioteca de exemplo: imagens desenhadas aqui mesmo (wireframes), nenhuma peça real
     midia: [['#4cc2ff', 'tela-de-login.png', 'envio', 'Tela de login com campos de e-mail e senha.'], ['#8b7cff', 'antes.png', 'envio', ''], ['#3ddc84', 'depois.png', 'envio', ''], ['#ffb547', 'daily-ui-003.png', 'dailyui', '']].map(([cor, nome, origem, alt], k) => ({
@@ -64,13 +64,16 @@ const D = DEMO && (() => {
       { kind: 'noticias', id: 'hoje-a', title: 'Carrossel A · notícias do dia', formato: 'carrossel', paginas: 7, hasFile: true, approved: false, published: null, caption: 'O assunto do dia em 7 slides: o que aconteceu, o outro lado e o que muda para quem desenha.\n\nFontes checadas no último slide.\n\n#design #ia #tecnologia' },
       { kind: 'avulsos', id: 'processo', title: 'Vídeo · bastidores de um projeto', formato: 'video', hasFile: true, approved: false, published: null, caption: 'Quarenta segundos de processo: do rascunho à tela final.\n\nO que você mudaria?\n\n#processo #design' },
       { kind: 'avulsos', id: 'antes-depois', title: 'Antes e depois · 4 telas', formato: 'multi', arquivos: [], hasFile: true, approved: false, published: null, caption: 'Quatro telas, antes e depois do redesenho.\n\nArraste para o lado e diga qual mudança você notou primeiro.\n\n#uxdesign #redesign' },
-      { kind: 'avulsos', id: 'reflexao', title: 'Só texto · uma lição da semana', formato: 'texto', hasFile: true, approved: true, published: null, caption: 'Uma lição desta semana: mostrar o rascunho cedo economiza três rodadas de ajuste.\n\nO que você aprendeu esta semana?' },
+      { kind: 'avulsos', id: 'reflexao', title: 'Só texto · uma lição da semana', formato: 'texto', hasFile: true, approved: true, published: null, agendado: new Date(new Date().setHours(33, 0, 0, 0)).toISOString(), caption: 'Uma lição desta semana: mostrar o rascunho cedo economiza três rodadas de ajuste.\n\nO que você aprendeu esta semana?' },
       { kind: 'series', id: '04', title: 'Série 04 · ferramentas', formato: 'imagem', hasFile: true, approved: true, published: null, caption: 'As ferramentas que eu abro todo dia, e por quê.\n\n#design #ferramentas' },
       { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', hasFile: true, approved: true, published: { link: 'https://github.com/AbapaOnSwamp/farol', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
     ],
   }
 })()
 const ag = id => D.lista.find(a => a.id === id)
+// os mesmos modelos de engine/modelos.js (a demonstração não tem servidor)
+const MODELOS_DEMO = [['noticias-da-area', 'Notícias da sua área', 'carrossel', 1, 'semanal', 'O assunto mais quente da semana na sua área, com o que aconteceu, o outro lado e a sua leitura. Fontes checadas.'], ['dicas', 'Dicas práticas', 'carrossel', 0, 'semanal', 'De 5 a 7 dicas curtas e acionáveis sobre um dos seus pilares, uma por slide.'], ['mito-verdade', 'Mito ou verdade', 'carrossel', 0, 'quinzenal', 'Crenças comuns da sua área desmontadas com argumentos simples.'], ['passo-a-passo', 'Passo a passo', 'carrossel', 0, 'quinzenal', 'Como fazer algo que o seu público precisa, em etapas claras.'], ['licao', 'Lição aprendida', 'texto', 0, 'semanal', 'Uma história curta: o que aconteceu, o que você aprendeu e o que faria diferente.'], ['bastidores', 'Bastidores do trabalho', 'texto', 0, 'quinzenal', 'Um processo, uma rotina ou uma ferramenta do seu dia a dia, contado com honestidade.'], ['opiniao', 'Opinião sobre uma tendência', 'texto', 1, 'quinzenal', 'Uma tendência recente da área e o seu ponto de vista, com os dois lados.'], ['pergunta', 'Pergunta para a rede', 'texto', 0, 'semanal', 'Um post curto que termina numa pergunta e puxa conversa nos comentários.'], ['recomendacao', 'Recomendação', 'texto', 0, 'mensal', 'Um livro, curso, ferramenta ou pessoa que ajudou você, e por quê.'], ['daily-ui', 'Daily UI', 'imagem', 0, 'diario', 'A tela do desafio Daily UI do dia, com as decisões de UX numeradas.', 1]]
+  .map(([id, titulo, formato, web, freq, desc, design]) => ({ id, titulo, formato, web: !!web, freq, desc, design: !!design, freqTxt: { diario: 'todo dia útil', semanal: 'uma vez por semana', quinzenal: 'a cada 15 dias', mensal: 'uma vez por mês' }[freq] }))
 // imagem de exemplo desenhada na hora (wireframe colorido), para a demonstração
 const svgDemo = cor => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><radialGradient id="c" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="${cor}" stop-opacity=".55"/><stop offset="1" stop-color="#0e1524"/></radialGradient></defs><rect width="400" height="500" fill="url(#c)"/><path d="M0 380 120 300l80 50 90-70 110 90v130H0z" fill="${cor}" opacity=".45"/><path d="M186 170h28l10 120h-48z" fill="#eef1f8"/><circle cx="200" cy="155" r="14" fill="#ffb547"/><path d="M200 155 400 110v90z" fill="#ffb547" opacity=".22"/></svg>`)
 const usoDemo = () => ({ mes: new Date().toISOString().slice(0, 7), operacoes: D.ops, gasto: D.gasto, semPreco: D.tarefas.filter(t => t.op !== 'melhorar').reduce((s, t) => s + t.itens.length, 0), limiteMensal: 30, orcamentoMensal: 10 })
@@ -111,7 +114,10 @@ async function apiDemo(path, data) {
     case '/api/linkedin/cancelar': clearTimeout(D.liTimer); return { ok: true }
     case '/api/linkedin/disconnect': Object.assign(D.linkedin, { connected: false, name: null }); return { ok: true }
     case '/api/queue': return D.fila
-    case '/api/runs': return { agente: D.escolhido ? ag(D.escolhido).nome : null, rotinas: [{ id: 'daily-ui', titulo: 'Gerar o Daily UI de hoje', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - Gerar o Daily UI de hoje" /TR "..."' }, { id: 'pauta-noticias', titulo: 'Montar os carrosséis de notícias', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - Montar os carrosséis de notícias" /TR "..."' }], runs: [] }
+    case '/api/runs': return { agente: D.escolhido ? ag(D.escolhido).nome : null, perfil: { area: D.perfil.area }, avisos: [], runs: [], rotinas: MODELOS_DEMO.filter(m => !m.design || /design|ux|ui/i.test(D.perfil.area)).map(m => ({ ...m, agenda: D.rotinas[m.id] || null })) }
+    case '/api/agendar': { const k = `${data.kind}:${data.id}`, x = D.fila.find(i => `${i.kind}:${i.id}` === k); if (x) x.agendado = data.quando || null; return { ok: true } }
+    case '/api/rotinas/agendar': D.rotinas[data.id] = { ativo: !!data.ativo, dias: data.dias, hora: data.hora }; return { ok: true }
+    case '/api/runs-antigo': return { agente: D.escolhido ? ag(D.escolhido).nome : null, rotinas: [{ id: 'daily-ui', titulo: 'Gerar o Daily UI de hoje', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - Gerar o Daily UI de hoje" /TR "..."' }, { id: 'pauta-noticias', titulo: 'Montar os carrosséis de notícias', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - Montar os carrosséis de notícias" /TR "..."' }], runs: [] }
     case '/api/approve': it.approved = true; return { ok: true }
     case '/api/unapprove': it.approved = false; return { ok: true }
     case '/api/publish': it.published = { link: 'https://github.com/AbapaOnSwamp/farol', quando: new Date().toISOString() }; return { ok: true }
@@ -155,7 +161,7 @@ async function apiDemo(path, data) {
         Object.assign(D.rede, {
           conexoes: [['Líderes de produto em startups', 'decidem quem contratar e avaliam portfólio', 'head of product startup', 'Oi! Acompanho o seu trabalho em produto e queria trocar ideias sobre design em times pequenos.'], ['Recrutadores de design', 'abrem as vagas antes de elas ficarem públicas', 'recrutador design', 'Oi! Sou designer de produto e gostaria de ficar no seu radar para vagas da área.'], ['Designers sêniores da sua área', 'trocam referências e indicam oportunidades', 'senior product designer', 'Oi! Gosto muito dos seus estudos de caso e queria acompanhar o seu trabalho.']].map(([perfil, por_que, busca, convite]) => ({ perfil, por_que, busca, convite, url: 'https://www.linkedin.com/search/results/people/?keywords=' + q(busca) })),
           seguir: [{ nome: '#uxdesign', tipo: 'hashtag', por_que: 'onde a área conversa' }, { nome: 'Comunidades de design de produto', tipo: 'comunidade', por_que: 'eventos e vagas' }],
-          vagas: data.tipo === 'conexoes' ? D.rede.vagas : [{ titulo: 'Exemplo: Designer de produto pleno', empresa: 'Empresa de exemplo', local: data.local || 'Remoto', modalidade: data.modalidade || 'Remoto', link: 'https://example.com/vaga', por_que: 'Demonstração: na versão real, só aparecem vagas que a IA achou e cujo link existe.', publicada: 'há 3 dias', conferido: true }],
+          vagas: data.tipo === 'conexoes' ? D.rede.vagas : [{ titulo: 'Exemplo: Designer de produto pleno', empresa: 'Empresa de exemplo', local: data.local || 'Remoto', modalidade: data.modalidade || 'Remoto', link: 'https://example.com/vaga', por_que: 'Demonstração: na versão real, só aparecem vagas que a IA achou e cujo link existe.', publicada: 'há 3 dias', conferido: true, nivel: data.senioridade || 'Pleno', contrato: 'CLT', salario: 'R$ 8.000 a R$ 11.000', requisitos: ['3 anos na área', 'Portfólio com casos reais', 'Boa comunicação escrita'], diferenciais: ['Plano de saúde', 'Horário flexível'], combina: 'Você já tem os temas e a experiência que a vaga pede.', falta: 'A vaga pede inglês avançado; o seu perfil não fala disso.', candidatura: 'Pelo formulário do site, com portfólio em PDF.', fonte: 'site da empresa' }, { titulo: 'Exemplo: Especialista sênior', empresa: 'Outra empresa', local: 'Híbrido · Rio de Janeiro', modalidade: 'Híbrido', link: 'https://example.com/vaga-2', por_que: 'Combina com o seu objetivo de crescer para cargos sêniores.', publicada: 'há 1 semana', conferido: false, nivel: 'Sênior', contrato: 'PJ', requisitos: ['5 anos na área'], diferenciais: [], combina: '', falta: '', candidatura: '', fonte: 'Gupy' }],
           maisVagas: 'https://www.linkedin.com/jobs/search/?keywords=' + q(D.perfil.area || 'design'), quando: new Date().toISOString(), prefs: { local: data.local, modalidade: data.modalidade, senioridade: data.senioridade },
         })
         D.redeEstado = { estado: 'pronto', tipo: data.tipo }
@@ -248,8 +254,9 @@ function cena(nome, { som = true } = {}) {
     $('#nav').hidden = naEntrada; $('#conns').hidden = naEntrada
     $('#back').hidden = !(ob > 0 || voltarPara)
     $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === nome))
+    $('#conns').classList.toggle('on', ['perfil', 'ajustes'].includes(nome)); menuConta(false)
     if (som) Som.pad()
-    ENTRAR[nome]?.()
+    ENTRAR[nome]?.(); if (!ST && !ONB.includes(nome) && !['fila', 'ajustes', 'calendario'].includes(nome)) status()
   }
   if (ant && !reduced) { ant.classList.add('leaving'); setTimeout(mostrar, 200) } else mostrar()
 }
@@ -267,7 +274,7 @@ function voltar() {
 function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila') }
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
-  fila: () => carregarFila(), rotinas: () => carregarRotinas(), ajustes: () => { status(); carregarImgAjustes() },
+  fila: () => carregarFila(), rotinas: () => carregarRotinas(), calendario: () => carregarCalendario(), ajustes: () => { status(); carregarImgAjustes() },
   biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(), rede: () => carregarRede(),
 }
 
@@ -422,7 +429,7 @@ async function salvarVoce() {
 function analisarDepoisDaTriagem() {
   if (store.get('analisarDepois') !== '1') return
   store.set('analisarDepois', '0')
-  api('/api/perfil/analisar', {}).then(() => setTimeout(() => pill('A sua IA está completando o seu perfil', 'As sugestões aparecem na aba Perfil, para você aplicar.', 'var(--violet)'), 1800)).catch(() => {})
+  api('/api/perfil/analisar', {}).then(() => setTimeout(() => pill('A sua IA está completando o seu perfil', 'As sugestões aparecem em Perfil (no menu da sua conta), para você aplicar.', 'var(--violet)'), 1800)).catch(() => {})
 }
 
 // ---------------------------------------------------------------- 2. agente de IA
@@ -550,21 +557,24 @@ function alternarFormato(i) {
 }
 
 // ---------------------------------------------------------------- fila
-let FILA = [], FILTRO = 'pendente', foco = 0, verMais = false
+let FILA = [], FILTRO = 'pendente', foco = 0, verMais = false, AG_AB = false
+const localISO = d => `${ymd(d)}T${hhmm(d)}`
+const proximaHora = () => { const [h, m] = store.get('hora', '09:00').split(':').map(Number), d = new Date(); d.setHours(h, m, 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1); return d }
 const TIPO = { dailyui: 'Daily UI', noticias: 'Carrossel', series: 'Série', avulsos: 'Avulso' }
 const FMT_TXT = { imagem: 'Imagem', gif: 'GIF', carrossel: 'Carrossel', documento: 'Documento', video: 'Vídeo', multi: 'Várias imagens', texto: 'Só texto', artigo: 'Artigo' }
 const LIMITE = 3000   // caracteres do texto de um post no LinkedIn
 const dominio = u => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return '' } }
-const estado = i => i.published ? 'pub' : i.rascunho ? 'draft' : i.approved ? 'ok' : ''
-const estadoTxt = i => i.published ? 'no ar' : i.rascunho ? 'rascunho' : i.approved ? 'aprovado' : 'esperando você'
+const estado = i => i.published ? 'pub' : i.rascunho ? 'draft' : i.agendado && i.approved ? 'sched' : i.approved ? 'ok' : ''
+const quandoCurto = q => new Date(q).toLocaleString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const estadoTxt = i => i.published ? 'no ar' : i.rascunho ? 'rascunho' : i.agendado ? (i.approved ? 'sai ' : 'agendado, falta aprovar · ') + quandoCurto(i.agendado) : i.approved ? 'aprovado' : 'esperando você'
 const CONTA = { pendente: i => !i.published && !i.approved && !i.rascunho, pronto: i => !i.published && i.approved && !i.rascunho, publicado: i => !!i.published, rascunho: i => !i.published && !!i.rascunho, todos: () => true }
 const visiveis = () => FILA.filter(CONTA[FILTRO])
 async function carregarFila() {
   try { [FILA] = await Promise.all([api('/api/queue'), ST ? null : status()]) } catch (e) { return falha(e) }
-  desenharFila(); atualizarHumor()
+  desenharFila(); atualizarHumor(); contarFila()
 }
 function atualizarHumor() {
-  if (!['fila', 'rotinas', 'ajustes', 'biblioteca', 'editor', 'perfil', 'rede'].includes(atual?.dataset.scene)) return
+  if (!['fila', 'rotinas', 'ajustes', 'biblioteca', 'editor', 'perfil', 'rede', 'calendario'].includes(atual?.dataset.scene)) return
   humor(FILA.some(CONTA.pendente) ? 'waiting' : FILA.some(CONTA.pronto) ? 'live' : 'neutral')
 }
 const capa = i => i.formato === 'texto' ? wire('texto', { texto: (i.caption || '').slice(0, 160) })
@@ -600,12 +610,12 @@ function desenharFila() {
   const v = visiveis(), pend = FILA.filter(CONTA.pendente).length, prontos = FILA.filter(CONTA.pronto).length
   $$('[data-filter] button').forEach(b => { b.classList.toggle('on', b.dataset.v === FILTRO); const n = FILA.filter(CONTA[b.dataset.v]).length; b.innerHTML = `${b.textContent.replace(/\d+$/, '').trim()}<span class="n">${n}</span>` })
   $('[data-fila-title]').textContent = pend ? `${pend} ${pend === 1 ? 'post esperando' : 'posts esperando'} você.` : prontos ? 'Tudo aprovado.' : FILA.length ? 'Tudo no ar.' : 'Nada na fila ainda.'
-  $('[data-fila-sub]').innerHTML = pend ? 'Olhe a prévia, aperte <kbd class="sm">A</kbd> para aprovar e <kbd class="sm">P</kbd> para publicar.' : prontos ? `${prontos} ${prontos === 1 ? 'pronto' : 'prontos'} para ir ao ar quando você quiser (<kbd class="sm">P</kbd>).` : 'Peça peças novas para a sua IA na aba Rotinas.'
+  $('[data-fila-sub]').innerHTML = pend ? 'Olhe a prévia, aperte <kbd class="sm">A</kbd> para aprovar e <kbd class="sm">P</kbd> para publicar.' : prontos ? `${prontos} ${prontos === 1 ? 'pronto' : 'prontos'} para ir ao ar quando você quiser (<kbd class="sm">P</kbd>).` : 'Peça posts novos para a sua IA na aba Criar, ou escreva um em Novo post.'
   foco = Math.max(0, Math.min(foco, v.length - 1))
   $('[data-strip]').innerHTML = v.length ? v.map((i, n) => `<button class="post${n === foco ? ' focus' : ''}" data-n="${n}" aria-pressed="${n === foco}">
     <div class="shot">${capa(i)}</div>
     <footer><span class="state ${estado(i)}"></span><span><b>${esc(i.title)}</b><small>${FMT_TXT[i.formato] || TIPO[i.kind]} · ${estadoTxt(i)}</small></span></footer></button>`).join('')
-    : `<div class="empty"><div class="wf-row">${wire('imagem')}${wire('carrossel')}${wire('video')}</div><h3>${FILTRO === 'pendente' ? 'Nada esperando você.' : 'Nada por aqui.'}</h3><p>Quando a sua IA terminar uma peça, ela aparece aqui para você olhar antes de ir ao ar.</p><div class="cta small"><button class="btn sm" data-run="daily-ui">Gerar o Daily UI</button><button class="btn sm" data-run="pauta-noticias">Montar os carrosséis</button></div></div>`
+    : `<div class="empty"><div class="wf-row">${wire('imagem')}${wire('carrossel')}${wire('video')}</div><h3>${FILTRO === 'pendente' ? 'Nada esperando você.' : 'Nada por aqui.'}</h3><p>Quando a sua IA terminar uma peça, ela aparece aqui para você olhar antes de ir ao ar.</p><div class="cta small"><button class="btn sm accent" data-view="rotinas">Escolher um modelo de post</button><button class="btn sm" data-novo-post>Escrever um post</button></div></div>`
   detalhe()
 }
 function detalhe() {
@@ -618,16 +628,22 @@ function detalhe() {
     : i.rascunho ? `<button class="btn accent" data-q="enviar">Enviar para aprovação</button>${editar}<button class="link soft" data-q="excluir">Excluir</button>`
     : [editar, !i.hasFile ? `<button class="btn" data-q="export">Exportar</button>` : '',
        i.kind !== 'series' ? `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>` : '',
-       i.approved && i.hasFile ? `<button class="btn${i.kind === 'series' || i.approved ? ' good' : ''}" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : ''].join('')
+       i.approved && i.hasFile ? `<button class="btn${i.kind === 'series' || i.approved ? ' good' : ''}" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : '',
+       i.kind !== 'series' || !i.published ? `<button class="btn" data-q="agendar" aria-expanded="${AG_AB}">${i.agendado ? 'Mudar horário' : 'Agendar'}</button>` : ''].join('')
   d.innerHTML = `<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
     ${cartaoFeed(i, { aberto: verMais, quandoTxt: i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora' })}
+    ${i.agendado && !i.published ? `<div class="fp-ag${i.approved ? '' : ' warn'}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${i.approved ? 'Sai sozinho' : 'Agendado, mas só sai se você aprovar'} · <b>${quandoCurto(i.agendado)}</b></span></div>` : ''}
     <div class="fp-actions">${acoes}${i.file && (!i.pasta || ST?.desktop) ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">${i.pasta ? 'Abrir a pasta' : 'Abrir o arquivo'}</a>` : ''}</div>
+    ${AG_AB && !i.published && !i.rascunho ? `<div class="fp-agform"><label><span>Dia e hora</span><input type="datetime-local" data-ag-quando value="${i.agendado ? localISO(new Date(i.agendado)) : localISO(proximaHora())}" min="${localISO(new Date())}"></label><button class="btn sm accent" data-q="ag-salvar">${i.approved || i.kind === 'series' ? 'Agendar' : 'Aprovar e agendar'}</button>${i.agendado ? '<button class="link soft" data-q="ag-tirar">Tirar da agenda</button>' : ''}<p class="fine">O Farol publica no horário enquanto estiver aberto. Se estiver fechado, publica assim que você abrir.</p></div>` : ''}
     <p class="fp-note${passou ? ' bad' : ''}">${passou ? `O texto tem ${chars.toLocaleString('pt-BR')} caracteres: o LinkedIn aceita até ${LIMITE.toLocaleString('pt-BR')}. Encurte a legenda para publicar.` : `${chars.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')} caracteres`}${!i.published && !l.connected ? ' · Conecte o LinkedIn em Ajustes para publicar.' : l.connected && !i.published ? ` · sai como ${esc(l.name || '')}` : ''}</p>`
 }
 async function acao(q) {
   const i = visiveis()[foco]; if (!i) return
   if (q === 'mais') { verMais = !verMais; return detalhe() }
   if (q === 'editar') return abrirEditor({ id: i.id })
+  if (q === 'agendar') { AG_AB = !AG_AB; Som.tique(); return detalhe() }
+  if (q === 'ag-salvar') { const v = $('[data-ag-quando]').value; if (!v) return pill('Escolha o dia e a hora', '', 'var(--amber)'); AG_AB = false; return agendarItem(chaveIt(i), v.slice(0, 10), v.slice(11, 16)) }
+  if (q === 'ag-tirar') { AG_AB = false; return tirarDaAgenda(chaveIt(i)) }
   const item = { kind: i.kind, id: i.id }
   try {
     if (q === 'enviar') { await api('/api/post/enviar', { id: i.id }); Som.liga(); pill('Enviado para aprovação', i.title, 'var(--amber)'); FILTRO = 'pendente' }
@@ -652,7 +668,7 @@ async function acao(q) {
     await carregarFila()
   } catch (e) { falha(e) }
 }
-$('[data-strip]').addEventListener('click', e => { const p = e.target.closest('.post'); if (!p) return; foco = +p.dataset.n; verMais = false; Som.tique(); desenharFila() })
+$('[data-strip]').addEventListener('click', e => { const p = e.target.closest('.post'); if (!p) return; foco = +p.dataset.n; verMais = false; AG_AB = false; Som.tique(); desenharFila() })
 $('[data-detail]').addEventListener('click', e => { const q = e.target.closest('[data-q]')?.dataset.q; if (q) acao(q) })
 $$('[data-filter] button').forEach(b => b.addEventListener('click', () => { FILTRO = b.dataset.v; foco = 0; Som.tique(); carregarFila() }))
 
@@ -757,7 +773,7 @@ for (const alvo of $$('.solta-alvo')) {
 let ED = null, ED_PEDIDO = null, edVerMais = false
 const edNovo = () => ({ id: null, titulo: '', legenda: '', midias: [], artigo: null, sujo: false, salvoEm: null, aprovado: false, rascunho: true })
 // abre o editor: { id } edita um post salvo; { midias } começa um post novo com essas mídias
-function abrirEditor(pedido = {}) { ED_PEDIDO = pedido; voltarPara = ['fila', 'biblioteca', 'perfil', 'rotinas', 'ajustes'].includes(atual?.dataset.scene) ? atual.dataset.scene : 'fila'; if (atual?.dataset.scene === 'editor') entrarEditor(); else cena('editor') }
+function abrirEditor(pedido = {}) { ED_PEDIDO = pedido; voltarPara = ['fila', 'biblioteca', 'perfil', 'rotinas', 'ajustes', 'calendario', 'rede'].includes(atual?.dataset.scene) ? atual.dataset.scene : 'fila'; if (atual?.dataset.scene === 'editor') entrarEditor(); else cena('editor') }
 let ED_PERFIL = null
 // lembrete do perfil acima do texto: para quem, em que tom (e a ideia do pilar, quando o post nasce de uma)
 function desenharLembrete() {
@@ -1184,7 +1200,7 @@ function desenharRede() {
   const r = RD.rede, rodando = RD.estado?.estado === 'rodando'
   for (const [k, ops] of [['modalidade', MODALIDADES], ['senioridade', NIVEIS]]) $(`[data-rd-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${o}" class="${RD_P[k] === o ? 'on' : ''}">${o}</button>`).join('')
   $$('[data-rd-ir]').forEach(b => (b.disabled = rodando))
-  $('[data-rd-sub]').textContent = RD.perfil.area ? `Sugestões para ${RD.perfil.area}${RD.perfil.objetivo ? `, com foco em: ${RD.perfil.objetivo.toLowerCase()}` : ''}. Feitas pela sua IA a partir do seu perfil.` : 'Preencha a sua área no Perfil: é dela que saem as sugestões de conexões e vagas.'
+  $('[data-rd-sub]').textContent = RD.perfil.area ? `Sugestões para ${RD.perfil.area}${RD.perfil.objetivo ? `, com foco em: ${RD.perfil.objetivo.toLowerCase()}` : ''}. Feitas pela sua IA a partir do seu perfil.` : 'Preencha a sua área em Perfil (menu da sua conta, no alto): é dela que saem as sugestões de conexões e vagas.'
   $('[data-rd-estado]').innerHTML = rodando ? `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>A ${esc(RD.agente || 'sua IA')} está pesquisando ${RD.estado.tipo === 'vagas' ? 'vagas' : RD.estado.tipo === 'conexoes' ? 'conexões' : 'conexões e vagas'}</b><small>Leva de 1 a 4 minutos. Os links das vagas são conferidos antes de aparecer.</small></span></li></div>`
     : RD.estado?.estado === 'falhou' ? `<p class="ed-erro">${esc(RD.estado.erro || 'A busca não deu certo.')}</p>` : r.quando ? `<p class="fine">Última busca em ${new Date(r.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}${r.descartadas ? ` · ${r.descartadas} ${r.descartadas === 1 ? 'vaga descartada' : 'vagas descartadas'} por link quebrado` : ''}.</p>` : ''
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
@@ -1194,10 +1210,25 @@ function desenharRede() {
     : `<div class="es-vazio"><p>Aqui aparecem os tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e uma mensagem de convite no seu tom.</p></div>`
   $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<div class="rd-seguir"><small>Para seguir</small>${r.seguir.map(s => `<span class="rd-tag" title="${esc(s.por_que)}">${esc(s.nome)}<i>${esc(s.tipo)}</i></span>`).join('')}</div>` : ''
   $('[data-rd-nv]').textContent = r.vagas.length ? `${r.vagas.length} ${r.vagas.length === 1 ? "vaga" : "vagas"}` : ''
-  $('[data-rd-vagas]').innerHTML = (r.vagas.length ? r.vagas.map(v => `<article class="rd-card"><b>${esc(v.titulo)}</b><small class="rd-meta">${[v.empresa, v.local, v.modalidade, v.publicada].filter(Boolean).map(esc).join(' · ')}</small><p>${esc(v.por_que)}</p>
-      <div class="rd-a"><a class="btn sm accent" href="${esc(v.link)}" target="_blank" rel="noopener">Abrir a vaga ↗</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? 'link conferido' : 'o site não deixa conferir o link'}</span></div></article>`).join('')
+  $('[data-rd-vagas]').innerHTML = (r.vagas.length ? r.vagas.map(cartaoVaga).join('')
     : `<div class="es-vazio"><p>${r.quando ? 'A IA não achou vagas recentes com essas preferências. Tente outro local ou modalidade.' : 'Aqui aparecem vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
     + (r.maisVagas ? `<a class="link" href="${esc(r.maisVagas)}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
+}
+// a vaga em duas camadas: o essencial à vista (cargo, empresa, etiquetas, por que combina) e o resto em "Ver detalhes"
+function cartaoVaga(v) {
+  const tags = [v.modalidade, v.nivel, v.contrato].filter(Boolean).map(t => `<span class="vg-tag">${esc(t)}</span>`).join('') + (v.salario ? `<span class="vg-tag money">${esc(v.salario)}</span>` : '')
+  const lista = (t, xs, cls = '') => xs && xs.length ? `<div class="vg-bloco${cls}"><small>${t}</small><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''
+  const tem = (v.requisitos || []).length || (v.diferenciais || []).length || v.combina || v.falta || v.candidatura
+  return `<article class="rd-card vg">
+    <header class="vg-h"><span class="vg-logo" aria-hidden="true">${inicial(v.empresa || v.titulo)}</span><span><b>${esc(v.titulo)}</b><small class="rd-meta">${[v.empresa, v.local].filter(Boolean).map(esc).join(' · ')}</small></span>${v.publicada ? `<small class="vg-quando">${esc(v.publicada)}</small>` : ''}</header>
+    ${tags ? `<div class="vg-tags">${tags}</div>` : ''}
+    <p>${esc(v.por_que)}</p>
+    ${tem ? `<details class="vg-mais"><summary>Ver detalhes</summary>
+      ${lista('Requisitos', v.requisitos)}${lista('Diferenciais e benefícios', v.diferenciais)}
+      ${v.combina || v.falta ? `<div class="vg-fit">${v.combina ? `<div class="vg-bloco ok"><small>O que você já tem</small><p>${esc(v.combina)}</p></div>` : ''}${v.falta ? `<div class="vg-bloco falta"><small>O que pode faltar</small><p>${esc(v.falta)}</p></div>` : ''}</div>` : ''}
+      ${v.candidatura ? `<div class="vg-bloco"><small>Como se candidatar</small><p>${esc(v.candidatura)}</p></div>` : ''}
+    </details>` : ''}
+    <div class="rd-a"><a class="btn sm accent" href="${esc(v.link)}" target="_blank" rel="noopener">Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''} ↗</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? 'link conferido' : 'o site não deixa conferir o link'}</span></div></article>`
 }
 async function buscarRede(tipo) {
   RD_P.local = $('[data-rd=local]').value
@@ -1220,26 +1251,210 @@ $('[data-scene=rede]').addEventListener('click', async e => {
   if (b.dataset.rdCopia != null) { try { await navigator.clipboard.writeText(RD.rede.conexoes[+b.dataset.rdCopia].convite); Som.tique(); pill('Convite copiado', 'Cole na mensagem do convite no LinkedIn.', 'var(--green)') } catch { pill('Não consegui copiar', '', 'var(--amber)') } }
 })
 
-// ---------------------------------------------------------------- rotinas
+// ---------------------------------------------------------------- criar: modelos de post (rotinas) para qualquer área
+let ROT = null, ROT_F = 'todos', ROT_AB = null, ROT_FORM = null
+const DIAS_C = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'], DIAS_N = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+const FMT_MOD = { carrossel: 'Carrossel', texto: 'Texto', imagem: 'Imagem' }
+const agendaTxt = a => {
+  if (!a || !a.ativo || !(a.dias || []).length) return ''
+  const d = [...a.dias].sort(), uteis = d.join() === '1,2,3,4,5'
+  return `Repete ${d.length === 7 ? 'todo dia' : uteis ? 'de segunda a sexta' : d.map(x => DIAS_N[x]).join(', ')} às ${a.hora || '08:00'}`
+}
 async function carregarRotinas() {
-  let d; try { d = await api('/api/runs') } catch (e) { return falha(e) }
-  const a = ST?.agente
-  $('[data-rot-sub]').textContent = d.agente ? `O ${d.agente} gera as peças e para antes de publicar. O resto é com você.` : 'Escolha uma IA em Ajustes para rodar as rotinas.'
-  const ART = { 'daily-ui': wire('gif'), 'pauta-noticias': wire('carrossel') }
-  $('[data-rotinas]').innerHTML = d.rotinas.map(r => {
-    const u = d.runs.find(x => x.id === r.id), rodando = u && u.status === 'rodando'
-    return `<article class="glass rot"><header><span class="sso-ic">${a ? glifo(a.id) : glifo('?')}</span><span><h3>${esc(r.titulo)}</h3><small>${u ? `${esc(u.status)} · ${new Date(u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })}` : d.agente ? `roda no ${esc(d.agente)}` : 'sem IA escolhida'}</small></span></header>
-      ${u ? `<pre class="log">${esc(u.tail || '…')}</pre>` : `<p>${r.id === 'daily-ui' ? 'A tela do desafio de hoje, com as decisões de UX e a legenda.' : 'Dois carrosséis com pauta checada em fonte primária.'}</p>`}
-      <div class="row"><button class="btn${rodando ? '' : ' accent'} sm" data-run="${r.id}" ${rodando || !d.agente ? 'disabled' : ''}>${rodando ? '<span class="spin" style="width:14px;height:14px"></span> Rodando…' : 'Rodar agora'}</button></div>
-      <details class="more"><summary>Agendar no Windows</summary><pre class="log">${esc(r.agendar || '')}</pre><button class="link" data-copy="${esc(r.agendar || '')}">Copiar o comando</button></details></article>`
-  }).join('')
-  if (d.runs.some(r => r.status === 'rodando')) setTimeout(() => atual?.dataset.scene === 'rotinas' && carregarRotinas(), 4000)
+  try { ROT = await api('/api/runs') } catch (e) { return falha(e) }
+  if (!ST) await status()
+  desenharRotinas()
+  if (ROT.runs.some(r => r.status === 'rodando')) setTimeout(() => atual?.dataset.scene === 'rotinas' && carregarRotinas(), 4000)
+}
+function desenharRotinas() {
+  const d = ROT, temDesign = d.rotinas.some(r => r.design)
+  $('[data-rot-sub]').textContent = !d.agente ? 'Conecte uma IA (menu da conta → Ajustes) para criar peças.' : `A ${d.agente} cria a peça a partir do seu perfil${d.perfil?.area ? ` (${d.perfil.area})` : ''} e para antes de publicar. Nada vai ao ar sem você aprovar.`
+  const f = $('[data-rot-filtro]')
+  if (temDesign && !$('[data-v=design]', f)) f.insertAdjacentHTML('beforeend', '<button data-v="design">Design</button>')
+  $$('button', f).forEach(b => b.classList.toggle('on', b.dataset.v === ROT_F))
+  $('[data-rot-avisos]').innerHTML = (d.avisos || []).slice(0, 3).map(a => `<div class="cr-aviso ${a.ok ? 'ok' : 'bad'}"><span class="dot"></span><span><b>${esc(a.titulo)}</b> · ${esc(a.texto)}</span>${a.link ? `<a class="link" href="${esc(a.link)}" target="_blank" rel="noopener">Ver no LinkedIn ↗</a>` : ''}</div>`).join('')
+  const lista = d.rotinas.filter(r => ROT_F === 'todos' || (ROT_F === 'design' ? r.design : r.formato === ROT_F && !r.design))
+  $('[data-rotinas]').innerHTML = lista.map(r => {
+    const u = d.runs.find(x => x.id === r.id), rodando = u && u.status === 'rodando', ag = agendaTxt(r.agenda)
+    const est = !u ? '' : rodando ? `<span class="rot-st run"><span class="spin"></span>Criando… começou às ${new Date(u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })}</span>`
+      : u.status === 'concluída' ? `<span class="rot-st ok">Pronto às ${new Date(u.fim || u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })} · <button class="link" data-view="fila">ver na Fila</button></span>`
+      : `<span class="rot-st bad">Não deu certo. Veja o registro abaixo e tente de novo.</span>`
+    const form = ROT_AB === r.id ? `<div class="rot-form">
+        <span class="fine">Em quais dias a IA cria este post?</span>
+        <div class="dias" role="group" aria-label="Dias da semana">${DIAS_C.map((c, k) => `<button type="button" data-rot-dia="${k}" class="${ROT_FORM.dias.includes(k) ? 'on' : ''}" aria-pressed="${ROT_FORM.dias.includes(k)}" title="${DIAS_N[k]}">${c}</button>`).join('')}</div>
+        <label class="hora"><span>às</span><input type="time" data-rot-hora value="${esc(ROT_FORM.hora)}"></label>
+        <div class="row"><button class="btn sm accent" data-rot-salvar="${r.id}">Salvar</button>${r.agenda?.ativo ? `<button class="btn sm" data-rot-parar="${r.id}">Parar de repetir</button>` : ''}<button class="link soft" data-rot-fechar>Cancelar</button></div>
+        <p class="fine">Roda enquanto o Farol estiver aberto (se estiver fechado, roda quando você abrir). A peça vai para a Fila esperando você.</p></div>` : ''
+    return `<article class="glass rot${rodando ? ' rodando' : ''}">
+      <div class="rot-art">${wire(r.formato === 'imagem' ? 'gif' : r.formato)}</div>
+      <div class="rot-c">
+        <header><h3>${esc(r.titulo)}</h3><div class="vg-tags"><span class="vg-tag">${FMT_MOD[r.formato] || r.formato}</span>${r.web ? '<span class="vg-tag">pesquisa na web</span>' : ''}${r.design ? '<span class="vg-tag">design</span>' : ''}</div></header>
+        <p>${esc(r.desc)}</p>
+        <small class="rot-agenda${ag ? ' on' : ''}">${ag || `Sugestão: ${esc(r.freqTxt || '')}`}</small>
+        ${est}
+        <div class="row"><button class="btn sm${rodando ? '' : ' accent'}" data-run="${r.id}" ${rodando || !d.agente ? 'disabled' : ''}>${rodando ? 'Criando…' : 'Criar agora'}</button><button class="btn sm" data-rot-rep="${r.id}" aria-expanded="${ROT_AB === r.id}">${ag ? 'Mudar a repetição' : 'Repetir'}</button></div>
+        ${form}
+        ${u ? `<details class="more"><summary>O que a IA fez</summary><pre class="log">${esc(u.tail || '…')}</pre></details>` : ''}
+      </div></article>`
+  }).join('') || `<div class="es-vazio"><p>Nenhum modelo neste filtro.</p></div>`
 }
 async function rodar(id) {
   if (!ST) await status()
-  if (!ST?.agente?.conectado) return falha(new Error('Conecte uma IA primeiro (Ajustes).'))
-  try { await api('/api/run', { id }); Som.liga(); pill('Rotina iniciada', 'As peças aparecem na fila quando ficarem prontas.', 'var(--violet)'); if (atual?.dataset.scene === 'rotinas') carregarRotinas() } catch (e) { falha(e) }
+  if (!ST?.agente?.conectado) return falha(new Error('Conecte uma IA primeiro (menu da conta → Ajustes).'))
+  try { await api('/api/run', { id }); Som.liga(); pill('Criando o seu post', 'Ele aparece na Fila quando ficar pronto (de 2 a 10 minutos).', 'var(--violet)'); if (atual?.dataset.scene === 'rotinas') carregarRotinas() } catch (e) { falha(e) }
 }
+$('[data-rot-filtro]').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ROT_F = b.dataset.v; Som.tique(); desenharRotinas() })
+$('[data-rotinas]').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return
+  if (b.dataset.rotRep) { const r = ROT.rotinas.find(x => x.id === b.dataset.rotRep); ROT_AB = ROT_AB === r.id ? null : r.id; ROT_FORM = { dias: r.agenda?.ativo ? [...r.agenda.dias] : r.freq === 'diario' ? [1, 2, 3, 4, 5] : [2], hora: r.agenda?.hora || '08:00' }; Som.tique(); return desenharRotinas() }
+  if (b.dataset.rotDia != null) { const k = +b.dataset.rotDia; ROT_FORM.dias = ROT_FORM.dias.includes(k) ? ROT_FORM.dias.filter(x => x !== k) : [...ROT_FORM.dias, k]; Som.tique(); return desenharRotinas() }
+  if (b.matches('[data-rot-fechar]')) { ROT_AB = null; return desenharRotinas() }
+  const salvar = b.dataset.rotSalvar, parar = b.dataset.rotParar
+  if (salvar || parar) {
+    ROT_FORM.hora = $('[data-rot-hora]')?.value || ROT_FORM.hora
+    if (salvar && !ROT_FORM.dias.length) return pill('Escolha pelo menos um dia', '', 'var(--amber)')
+    try {
+      await api('/api/rotinas/agendar', { id: salvar || parar, ativo: !!salvar, dias: ROT_FORM.dias, hora: ROT_FORM.hora })
+      ROT_AB = null; salvar ? Som.liga() : Som.desliga()
+      pill(salvar ? 'Repetição salva' : 'Não repete mais', salvar ? agendaTxt({ ativo: true, ...ROT_FORM }) : '', salvar ? 'var(--green)' : 'var(--amber)')
+      carregarRotinas()
+    } catch (err) { falha(err) }
+  }
+})
+
+// ---------------------------------------------------------------- calendário: o que foi ao ar, o que está agendado e o que as rotinas vão criar
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const hhmm = d => d.toTimeString().slice(0, 5)
+const hoje0 = () => ymd(new Date())
+let CAL = { ano: new Date().getFullYear(), mes: new Date().getMonth(), dia: hoje0() }, CAL_ROT = []
+async function carregarCalendario() {
+  try { const [f, r] = await Promise.all([api('/api/queue'), api('/api/runs'), ST ? null : status()]); FILA = f; CAL_ROT = r.rotinas.filter(x => x.agenda?.ativo) } catch (e) { return falha(e) }
+  desenharCalendario(); contarFila()
+}
+function eventos(ds) {
+  const ev = []
+  for (const i of FILA) {
+    if (i.published?.quando && ymd(new Date(i.published.quando)) === ds) ev.push({ t: 'pub', i, hora: hhmm(new Date(i.published.quando)) })
+    else if (i.agendado && ymd(new Date(i.agendado)) === ds) ev.push({ t: 'ag', i, hora: hhmm(new Date(i.agendado)) })
+  }
+  const dow = new Date(ds + 'T12:00').getDay()
+  if (ds >= hoje0()) for (const r of CAL_ROT) if (r.agenda.dias.includes(dow) && !(ds === hoje0() && r.agenda.ultima === ds)) ev.push({ t: 'rot', r, hora: r.agenda.hora || '08:00' })
+  return ev.sort((a, b) => a.hora.localeCompare(b.hora))
+}
+const chaveIt = i => `${i.kind}:${i.id}`
+const semData = () => FILA.filter(i => !i.published && !i.agendado && !i.rascunho).sort((a, b) => (b.approved ? 1 : 0) - (a.approved ? 1 : 0))
+function desenharCalendario() {
+  const { ano, mes } = CAL, prim = new Date(ano, mes, 1), ini = new Date(ano, mes, 1 - prim.getDay()), hoje = hoje0()
+  $('[data-cal-titulo]').innerHTML = `${MESES[mes][0].toUpperCase() + MESES[mes].slice(1)} <span class="soft">${ano}</span>`
+  const doMes = FILA.filter(i => { const q = i.published?.quando || i.agendado; return q && new Date(q).getMonth() === mes && new Date(q).getFullYear() === ano })
+  const nAg = doMes.filter(i => !i.published).length, nPub = doMes.filter(i => i.published).length
+  $('[data-cal-sub]').textContent = nAg || nPub ? `${nPub} ${nPub === 1 ? 'post no ar' : 'posts no ar'} e ${nAg} ${nAg === 1 ? 'agendado' : 'agendados'} neste mês.` : 'Nada agendado neste mês ainda. Arraste um post da lista "Sem data" para um dia.'
+  let h = DIAS_N.map(d => `<div class="cal-dow" role="columnheader">${d}</div>`).join('')
+  for (let k = 0; k < 42; k++) {
+    const d = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + k), ds = ymd(d), ev = eventos(ds), fora = d.getMonth() !== mes
+    if (k === 35 && fora) break   // não desenha a 6ª semana quando ela é toda do mês seguinte
+    h += `<div class="cal-d${fora ? ' fora' : ''}${ds === hoje ? ' hoje' : ''}${ds === CAL.dia ? ' sel' : ''}${ds < hoje ? ' passado' : ''}" role="gridcell" tabindex="${ds === CAL.dia ? 0 : -1}" data-dia="${ds}" aria-label="${d.getDate()} de ${MESES[d.getMonth()]}: ${ev.length ? ev.length + (ev.length === 1 ? ' item' : ' itens') : 'vazio'}">
+      <span class="cal-n">${d.getDate()}</span>
+      ${ev.slice(0, 3).map(e => `<span class="cal-ev ${e.t}"${e.t === 'ag' ? ` draggable="true" data-arrasta="${esc(chaveIt(e.i))}"` : ''} title="${esc(e.hora + ' · ' + (e.i ? e.i.title : 'Rotina: ' + e.r.titulo))}"><i>${e.hora}</i>${esc(e.i ? e.i.title : e.r.titulo)}</span>`).join('')}
+      ${ev.length > 3 ? `<span class="cal-mais">+${ev.length - 3}</span>` : ''}</div>`
+  }
+  $('[data-cal-mes]').innerHTML = h
+  desenharDia()
+  const sem = semData()
+  $('[data-cal-nsem]').textContent = sem.length || ''
+  $('[data-cal-sem]').innerHTML = sem.length ? sem.map(i => `<div class="cal-it" draggable="true" data-arrasta="${esc(chaveIt(i))}"><span class="state ${estado(i)}"></span><span><b>${esc(i.title)}</b><small>${FMT_TXT[i.formato] || ''} · ${estadoTxt(i)}</small></span></div>`).join('') : '<p class="fine">Nada esperando data. Peça um post novo em Criar.</p>'
+}
+function desenharDia() {
+  const ds = CAL.dia, d = new Date(ds + 'T12:00'), ev = eventos(ds), passado = ds < hoje0(), sem = semData()
+  $('[data-cal-dia]').innerHTML = `<header class="ed-box-h"><h3>${d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>${ds === hoje0() ? '<span class="tag">hoje</span>' : ''}</header>
+    <div class="cal-lista">${ev.length ? ev.map(e => e.t === 'rot'
+      ? `<div class="cal-li rot"><i>${e.hora}</i><span><b>${esc(e.r.titulo)}</b><small>a sua IA cria e manda para a Fila</small></span><button class="link" data-view="rotinas">Ajustar</button></div>`
+      : `<div class="cal-li ${e.t}"><i>${e.hora}</i><span><b>${esc(e.i.title)}</b><small>${e.t === 'pub' ? 'no ar' : e.i.approved ? 'agendado · sai sozinho' : 'agendado · falta aprovar'}</small></span>
+          ${e.t === 'pub' ? `<a class="link" href="${esc(e.i.published.link)}" target="_blank" rel="noopener">Ver ↗</a>` : `<span class="cal-li-a"><input type="time" value="${e.hora}" data-cal-hora="${esc(chaveIt(e.i))}" aria-label="Horário"><button class="link" data-cal-fila="${esc(chaveIt(e.i))}">Abrir</button><button class="link soft" data-cal-tirar="${esc(chaveIt(e.i))}">Tirar</button></span>`}</div>`).join('')
+      : `<p class="fine">${passado ? 'Nada neste dia.' : 'Dia livre.'}</p>`}</div>
+    ${!passado && sem.length ? `<div class="cal-add"><select data-cal-add aria-label="Post para agendar">${sem.map(i => `<option value="${esc(chaveIt(i))}">${esc(i.title)}${i.approved ? '' : ' (falta aprovar)'}</option>`).join('')}</select><input type="time" data-cal-add-hora value="${store.get('hora', '09:00')}" aria-label="Horário"><button class="btn sm accent" data-cal-agendar>Agendar</button></div>` : ''}`
+}
+const itemDe = k => FILA.find(i => chaveIt(i) === k)
+// agenda um post num dia e hora; se ainda não estiver aprovado, pergunta se pode aprovar junto (só sai no horário o que você aprovou)
+async function agendarItem(k, ds, hora) {
+  const i = itemDe(k); if (!i) return
+  if (ds < hoje0()) return pill('Esse dia já passou', 'Escolha hoje ou um dia futuro.', 'var(--amber)')
+  hora = hora || (i.agendado ? hhmm(new Date(i.agendado)) : store.get('hora', '09:00'))
+  let q = new Date(`${ds}T${hora}`)
+  if (q < new Date()) { q = new Date(Date.now() + 36e5); q.setMinutes(0, 0, 0) }
+  try {
+    if (!i.approved && i.kind !== 'series') {
+      if (!(await confirmar('Aprovar e agendar?', `"${i.title}" só vai ao ar sozinho se estiver aprovado. Olhe a prévia na Fila se ainda não leu.`, 'Aprovar e agendar'))) return
+      await api('/api/approve', { kind: i.kind, id: i.id })
+    }
+    await api('/api/agendar', { kind: i.kind, id: i.id, quando: q.toISOString() })
+    store.set('hora', hhmm(q)); Som.liga()
+    pill('Agendado', `${i.title} · ${q.toLocaleString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`, 'var(--green)')
+    CAL.dia = ymd(q); await (atual?.dataset.scene === 'calendario' ? carregarCalendario() : carregarFila())
+  } catch (e) { falha(e) }
+}
+async function tirarDaAgenda(k) {
+  const i = itemDe(k); if (!i) return
+  try { await api('/api/agendar', { kind: i.kind, id: i.id, quando: null }); Som.desliga(); pill('Fora da agenda', i.title, 'var(--amber)'); await (atual?.dataset.scene === 'calendario' ? carregarCalendario() : carregarFila()) } catch (e) { falha(e) }
+}
+function abrirNaFila(k) {
+  const i = itemDe(k); if (!i) return
+  FILTRO = CONTA.pendente(i) ? 'pendente' : CONTA.pronto(i) ? 'pronto' : CONTA.publicado(i) ? 'publicado' : 'todos'
+  foco = Math.max(0, visiveis().findIndex(x => chaveIt(x) === k)); verMais = false
+  voltarPara = null; cena('fila')
+}
+const cal = $('[data-scene=calendario]')
+cal.addEventListener('click', e => {
+  const b = e.target.closest('[data-cal], [data-cal-tirar], [data-cal-fila], [data-cal-agendar]')
+  if (b?.dataset.cal) { const m = b.dataset.cal; if (m === 'hoje') { const n = new Date(); CAL = { ano: n.getFullYear(), mes: n.getMonth(), dia: hoje0() } } else { const n = new Date(CAL.ano, CAL.mes + (m === 'prox' ? 1 : -1), 1); CAL.ano = n.getFullYear(); CAL.mes = n.getMonth() } Som.tique(); return desenharCalendario() }
+  if (b?.dataset.calTirar) return tirarDaAgenda(b.dataset.calTirar)
+  if (b?.dataset.calFila) return abrirNaFila(b.dataset.calFila)
+  if (b?.matches('[data-cal-agendar]')) return agendarItem($('[data-cal-add]').value, CAL.dia, $('[data-cal-add-hora]').value)
+  const d = e.target.closest('[data-dia]')
+  if (d) { CAL.dia = d.dataset.dia; Som.tique(); $$('.cal-d', cal).forEach(x => { x.classList.toggle('sel', x === d); x.tabIndex = x === d ? 0 : -1 }); desenharDia() }
+})
+cal.addEventListener('change', e => { const t = e.target.closest('[data-cal-hora]'); if (t && t.value) agendarItem(t.dataset.calHora, CAL.dia, t.value) })
+// teclado: setas andam pelos dias
+cal.addEventListener('keydown', e => {
+  const d = e.target.closest('[data-dia]'); if (!d) return
+  const passo = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key]
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); return d.click() }
+  if (!passo) return
+  e.preventDefault()
+  const n = new Date(d.dataset.dia + 'T12:00'); n.setDate(n.getDate() + passo); CAL.dia = ymd(n)
+  if (n.getMonth() !== CAL.mes) { CAL.ano = n.getFullYear(); CAL.mes = n.getMonth() }
+  desenharCalendario(); $(`[data-dia="${CAL.dia}"]`, cal)?.focus()
+})
+// arrastar e soltar: da lista "Sem data" ou de um dia para outro
+cal.addEventListener('dragstart', e => { const a = e.target.closest('[data-arrasta]'); if (!a) return; e.dataTransfer.setData('text/plain', a.dataset.arrasta); e.dataTransfer.effectAllowed = 'move'; a.classList.add('arrastando') })
+cal.addEventListener('dragend', e => { e.target.closest('[data-arrasta]')?.classList.remove('arrastando'); $$('.cal-d.alvo', cal).forEach(x => x.classList.remove('alvo')) })
+cal.addEventListener('dragover', e => { const d = e.target.closest('[data-dia]'); if (!d || d.dataset.dia < hoje0()) return; e.preventDefault(); $$('.cal-d.alvo', cal).forEach(x => x !== d && x.classList.remove('alvo')); d.classList.add('alvo') })
+cal.addEventListener('drop', e => { const d = e.target.closest('[data-dia]'); if (!d) return; e.preventDefault(); d.classList.remove('alvo'); const k = e.dataTransfer.getData('text/plain'); if (k) agendarItem(k, d.dataset.dia) })
+
+// ---------------------------------------------------------------- menu da conta (Perfil e Ajustes moram aqui)
+function desenharMenuConta() {
+  if (!ST) return
+  const l = ST.linkedin, a = ST.agente
+  $('#conta-menu').innerHTML = `<div class="cm-h"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(l.name || 'Você')}</span><span><b>${esc(l.name || 'Você')}</b><small>${l.connected ? (venceLogo(l) ? `LinkedIn vence ${prazo(l.dias)}` : 'LinkedIn conectado') : 'LinkedIn não conectado'} · ${a ? esc(a.nome) + (a.conectado ? '' : ' (falta entrar)') : 'sem IA'}</small></span></div>
+    <button role="menuitem" data-cm="perfil"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5.5" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 14c.8-2.8 3-4 5.5-4s4.7 1.2 5.5 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Perfil<small>área, público, tom, pilares e identidade visual</small></span></button>
+    <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>`
+}
+function menuConta(abrir) {
+  const m = $('#conta-menu'), b = $('#conns'), on = abrir ?? m.hidden
+  if (on) desenharMenuConta()
+  m.hidden = !on; b.setAttribute('aria-expanded', on)
+  if (on) $('button', m)?.focus()
+}
+$('#conta-menu').addEventListener('click', e => { const b = e.target.closest('[data-cm]'); if (!b) return; menuConta(false); voltarPara = null; cena(b.dataset.cm) })
+document.addEventListener('click', e => { if (!e.target.closest('#conta')) menuConta(false) })
+$('#conta-menu').addEventListener('keydown', e => {
+  const bs = $$('#conta-menu button'), k = bs.indexOf(document.activeElement)
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); bs[(k + (e.key === 'ArrowDown' ? 1 : bs.length - 1)) % bs.length].focus() }
+  if (e.key === 'Escape') { e.stopPropagation(); menuConta(false); $('#conns').focus() }
+})
+// número de posts esperando você, ao lado de "Fila"
+function contarFila() { const n = FILA.filter(CONTA.pendente).length, el = $('[data-nav-n=fila]'); el.hidden = !n; el.textContent = n }
 
 // ---------------------------------------------------------------- ajustes
 function desenharAjustes() {
@@ -1290,7 +1505,7 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-next]')) return proximaCena()
   if (t.matches('[data-finish]')) return terminar()
   if (t.matches('[data-view]')) { voltarPara = null; return cena(t.dataset.view) }
-  if (t.matches('[data-goscene]')) { const de = atual.dataset.scene; voltarPara = ['fila', 'rotinas', 'ajustes'].includes(de) ? de : voltarPara; return cena(t.dataset.goscene) }
+  if (t.matches('[data-goscene]')) { const de = atual.dataset.scene; voltarPara = ['fila', 'rotinas', 'ajustes', 'perfil', 'calendario', 'rede', 'biblioteca'].includes(de) ? de : voltarPara; return cena(t.dataset.goscene) }
   if (t.matches('[data-restart]')) { voltarPara = null; fmtOn = new Set(); return cena('ola') }
   if (t.matches('[data-run]')) return rodar(t.dataset.run)
   if (t.matches('[data-agent]')) return entrarCom(t.dataset.agent)
@@ -1314,7 +1529,7 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-copy]')) { try { await navigator.clipboard.writeText(t.dataset.copy); Som.tique(); pill('Copiado') } catch { pill('Não consegui copiar', 'Selecione o texto e copie à mão.', 'var(--amber)') } return }
   if (t.matches('[data-close]')) return t.closest('dialog').close()
   if (t.id === 'back') return voltar()
-  if (t.id === 'conns') { voltarPara = null; return cena('ajustes') }
+  if (t.id === 'conns') return menuConta()
   const act = t.dataset.act; if (!act) return
   try {
     if (act === 'li-connect' || act === 'li-reopen') return conectarLinkedin()
@@ -1355,7 +1570,7 @@ addEventListener('keydown', e => {
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key
   const nome = atual?.dataset.scene
   lit({ ArrowLeft: '←', ArrowRight: '→' }[k] || k, true)
-  if (k === 'Escape') { if ($('.dd[data-open]')) return menuOutros(false); if (ONB.includes(nome) || voltarPara) return voltar() }
+  if (k === 'Escape') { if (!$('#conta-menu').hidden) return menuConta(false); if ($('.dd[data-open]')) return menuOutros(false); if (ONB.includes(nome) || voltarPara) return voltar() }
   if (k === 'Enter' && ONB.includes(nome) && !e.target.closest('button, a, summary')) {
     e.preventDefault()
     if (nome === 'ola') return proximaCena()
@@ -1381,5 +1596,5 @@ if (DEMO) setTimeout(() => pill('Demonstração', 'Logins simulados: nada é con
 if (new URLSearchParams(location.search).has('captura')) document.documentElement.classList.add('static')
 const pedida = new URLSearchParams(location.search).get('tela')   // ?tela=fila abre direto numa cena (útil para capturas e atalhos)
 if (pedida && $(`.scene[data-scene="${pedida}"]`)) cena(pedida, { som: false })
-else if (store.get('onboarded') === '1') { cena('fila', { som: false }); setInterval(() => atual?.dataset.scene === 'fila' && carregarFila(), 60000) }
+else if (store.get('onboarded') === '1') { cena('fila', { som: false }); setInterval(() => atual?.dataset.scene === 'fila' ? carregarFila() : atual?.dataset.scene === 'calendario' && carregarCalendario(), 60000) }
 else { cena('ola', { som: false }); status() }

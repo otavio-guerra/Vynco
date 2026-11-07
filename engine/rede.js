@@ -12,6 +12,7 @@ const PERFIS = require('./perfis.js')
 const arq = id => path.join(C.ws('perfis'), id, 'rede.json')
 const ler = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')) } catch { return d } }
 const txt = (v, n = 300) => String(v ?? '').trim().slice(0, n)
+const lista = (v, n) => (Array.isArray(v) ? v : []).map(x => txt(x, 140)).filter(Boolean).slice(0, n)
 const buscaPessoas = q => 'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(q)
 const buscaVagas = (q, local) => 'https://www.linkedin.com/jobs/search/?keywords=' + encodeURIComponent(q) + (local ? '&location=' + encodeURIComponent(local) : '')
 
@@ -26,10 +27,10 @@ Preferências para vagas: local "${prefs.local || 'não informado'}", modalidade
 
 Tarefa:
 1. CONEXÕES: sugira de 6 a 8 TIPOS de pessoas para ela se conectar (cargos ou perfis, nunca nomes de pessoas reais), por que cada tipo ajuda o objetivo dela, as palavras-chave para buscar no LinkedIn e uma mensagem de convite curta (até 200 caracteres), no tom do perfil, sem prometer nada que ela não informou. Sugira também até 5 comunidades, eventos recorrentes ou hashtags para seguir na área dela.
-${vagas ? `2. VAGAS: pesquise na web vagas publicadas nos últimos 30 dias que combinem com a área, o objetivo, o local, a modalidade e a senioridade. Inclua só vagas cuja página você realmente abriu, com o link direto da vaga. Até 8. Não invente vagas, empresas, salários nem links. Se não achar nenhuma, devolva a lista vazia.` : ''}
+${vagas ? `2. VAGAS: pesquise na web vagas publicadas nos últimos 30 dias que combinem com a área, o objetivo, o local, a modalidade e a senioridade. Inclua só vagas cuja página você realmente abriu, com o link direto da vaga. Até 8. Para cada vaga, leia a página e preencha o que estiver escrito nela: nível, tipo de contrato (CLT, PJ, estágio, freelance...), faixa salarial (só se a vaga mostrar; senão deixe vazio), até 4 requisitos principais, até 3 diferenciais ou benefícios, como se candidatar e o site onde a vaga está. Em "combina" diga, olhando o perfil, o que a pessoa já tem para a vaga; em "falta" o que talvez falte (seja honesto e curto). Não invente vagas, empresas, salários, requisitos nem links: campo que a página não mostra fica vazio. Se não achar nenhuma, devolva a lista vazia.` : ''}
 
 Responda SOMENTE com um bloco JSON neste formato:
-{"conexoes": [{"perfil": "", "por_que": "", "busca": "", "convite": ""}], "seguir": [{"nome": "", "tipo": "comunidade|evento|hashtag", "por_que": ""}]${vagas ? ', "vagas": [{"titulo": "", "empresa": "", "local": "", "modalidade": "", "link": "", "por_que": "", "publicada": ""}]' : ''}}`
+{"conexoes": [{"perfil": "", "por_que": "", "busca": "", "convite": ""}], "seguir": [{"nome": "", "tipo": "comunidade|evento|hashtag", "por_que": ""}]${vagas ? ', "vagas": [{"titulo": "", "empresa": "", "local": "", "modalidade": "", "link": "", "por_que": "", "publicada": "", "nivel": "", "contrato": "", "salario": "", "requisitos": [""], "diferenciais": [""], "combina": "", "falta": "", "candidatura": "", "fonte": ""}]' : ''}}`
 }
 
 // confere cada link de vaga: some o que não existe (404, 410, endereço inválido); fica marcado o que o site não deixa conferir
@@ -57,7 +58,7 @@ function buscar(id, agente, perguntar, { tipo = 'ambos', local = '', modalidade 
     const seguir = (r.seguir || []).slice(0, 6).map(s => ({ nome: txt(s.nome, 100), tipo: txt(s.tipo, 20), por_que: txt(s.por_que, 200) })).filter(s => s.nome)
     let vagas = antes.vagas, descartadas = 0
     if (tipo !== 'conexoes') {
-      const brutas = (r.vagas || []).slice(0, 10).map(v => ({ titulo: txt(v.titulo, 140), empresa: txt(v.empresa, 100), local: txt(v.local, 100), modalidade: txt(v.modalidade, 40), link: txt(v.link, 600), por_que: txt(v.por_que), publicada: txt(v.publicada, 40) })).filter(v => v.titulo && v.link)
+      const brutas = (r.vagas || []).slice(0, 10).map(v => ({ titulo: txt(v.titulo, 140), empresa: txt(v.empresa, 100), local: txt(v.local, 100), modalidade: txt(v.modalidade, 40), link: txt(v.link, 600), por_que: txt(v.por_que), publicada: txt(v.publicada, 40), nivel: txt(v.nivel, 40), contrato: txt(v.contrato, 40), salario: txt(v.salario, 80), requisitos: lista(v.requisitos, 4), diferenciais: lista(v.diferenciais, 3), combina: txt(v.combina), falta: txt(v.falta), candidatura: txt(v.candidatura, 200), fonte: txt(v.fonte, 60) })).filter(v => v.titulo && v.link)
       const marcas = await Promise.all(brutas.map(v => conferir(v.link)))
       vagas = brutas.map((v, i) => ({ ...v, conferido: marcas[i] === 'ok' })).filter((v, i) => !['quebrado', 'invalido'].includes(marcas[i]))
       descartadas = brutas.length - vagas.length

@@ -31,7 +31,8 @@ Nasceu para o meu próprio perfil ([portfolio-otavio-guerra.vercel.app](https://
 - **Projeto editável no Desigma.** Cada peça vira um quadro na página certa do seu `.desigma`, sem perder o que você editou à mão.
 - **Todos os formatos de post que a API aceita para pessoas:** só texto, imagem (PNG/JPG), GIF (até 250 quadros), várias imagens (2 a 20), documento/carrossel (PDF, PPT ou DOC, até 100 MB e 300 páginas), vídeo (MP4, de 3 s a 30 min, até 500 MB) e artigo (link com título, descrição e miniatura). Texto alternativo nas imagens e limite de 3.000 caracteres conferido antes de enviar. Carrossel nativo e enquete ficam de fora: o LinkedIn só libera o carrossel em anúncio pago, e a enquete por API não é confirmada para perfis pessoais.
 - **Várias contas.** Conecte mais de um perfil e escolha em Ajustes qual publica. O app avisa uma semana antes do acesso vencer (o LinkedIn não renova sozinho para apps comuns).
-- **Você aprova, ele publica.** A publicação usa a API oficial do LinkedIn. Nenhuma rotina publica sozinha: sem aprovação, nada vai ao ar.
+- **Modelos de post para qualquer profissão.** Notícias da sua área, dicas práticas, mito ou verdade, passo a passo (carrosséis), lição aprendida, bastidores, opinião sobre uma tendência, pergunta para a rede e recomendação (texto). A IA escreve a partir do seu perfil (área, público, tom, pilares). O Daily UI e os carrosséis de IA e design só aparecem para quem é da área de design.
+- **Você aprova, ele publica.** A publicação usa a API oficial do LinkedIn. Nenhuma rotina publica sozinha: sem aprovação, nada vai ao ar. Um post aprovado pode ser agendado e sai sozinho no horário.
 
 ## O app
 Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum comando fora do app:
@@ -41,7 +42,12 @@ Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum
 4. **Sincronização:** uma tela de carregamento mostra cada passo enquanto o Farol entrega à IA as regras (`agent/AGENTS.md`), as skills (`agent/skills`), os prompts das rotinas, o plugin do Desigma (MCP, se estiver instalado) e a trava que impede a IA de publicar. No fim, um teste rápido confere se ela responde.
 5. **Formatos:** os quatro formatos em wireframe (imagem, GIF, carrossel e vídeo) e como aprovar com `A`.
 
-Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fica no feed. **Rotinas** roda a sua IA e **Ajustes** troca de IA, reconecta o LinkedIn e liga o Desigma.
+Depois disso, o app tem cinco abas: **Fila**, **Calendário**, **Criar**, **Biblioteca** e **Rede**. **Perfil** e **Ajustes** ficam no menu da sua conta, no canto de cima (Ajustes troca de IA, reconecta o LinkedIn e liga o Desigma). Ao lado de "Fila", um número mostra quantos posts esperam você.
+
+- **Fila:** cada peça ao lado de uma prévia de como ela fica no feed. Aprovar (`A`), publicar agora (`P`) ou **Agendar** para um dia e hora. Agendar um post que ainda não foi aprovado pede a aprovação junto.
+- **Calendário:** o mês com o que já foi ao ar, o que está agendado e o que as rotinas vão criar. Clique num dia para ver a lista, mudar o horário, tirar da agenda ou agendar um post ali. Os posts sem data ficam ao lado e podem ser arrastados para um dia. As setas do teclado andam pelos dias.
+- **Agenda:** o Farol publica no horário só o que está aprovado, e só enquanto estiver aberto. Se estiver fechado na hora, publica assim que você abrir. Se o post não estiver aprovado quando der a hora, ele sai da agenda e o app avisa.
+- **Criar:** atalhos para escrever um post e gerar uma imagem, e os modelos de post. "Criar agora" pede a peça para a sua IA. "Repetir" escolhe os dias da semana e a hora em que ela cria sozinha, enquanto o app estiver aberto. Cada peça chega na Fila esperando você.
 
 - **Biblioteca:** tudo o que pode ir num post, num lugar só. Ficam ali o que você envia (arraste para a tela ou use "Enviar arquivos") e o que as rotinas geram (Daily UI, série, carrosséis). Cada mídia mostra medidas, tamanho e origem e avisa se passar dos limites do LinkedIn. As imagens ganham **texto alternativo**, que vai junto para o post. Excluir manda para a lixeira do workspace e não quebra posts que já usam o arquivo.
 - **Editor:** "Novo post" na fila (ou "Usar em novo post" na biblioteca) abre o editor: título, texto com contador de 3.000 caracteres, mídias da biblioteca ou enviadas na hora, ordem com ‹ e ›, texto alternativo por imagem e link com cartão (artigo). O formato sai sozinho das mídias (só texto, imagem, várias imagens, vídeo, documento ou artigo), e as regras do LinkedIn são conferidas enquanto você escreve. A prévia ao lado é o mesmo cartão da fila.
@@ -59,7 +65,7 @@ Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fi
 - **Rede:** conexões e vagas para a sua área. A API do LinkedIn não deixa apps verem pessoas, conexões ou vagas, e automatizar isso viola os termos dele. Por isso a sua IA pesquisa na web, só leitura, a partir do seu perfil e das suas preferências (local, modalidade, nível).
   - **Conexões:** sugere tipos de pessoa (nunca nomes inventados), com o motivo, a busca pronta para abrir no próprio LinkedIn e uma mensagem de convite no seu tom.
   - **Para seguir:** comunidades, eventos e hashtags da área.
-  - **Vagas:** só vagas públicas recentes cujo link a IA abriu. O Farol confere cada link e descarta os quebrados.
+  - **Vagas:** só vagas públicas recentes cujo link a IA abriu. O Farol confere cada link e descarta os quebrados. Cada vaga mostra modalidade, nível, tipo de contrato e salário (só quando a vaga mostra). Em "Ver detalhes" aparecem os requisitos, os diferenciais e benefícios, o que você já tem, o que pode faltar e como se candidatar.
   - Convites e candidaturas são sempre feitos por você.
 - **Conexão com o LinkedIn sem a ponte:** quando a ponte de um clique não está ligada, o Farol abre um passo a passo de 5 passos: Página, app, 2 produtos, endereço de retorno e chaves. Cada passo tem botão para a página certa, "Copiar" e validação, e o Farol lembra onde você parou.
 - **Rascunhos:** salvar (`Ctrl S`) guarda um rascunho, que fica na fila em "Rascunhos" até você mandar para aprovação. Sair do editor com algo escrito salva sozinho. Editar um post que já estava aprovado pede a aprovação de novo.
@@ -189,7 +195,7 @@ FAROL_HOME      na versão desktop: a pasta de trabalho do usuário (DocumentosF
 ```
 
 ## Agendar
-Para rodar todo dia, crie tarefas agendadas na sua IA apontando para `prompts/daily-ui.md` e `prompts/pauta-noticias.md`, ou use o Agendador de Tarefas do Windows (a tela Rotinas mostra o comando). A publicação continua passando pela sua aprovação.
+Na aba Criar, "Repetir" faz a sua IA criar um modelo nos dias e na hora que você escolher, enquanto o app estiver aberto (a agenda fica em `config`, em `rotinas`). Os modelos estão em `engine/modelos.js`, e as instruções de cada um são escritas a partir do seu perfil em `workspace/rotinas/<modelo>.md` na hora de rodar. Para rodar com o app fechado, aponte uma tarefa agendada da sua IA para esses arquivos. Os posts agendados ficam em `workspace/agenda.json`. A publicação continua passando pela sua aprovação.
 
 ## Créditos
 - A linguagem da interface (uma ideia por tela, brilho de estado, keycaps, pílula de aviso) foi inspirada no onboarding do **[Mutto](https://mutto.app)**, um app brasileiro para mutar o microfone. O código e os sons do Farol foram feitos do zero.

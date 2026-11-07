@@ -17,6 +17,7 @@ const POSTS = require('../engine/posts.js')
 const IMAGEM = require('../engine/imagem/index.js')
 const PERFIS = require('../engine/perfis.js')
 const REDE = require('../engine/rede.js')
+const MODELOS = require('../engine/modelos.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -106,7 +107,8 @@ function queue() {
   const nt = C.ws('noticias')
   for (const f of ls(path.join(nt, 'legendas')).filter(f => f.endsWith('.txt'))) {
     const id = f.replace('.txt', '')
-    add('noticias', id, `Carrossel ${id.slice(-1).toUpperCase()} · ${id.slice(0, 10)}`, path.join(nt, 'pdf', id + '.pdf'), path.join(nt, 'png', id, '01.png'), path.join(nt, 'legendas', f), path.join(nt, 'aprovados', id + '.ok'), { paginas: ls(path.join(nt, 'png', id)).filter(x => x.endsWith('.png')).length })
+    const tit = /^\d{4}-\d\d-\d\d-[a-z]$/.test(id) ? `Carrossel ${id.slice(-1).toUpperCase()} · ${id.slice(0, 10)}` : primeiraLinha(path.join(nt, 'legendas', f)) || id
+    add('noticias', id, tit, path.join(nt, 'pdf', id + '.pdf'), path.join(nt, 'png', id, '01.png'), path.join(nt, 'legendas', f), path.join(nt, 'aprovados', id + '.ok'), { paginas: ls(path.join(nt, 'png', id)).filter(x => x.endsWith('.png')).length })
   }
   // série própria (já aprovada pelo autor ao gerar)
   const se = C.ws('series')
@@ -136,18 +138,79 @@ function queue() {
     const capa = p.arquivos.find(f => /\.(png|gif|jpe?g)$/i.test(f)) || null
     add('avulsos', d, meta.titulo || d, dir, capa, path.join(dir, 'legenda.txt'), okAv(d), { formato: p.formato, pasta: true, rascunho: !!meta.rascunho, editor: !!meta.criado, arquivos: p.arquivos.map(f => path.relative(C.WS, f)), artigo: p.artigo || undefined })
   }
-  for (const it of items) it.caracteres = it.caption.trim().length
+  const ag = agenda()
+  for (const it of items) { it.caracteres = it.caption.trim().length; it.agendado = (!it.published && ag[`${it.kind}:${it.id}`]) || null }
   return items.sort((a, b) => (a.published ? 1 : 0) - (b.published ? 1 : 0) || a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
 }
+const primeiraLinha = f => { try { return (fs.readFileSync(f, 'utf8').split(/\r?\n/).find(l => l.trim()) || '').trim().slice(0, 70) } catch { return '' } }
 function ls(d) { try { return fs.readdirSync(d).sort() } catch { return [] } }
 const findItem = (kind, id) => queue().find(i => i.kind === kind && i.id === id)
 const legendaDe = it => it.kind !== 'avulsos' ? C.ws(it.kind, 'legendas', it.id + '.txt') : it.pasta ? C.ws('avulsos', it.id, 'legenda.txt') : C.ws('avulsos', it.id + '.txt')
 
-// ---------------------------------------------------------------- rotinas (o agente escolhido, em modo não interativo)
+// ---------------------------------------------------------------- publicar (pelo botão ou pela agenda; sempre só o que você aprovou)
+async function publicarItem(it) {
+  if (!it || !it.hasFile) return [400, { erro: 'Arquivo do post não encontrado: exporte antes.' }]
+  if (!it.approved) return [400, { erro: 'Aprove o post antes de publicar.' }]
+  if (it.published) return [409, { erro: 'Esse post já foi publicado.' }]
+  if (!linkedinStatus().connected) return [400, { erro: 'Conecte o LinkedIn antes.' }]
+  if (it.caracteres > PUB_LI.LIMITE) return [400, { erro: `O texto tem ${it.caracteres} caracteres; o LinkedIn aceita até ${PUB_LI.LIMITE}.` }]
+  if (it.rascunho) return [400, { erro: 'Este post ainda é rascunho: envie para aprovação antes.' }]
+  const alvo = it.formato === 'texto' && !it.pasta ? '-' : path.join(C.WS, it.file)
+  const r = await run(process.execPath, [path.join(ROOT, 'engine', 'linkedin', 'postar.js'), alvo, legendaDe(it), '--confirmo'], { timeout: 600000 })
+  const j = readJSONText(r.out)
+  return [r.code === 0 && j && j.ok ? 200 : 500, r.code === 0 && j ? j : { erro: (r.err || r.out).slice(0, 400) }]
+}
+
+// ---------------------------------------------------------------- agenda: { "kind:id": "2026-11-10T12:00:00.000Z" }
+// O Farol publica no horário só o que já está aprovado e só enquanto o app estiver aberto (se estiver fechado, publica ao abrir).
+const AGENDA = () => C.ws('agenda.json')
+const agenda = () => readJSON(AGENDA(), {})
+const AVISOS = []   // o que a agenda fez ou não conseguiu fazer (aparece no app)
+function agendar(kind, id, quando) {
+  const a = agenda(), k = `${kind}:${id}`
+  if (quando) { const d = new Date(quando); if (isNaN(d)) throw new Error('data inválida'); a[k] = d.toISOString() } else delete a[k]
+  fs.mkdirSync(path.dirname(AGENDA()), { recursive: true }); fs.writeFileSync(AGENDA(), JSON.stringify(a, null, 2))
+  return a
+}
+let publicandoAgenda = false
+async function rodarAgenda() {
+  if (publicandoAgenda) return
+  const a = agenda(), agora = Date.now()
+  const vencidos = Object.entries(a).filter(([, q]) => new Date(q).getTime() <= agora)
+  if (!vencidos.length) return
+  publicandoAgenda = true
+  try {
+    for (const [k] of vencidos) {
+      const [kind, ...resto] = k.split(':'), id = resto.join(':'), it = findItem(kind, id)
+      if (!it || it.published) { agendar(kind, id, null); continue }
+      if (!it.approved || it.rascunho) { AVISOS.unshift({ quando: new Date().toISOString(), ok: false, titulo: it.title, texto: 'Chegou o horário, mas o post não está aprovado. Aprove e escolha outro horário.' }); agendar(kind, id, null); continue }
+      const [code, r] = await publicarItem(it)
+      if (code === 200) { agendar(kind, id, null); AVISOS.unshift({ quando: new Date().toISOString(), ok: true, titulo: it.title, texto: 'Publicado no horário agendado.', link: r.link }) }
+      else if (code === 409) agendar(kind, id, null)
+      else { agendar(kind, id, null); AVISOS.unshift({ quando: new Date().toISOString(), ok: false, titulo: it.title, texto: `Não consegui publicar no horário: ${r.erro || 'erro'}` }) }
+    }
+  } finally { publicandoAgenda = false; AVISOS.splice(20) }
+}
+
+// ---------------------------------------------------------------- rotinas: os modelos de post, rodados pela IA escolhida
+// agenda das rotinas no config: rotinas: { [id]: { ativo, dias: [1..5] (0 = domingo), hora: "08:00", ultima: "AAAA-MM-DD" } }
+const hojeLocal = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+function rodarRotinasDoDia() {
+  if (!agenteId()) return
+  const cfg = C.load().rotinas || {}, agora = new Date(), hhmm = agora.toTimeString().slice(0, 5)
+  for (const [rid, r] of Object.entries(cfg)) {
+    if (!r || !r.ativo || !(r.dias || []).includes(agora.getDay()) || hhmm < (r.hora || '08:00') || r.ultima === hojeLocal()) continue
+    if (!MODELOS.MODELOS.some(m => m.id === rid)) continue
+    C.save({ rotinas: { [rid]: { ultima: hojeLocal() } } })
+    try { startRun(rid) } catch (e) { AVISOS.unshift({ quando: new Date().toISOString(), ok: false, titulo: rid, texto: e.message }) }
+  }
+}
+setInterval(() => { rodarAgenda().catch(() => {}); try { rodarRotinasDoDia() } catch {} }, 60000).unref()
+
 const RUNS = []
 function startRun(rid) {
   const ag = agenteId(); if (!ag) throw new Error('Escolha um agente de IA antes (Ajustes).')
-  const r = AG.ROTINAS[rid]; if (!r) throw new Error('rotina desconhecida')
+  const r = MODELOS.MODELOS.find(m => m.id === rid); if (!r) throw new Error('modelo desconhecido')
   if (RUNS.some(x => x.id === rid && x.status === 'rodando')) throw new Error('essa rotina já está rodando')
   const logDir = C.ws('logs'); fs.mkdirSync(logDir, { recursive: true })
   const log = path.join(logDir, `${rid}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`)
@@ -237,7 +300,9 @@ const server = http.createServer(async (req, res) => {
           const ag = agenteId()
           return send(res, 200, {
             agente: ag && AG.AGENTES[ag].nome,
-            rotinas: Object.entries(AG.ROTINAS).map(([id, r]) => ({ id, titulo: r.titulo, agendar: AG.agendamento(ag, id) })),
+            perfil: (() => { const p = PERFIS.carregar(perfilAtivo()); return { area: p.area || '' } })(),
+            rotinas: (() => { const cfg = C.load().rotinas || {}; return MODELOS.disponiveis(PERFIS.carregar(perfilAtivo())).map(m => ({ id: m.id, titulo: m.titulo, desc: m.desc, formato: m.formato, web: !!m.web, freq: m.freq, freqTxt: m.freqTxt, design: !!m.areas, agenda: cfg[m.id] || null })) })(),
+            avisos: AVISOS.slice(0, 8),
             runs: RUNS.slice(0, 10).map(r => ({ ...r, tail: (() => { try { return fs.readFileSync(path.join(C.WS, r.log), 'utf8').slice(-1500) } catch { return '' } })() })),
           })
         }
@@ -327,18 +392,19 @@ const server = http.createServer(async (req, res) => {
         if (u.pathname === '/api/approve') { fs.mkdirSync(path.dirname(ok), { recursive: true }); fs.writeFileSync(ok, `${new Date().toISOString()} aprovado no painel\n`) } else if (exists(ok)) fs.unlinkSync(ok)
         return send(res, 200, { ok: true })
       }
-      case '/api/publish': {
-        const it = findItem(b.kind, b.id)
-        if (!it || !it.hasFile) return send(res, 400, { erro: 'Arquivo do post não encontrado: exporte antes.' })
-        if (!it.approved) return send(res, 400, { erro: 'Aprove o post antes de publicar.' })
+      case '/api/publish': { const [code, r] = await publicarItem(findItem(b.kind, b.id)); return send(res, code, r) }
+      case '/api/agendar': {
+        const it = findItem(b.kind, b.id); if (!it) return send(res, 400, { erro: 'Item não encontrado.' })
         if (it.published) return send(res, 409, { erro: 'Esse post já foi publicado.' })
-        if (!linkedinStatus().connected) return send(res, 400, { erro: 'Conecte o LinkedIn antes.' })
-        if (it.caracteres > PUB_LI.LIMITE) return send(res, 400, { erro: `O texto tem ${it.caracteres} caracteres; o LinkedIn aceita até ${PUB_LI.LIMITE}.` })
-        if (it.rascunho) return send(res, 400, { erro: 'Este post ainda é rascunho: envie para aprovação antes.' })
-        const alvo = it.formato === 'texto' && !it.pasta ? '-' : path.join(C.WS, it.file)
-        const r = await run(process.execPath, [path.join(ROOT, 'engine', 'linkedin', 'postar.js'), alvo, legendaDe(it), '--confirmo'], { timeout: 600000 })
-        const j = readJSONText(r.out)
-        return send(res, r.code === 0 && j && j.ok ? 200 : 500, r.code === 0 && j ? j : { erro: (r.err || r.out).slice(0, 400) })
+        if (b.quando && new Date(b.quando).getTime() < Date.now() - 60000) return send(res, 400, { erro: 'Escolha um horário no futuro.' })
+        try { agendar(it.kind, it.id, b.quando || null); return send(res, 200, { ok: true, quando: b.quando || null, aprovado: it.approved }) } catch (e) { return send(res, 400, { erro: e.message }) }
+      }
+      case '/api/rotinas/agendar': {
+        if (!MODELOS.MODELOS.some(m => m.id === b.id)) return send(res, 400, { erro: 'modelo desconhecido' })
+        const dias = (Array.isArray(b.dias) ? b.dias : []).map(Number).filter(d => d >= 0 && d <= 6)
+        const hora = /^\d\d:\d\d$/.test(b.hora || '') ? b.hora : '08:00'
+        C.save({ rotinas: { [b.id]: { ativo: !!b.ativo && dias.length > 0, dias, hora } } })
+        return send(res, 200, { ok: true })
       }
       case '/api/export': {
         const kind = b.kind

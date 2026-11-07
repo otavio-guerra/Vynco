@@ -15,7 +15,7 @@ const POSTAR = 'node engine/linkedin/postar.js'
 // ela não roda "node -e", PowerShell nem outros programas, não lê config/ (onde fica o cofre) e não mexe no resto do motor.
 // O código que ela escreve (dias/, pautas/) roda dentro da caixa de permissões (engine/caixa.js): sem processos, sem rede, sem cofre.
 const SCRIPTS = ['node engine/dailyui/dia.js', 'node engine/exportar-png.js', 'node engine/noticias/carrossel.js', 'node engine/noticias/exportar.js', 'node engine/desigma/anexar.js', 'node --max-old-space-size=6144 engine/desigma/anexar.js']
-const ESCRITA = ['engine/dailyui/dias', 'engine/noticias/pautas']
+const ESCRITA = ['engine/dailyui/dias', 'engine/noticias/pautas', 'workspace/avulsos']
 const TRAVA_TXT = 'não pode publicar nem ler o cofre; o código que escreve roda numa caixa sem rede.'
 
 // ---------------------------------------------------------------- achar e rodar a linha de comando de cada agente
@@ -278,7 +278,8 @@ const estadoSync = () => SYNC && { agente: SYNC.agente, nome: SYNC.nome, passos:
 
 // ---------------------------------------------------------------- rotinas (o agente escolhido, sem ninguém no teclado)
 function rotina(id, rid) {
-  const a = AGENTES[id], r = ROTINAS[rid]; if (!a || !r) throw new Error('rotina ou agente desconhecido')
+  const a = AGENTES[id]; if (!a) throw new Error('agente desconhecido')
+  const r = require('./modelos.js').preparar(rid)   // escreve as instruções do modelo a partir do perfil
   const bin = achar(a.bin); if (!bin) throw new Error(`O ${a.via} não está instalado.`)
   const { args, stdin } = a.rotina(r.prompt)
   const p = soltar(bin, args, { stdio: ['pipe', 'pipe', 'pipe'] })
@@ -287,7 +288,7 @@ function rotina(id, rid) {
 }
 // comando para o Agendador de Tarefas do Windows
 function agendamento(id, rid) {
-  const a = AGENTES[id] || AGENTES.claude, r = ROTINAS[rid]
+  const a = AGENTES[id] || AGENTES.claude, r = require('./modelos.js').preparar(rid)
   const { args, stdin } = a.rotina(r.prompt)
   const linha = [a.bin, ...args.map(aspas)].join(' ') + (stdin ? ` < ${r.prompt.replace(/\//g, '\\')}` : '')
   return `schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - ${r.titulo}" /TR "cmd /c cd /d ${ROOT} && ${linha.replace(/"/g, '\\"')}"`
