@@ -1,7 +1,7 @@
 'use strict'
-// Agentes de IA que o Farol sabe usar. Cada um tem um "adaptador": como instalar, entrar, conferir a conta,
+// Agentes de IA que o Vynco sabe usar. Cada um tem um "adaptador": como instalar, entrar, conferir a conta,
 // onde ficam as skills, os prompts e os plugins (MCP), e como rodar uma rotina sem ninguém no teclado.
-// Tudo o que é sincronizado sai de agent/ (fonte única) e vai para as pastas que cada agente lê dentro do Farol.
+// Tudo o que é sincronizado sai de agent/ (fonte única) e vai para as pastas que cada agente lê dentro do Vynco.
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
@@ -160,7 +160,7 @@ function login(id, { console: emConsole = false } = {}) {
         Object.assign(job, { fase: 'instalando', msg: `Instalando o ${a.via} (leva um ou dois minutos)` })
         await instalar(a, job)
         bin = achar(a.bin)
-        if (!bin) throw new Error(`Instalei o ${a.via}, mas não achei o comando. Feche e abra o Farol de novo.`)
+        if (!bin) throw new Error(`Instalei o ${a.via}, mas não achei o comando. Feche e abra o Vynco de novo.`)
       }
       const ja = await a.conta(bin).catch(() => ({ ok: false }))
       if (ja.ok) return Object.assign(job, { fase: 'ok', msg: `Conectado`, conta: ja.conta })
@@ -195,7 +195,7 @@ async function instalar(a, job) {
   let r
   if (i.tipo === 'npm') {
     const npmBin = achar('npm')
-    if (!npmBin) throw new Error(`Para instalar o ${a.via} o Farol precisa do Node.js (nodejs.org). Instale e tente de novo.`)
+    if (!npmBin) throw new Error(`Para instalar o ${a.via} o Vynco precisa do Node.js (nodejs.org). Instale e tente de novo.`)
     r = await rodar(npmBin, ['i', '-g', i.pkg], { timeout: 600000 })
   } else if (i.tipo === 'ps') r = await rodar('powershell.exe', ['-NoProfile', '-Command', i.cmd], { timeout: 600000 })
   else r = await rodar('sh', ['-c', i.cmd], { timeout: 600000 })
@@ -216,7 +216,7 @@ function sincronizar(id, desigma) {
   const skills = skillsFonte(), rot = Object.entries(ROTINAS)
   const passos = [
     { id: 'conta', rotulo: `Conferindo a sua conta do ${a.nome}` },
-    { id: 'instrucoes', rotulo: 'Ensinando as regras do Farol' },
+    { id: 'instrucoes', rotulo: 'Ensinando as regras do Vynco' },
     { id: 'skills', rotulo: `Instalando ${skills.length} skills` },
     { id: 'prompts', rotulo: `Copiando ${rot.length} prompts das rotinas` },
     { id: 'plugins', rotulo: 'Ligando o Desigma (plugin MCP)' },
@@ -242,7 +242,7 @@ function sincronizar(id, desigma) {
 
     await passo('instrucoes', () => {
       const base = fs.readFileSync(path.join(FONTE, 'AGENTS.md'), 'utf8')
-      escrever(path.join(ROOT, a.instrucoes), `<!-- gerado pelo Farol a partir de agent/AGENTS.md: edite lá e sincronize de novo -->\n${base}`)
+      escrever(path.join(ROOT, a.instrucoes), `<!-- gerado pelo Vynco a partir de agent/AGENTS.md: edite lá e sincronize de novo -->\n${base}`)
       return { detalhe: a.instrucoes }
     })
     await passo('skills', () => {
@@ -291,7 +291,7 @@ function agendamento(id, rid) {
   const a = AGENTES[id] || AGENTES.claude, r = require('./modelos.js').preparar(rid)
   const { args, stdin } = a.rotina(r.prompt)
   const linha = [a.bin, ...args.map(aspas)].join(' ') + (stdin ? ` < ${r.prompt.replace(/\//g, '\\')}` : '')
-  return `schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - ${r.titulo}" /TR "cmd /c cd /d ${ROOT} && ${linha.replace(/"/g, '\\"')}"`
+  return `schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Vynco - ${r.titulo}" /TR "cmd /c cd /d ${ROOT} && ${linha.replace(/"/g, '\\"')}"`
 }
 
 // ---------------------------------------------------------------- pergunta avulsa (ex.: análise do perfil)

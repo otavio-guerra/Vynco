@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 360"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Vynco logo</title>
+  <desc id="desc">Vynco geometric monogram and lowercase wordmark.</desc>
+  <g transform="translate(-55,-55) scale(1.12)" fill="#F4F5FA">
+    <path d="M127 144 L224 144 L236 163 L237 167 L168 167 L167 169 L258 325 L245 347 Z"/>
+    <path d="M362 144 L335 145 L274 252 L269 247 L255 220 L300 144 L274 144 L245 193 L212 193 L273 297 L278 292 Z"/>
+  </g>
+  <text x="390" y="225" fill="#F4F5FA"
+        font-family="Inter, Manrope, Arial, sans-serif"
+        font-size="174" font-weight="650" letter-spacing="-8">vynco</text>
+</svg>

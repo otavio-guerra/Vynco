@@ -1,5 +1,5 @@
 'use strict'
-// Posts montados no editor do Farol. Cada post é uma pasta em workspace/avulsos/<id>/, no formato que o publicar.js entende,
+// Posts montados no editor do Vynco. Cada post é uma pasta em workspace/avulsos/<id>/, no formato que o publicar.js entende,
 // então a fila, a aprovação e a publicação continuam as mesmas:
 //   legenda.txt · 01-foto.png, 02-... (a ordem das mídias) · <mídia>.alt.txt · link.json (artigo) · post.json (título, rascunho, datas)
 // As mídias são copiadas da biblioteca para a pasta: apagar algo da biblioteca nunca quebra um post já montado.

@@ -1,5 +1,5 @@
 'use strict'
-// Farol: entrada em cenas (LinkedIn → IA → sincronização → formatos) + fila, rotinas e ajustes.
+// Vynco: entrada em cenas (LinkedIn → IA → sincronização → formatos) + fila, rotinas e ajustes.
 // Fala com app/server.js (toda chamada leva o token desta sessão). Sem o servidor, roda em demonstração.
 const TOKEN = document.querySelector('meta[name=engine-token]').content
 const $ = (s, el = document) => el.querySelector(s)
@@ -107,7 +107,7 @@ async function apiDemo(path, data) {
     case '/api/sync': {
       if (!data) return D.sync || {}
       const a = ag(id || D.escolhido); D.escolhido = a.id
-      const rot = [['conta', `Conferindo a sua conta do ${a.nome}`, 'voce@exemplo.com'], ['instrucoes', 'Ensinando as regras do Farol', a.id === 'claude' ? 'CLAUDE.md' : a.id === 'gemini' ? 'GEMINI.md' : 'AGENTS.md'], ['skills', 'Instalando 4 skills', 'farol-daily-ui, farol-legendas, farol-marca, farol-pauta-noticias'], ['prompts', 'Copiando 2 prompts das rotinas', '/farol-daily-ui, /farol-pauta-noticias'], ['plugins', 'Ligando o Desigma (plugin MCP)', 'desigma'], ['trava', 'Travando a publicação para o agente', `O ${a.nome} não pode rodar o script de publicação.`], ['teste', `Testando uma resposta do ${a.nome}`, 'respondeu "ok"']]
+      const rot = [['conta', `Conferindo a sua conta do ${a.nome}`, 'voce@exemplo.com'], ['instrucoes', 'Ensinando as regras do Vynco', a.id === 'claude' ? 'CLAUDE.md' : a.id === 'gemini' ? 'GEMINI.md' : 'AGENTS.md'], ['skills', 'Instalando 4 skills', 'farol-daily-ui, farol-legendas, farol-marca, farol-pauta-noticias'], ['prompts', 'Copiando 2 prompts das rotinas', '/farol-daily-ui, /farol-pauta-noticias'], ['plugins', 'Ligando o Desigma (plugin MCP)', 'desigma'], ['trava', 'Travando a publicação para o agente', `O ${a.nome} não pode rodar o script de publicação.`], ['teste', `Testando uma resposta do ${a.nome}`, 'respondeu "ok"']]
       const S = D.sync = { agente: a.id, nome: a.nome, passos: rot.map(([pid, rotulo]) => ({ id: pid, rotulo, estado: 'espera', detalhe: '' })), fim: null, ok: false, resumo: { skills: 4, prompts: 2, plugins: 1 } }
       ;(async () => { for (let i = 0; i < rot.length; i++) { S.passos[i].estado = 'rodando'; await espera(i === 6 ? 1400 : 650); Object.assign(S.passos[i], { estado: 'ok', detalhe: rot[i][2] }) } S.ok = true; S.fim = Date.now(); D.sincronizado = true })()
       return S
@@ -119,11 +119,11 @@ async function apiDemo(path, data) {
     case '/api/runs': return { agente: D.escolhido ? ag(D.escolhido).nome : null, perfil: { area: D.perfil.area }, avisos: [], runs: [], rotinas: MODELOS_DEMO.filter(m => !m.design || /design|ux|ui/i.test(D.perfil.area)).map(m => ({ ...m, agenda: D.rotinas[m.id] || null })) }
     case '/api/agendar': { const k = `${data.kind}:${data.id}`, x = D.fila.find(i => `${i.kind}:${i.id}` === k); if (x) x.agendado = data.quando || null; return { ok: true } }
     case '/api/rotinas/agendar': D.rotinas[data.id] = { ativo: !!data.ativo, dias: data.dias, hora: data.hora }; return { ok: true }
-    case '/api/runs-antigo': return { agente: D.escolhido ? ag(D.escolhido).nome : null, rotinas: [{ id: 'daily-ui', titulo: 'Gerar o Daily UI de hoje', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - Gerar o Daily UI de hoje" /TR "..."' }, { id: 'pauta-noticias', titulo: 'Montar os carrosséis de notícias', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - Montar os carrosséis de notícias" /TR "..."' }], runs: [] }
+    case '/api/runs-antigo': return { agente: D.escolhido ? ag(D.escolhido).nome : null, rotinas: [{ id: 'daily-ui', titulo: 'Gerar o Daily UI de hoje', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Vynco - Gerar o Daily UI de hoje" /TR "..."' }, { id: 'pauta-noticias', titulo: 'Montar os carrosséis de notícias', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Vynco - Montar os carrosséis de notícias" /TR "..."' }], runs: [] }
     case '/api/approve': it.approved = true; return { ok: true }
     case '/api/unapprove': it.approved = false; return { ok: true }
     case '/api/publish': it.published = { link: 'https://github.com/AbapaOnSwamp/farol', quando: new Date().toISOString() }; return { ok: true }
-    case '/api/run': throw new Error('Na demonstração as rotinas não rodam. Baixe o Farol para usar de verdade.')
+    case '/api/run': throw new Error('Na demonstração as rotinas não rodam. Baixe o Vynco para usar de verdade.')
     case '/api/midia': return { itens: D.midia, limites: {} }
     case '/api/midia/alt': { const m = D.midia.find(x => x.arquivo === data.arquivo); if (m) m.alt = String(data.alt || '').trim(); return { ok: true } }
     case '/api/midia/excluir': D.midia = D.midia.filter(x => x.arquivo !== data.arquivo); return { ok: true }
@@ -307,13 +307,13 @@ function liEstado(s) { $('[data-li]').dataset.li = s; $('[data-li-next]').hidden
 function desenharContaLi(l) {
   const av = $('[data-li-av]'); av.textContent = l.foto ? '' : inicial(l.name); av.style.backgroundImage = l.foto ? `url("${l.foto}")` : ''
   $('[data-li-name]').textContent = l.name || 'Conta conectada'
-  $('[data-li-exp]').textContent = l.expiresAt ? `Acesso válido até ${quando(l.expiresAt)} · o Farol avisa antes de vencer` : ''
+  $('[data-li-exp]').textContent = l.expiresAt ? `Acesso válido até ${quando(l.expiresAt)} · o Vynco avisa antes de vencer` : ''
 }
 async function entrarLinkedin() {
   const s = await status(); if (!s) return
   if (s.linkedin.connected) { desenharContaLi(s.linkedin); liEstado('ok') } else if (!LI_POLL) liEstado('idle')
   LI_REDIRECT = s.linkedin.redirectUri || LI_REDIRECT
-  // sem a ponte do Farol ligada, o primeiro acesso passa pelo assistente: avisa antes, sem susto
+  // sem a ponte do Vynco ligada, o primeiro acesso passa pelo assistente: avisa antes, sem susto
   if (!DEMO && !s.linkedin.connected && !s.linkedin.proprio) api('/api/linkedin/ponte').then(p => { $('[data-li-dica]').hidden = p.pronto }).catch(() => {})
 }
 async function conectarLinkedin(proprio = false) {
@@ -341,10 +341,10 @@ async function conectarLinkedin(proprio = false) {
 let LI_REDIRECT = 'http://localhost:8765/callback', AS = 0
 const PASSOS_AS = [
   { t: 'Uma Página de empresa', txt: 'O LinkedIn só deixa criar apps ligados a uma Página de empresa. Se você já administra uma (pode ser a sua página de freelancer ou estúdio), pule este passo.', abrir: ['Criar uma Página', 'https://www.linkedin.com/company/setup/new/'], dica: 'Nome: o seu nome ou "Estúdio" + o seu nome. Tamanho: o menor. Não precisa publicar nada nela.' },
-  { t: 'Criar o app', txt: 'Na página que abrir, preencha: <b>App name</b> "Farol de" + o seu nome; <b>LinkedIn Page</b> a página do passo 1; um <b>logo</b> qualquer (pode ser a sua foto); marque que aceita os termos e clique em <b>Create app</b>.', abrir: ['Abrir a criação do app', 'https://www.linkedin.com/developers/apps/new'] },
+  { t: 'Criar o app', txt: 'Na página que abrir, preencha: <b>App name</b> "Vynco de" + o seu nome; <b>LinkedIn Page</b> a página do passo 1; um <b>logo</b> qualquer (pode ser a sua foto); marque que aceita os termos e clique em <b>Create app</b>.', abrir: ['Abrir a criação do app', 'https://www.linkedin.com/developers/apps/new'] },
   { t: 'Ligar 2 produtos', txt: 'No app recém-criado, abra a aba <b>Products</b> e clique em <b>Request access</b> nestes dois. Eles são liberados na hora:', lista: ['Share on LinkedIn', 'Sign In with LinkedIn using OpenID Connect'], abrir: ['Abrir os meus apps', 'https://www.linkedin.com/developers/apps'] },
   { t: 'Endereço de retorno', txt: 'Abra a aba <b>Auth</b>. Em <b>Authorized redirect URLs for your app</b>, clique no lápis, cole o endereço abaixo e clique em <b>Update</b>.', copiar: true },
-  { t: 'Copiar as chaves', txt: 'Ainda na aba <b>Auth</b>, copie o <b>Client ID</b> e o <b>Primary Client Secret</b> (clique no olho para ver) e cole aqui. Pronto: o Farol abre o LinkedIn para você clicar em Permitir.', form: true },
+  { t: 'Copiar as chaves', txt: 'Ainda na aba <b>Auth</b>, copie o <b>Client ID</b> e o <b>Primary Client Secret</b> (clique no olho para ver) e cole aqui. Pronto: o Vynco abre o LinkedIn para você clicar em Permitir.', form: true },
 ]
 function abrirAssistente() { AS = Math.min(+store.get('assist', 0) || 0, PASSOS_AS.length - 1); desenharAssistente(); $('#proprio').showModal() }
 function desenharAssistente() {
@@ -444,7 +444,7 @@ const VC_PUB = [['Recrutadores', 'quem contrata', 'recrutador'], ['Lideranças',
 const VC_TONS = [['Direto', 'Três erros que vejo toda semana, e como evitar.'], ['Didático', 'Vou explicar, passo a passo, como eu faço isso.'], ['Próximo', 'Hoje quero contar uma coisa que aconteceu comigo.'], ['Inspirador', 'Ninguém começa pronto. Eu também não comecei.'], ['Bem-humorado', 'Spoiler: aquela reunião podia ter sido um e-mail.'], ['Técnico', 'Os números por trás da decisão, sem rodeio.']]
 const VC_FREQ = [['1 vez por semana', 'leve, para começar', 'leve'], ['2 a 3 vezes por semana', 'o ritmo que mais cresce', 'medio'], ['Todo dia útil', 'para quem quer acelerar', 'intenso']]
 const VC_PASSOS = [
-  { k: 'area', t: n => `Prazer${n ? ', ' + n : ''}! Em que área você trabalha?`, s: 'Escolha a mais próxima. Na próxima pergunta você detalha.' },
+  { k: 'area', t: n => `Prazer${n ? ', ' + n : ''}! Em que área você trabalha?`, s: 'Escolha até 3. Na próxima pergunta você detalha.', multi: 3 },
   { k: 'esp', t: () => 'E o que você faz, exatamente?', s: 'Escolha até 3 e, se quiser, escreva o seu cargo do seu jeito.', multi: 3 },
   { k: 'nivel', t: () => 'Em que momento da carreira você está?', s: 'Isso muda o tom dos posts e as vagas que a gente sugere.' },
   { k: 'objetivo', t: () => 'O que você quer conseguir com o LinkedIn?', s: 'Escolha até 3. É isso que guia os assuntos dos posts.', multi: 3 },
@@ -462,16 +462,17 @@ async function entrarVoce() {
   const l = ST?.linkedin || {}, nome = p?.nome || l.name || ''
   // o que já estiver salvo volta marcado (perfil salvo como "Especialidade · Área")
   const [esp0, area0] = String(p?.area || '').includes(' · ') ? p.area.split(' · ') : ['', p?.area || '']
-  const areaOk = VC_AREAS.some(a => a[0] === area0)
-  const espSalvas = esp0 ? esp0.split(/,\s*/) : [], opsArea = VC_ESPEC[area0] || []
-  VC = { perfil: p, nome, passo: 0, area: areaOk ? area0 : area0 ? 'Outra área' : '', outra: areaOk ? '' : area0, esps: espSalvas.filter(e => opsArea.includes(e)), cargo: espSalvas.filter(e => !opsArea.includes(e)).join(', '), nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
+  const areasSalvas = area0 ? area0.split(/,\s*/) : [], conhecidas = areasSalvas.filter(a => VC_AREAS.some(x => x[0] === a)), outras = areasSalvas.filter(a => !conhecidas.includes(a))
+  const espSalvas = esp0 ? esp0.split(/,\s*/) : [], opsArea = conhecidas.flatMap(a => VC_ESPEC[a] || [])
+  VC = { perfil: p, nome, passo: 0, area: [...conhecidas, ...(outras.length ? ['Outra área'] : [])].slice(0, 3), outra: outras.join(', '), esps: espSalvas.filter(e => opsArea.includes(e)), cargo: espSalvas.filter(e => !opsArea.includes(e)).join(', '), nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
   const av = $('[data-vc-av]'); av.textContent = l.foto ? '' : inicial(nome || '?'); av.style.backgroundImage = l.foto ? `url("${l.foto}")` : ''
   $('[data-vc-li]').hidden = !l.connected
   desenharVoce()
 }
 const vcValor = k => VC[k]
+const vcAreas = () => VC.area.map(a => a === 'Outra área' ? VC.outra.trim() : a).filter(Boolean)
 const vcEspTxt = () => [...VC.esps, VC.cargo.trim()].filter(Boolean).join(', ')
-const vcRespondido = k => k === 'area' ? !!(VC.area && (VC.area !== 'Outra área' || VC.outra.trim())) : k === 'esp' ? !!(VC.esps.length || VC.cargo.trim()) : k === 'fim' ? true : Array.isArray(VC[k]) ? VC[k].length > 0 : !!VC[k]
+const vcRespondido = k => k === 'area' ? !!(VC.area.length && (!VC.area.includes('Outra área') || VC.outra.trim())) : k === 'esp' ? !!(VC.esps.length || VC.cargo.trim()) : k === 'fim' ? true : Array.isArray(VC[k]) ? VC[k].length > 0 : !!VC[k]
 function vcTiles(k, ops, multi) {
   const sel = v => multi ? VC[k].includes(v) : VC[k] === v
   return `<div class="vc-tiles${ops.length <= 3 ? ' tres' : ''}" role="${multi ? 'group' : 'radiogroup'}">${ops.map(([v, d, i]) => `<button type="button" class="vc-tile${sel(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${sel(v)}">
@@ -484,9 +485,9 @@ function desenharVoce() {
   $('[data-vc-passo]').textContent = P.k === 'fim' ? 'Revisão' : `Pergunta ${VC.passo + 1} de ${total}`
   const prog = $('[data-vc-prog]'); prog.style.setProperty('--p', (Math.min(VC.passo, total) / total * 100) + '%'); prog.setAttribute('aria-valuenow', VC.passo + 1)
   let h = ''
-  if (P.k === 'area') h = vcTiles('area', VC_AREAS) + (VC.area === 'Outra área' ? `<label class="vc-campo"><span>Qual é a sua área?</span><input class="vc-in" data-vc="outra" maxlength="80" placeholder="Ex.: Arquitetura, Agronegócio, Turismo" value="${esc(VC.outra)}"></label>` : '')
+  if (P.k === 'area') h = vcTiles('area', VC_AREAS, true) + (VC.area.includes('Outra área') ? `<label class="vc-campo"><span>Qual é a sua área?</span><input class="vc-in" data-vc="outra" maxlength="80" placeholder="Ex.: Arquitetura, Agronegócio, Turismo" value="${esc(VC.outra)}"></label>` : '')
   if (P.k === 'esp') {
-    const ops = VC_ESPEC[VC.area] || []
+    const ops = [...new Set(VC.area.flatMap(a => VC_ESPEC[a] || []))]
     h = (ops.length ? `<div class="vc-chips" role="group">${ops.map(o => `<button type="button" class="${VC.esps.includes(o) ? 'on' : ''}" data-vc-esp="${esc(o)}" aria-pressed="${VC.esps.includes(o)}">${esc(o)}</button>`).join('')}</div><div class="or vc-or">e, se quiser, escreva</div>` : '')
       + `<label class="vc-campo"><span>Seu cargo ou o que você faz</span><input class="vc-in" data-vc="cargo" maxlength="120" placeholder="${esc(ops.length ? 'Ex.: ' + ops[0] + ' em fintech' : 'Ex.: Arquiteto de interiores residenciais')}" value="${esc(VC.cargo)}"></label>`
   }
@@ -497,7 +498,7 @@ function desenharVoce() {
   if (P.k === 'frequencia') h = vcTiles('frequencia', VC_FREQ) + `<label class="vc-campo"><span>Tem site ou portfólio? <small class="soft">opcional</small></span><input class="vc-in" data-vc="site" type="url" placeholder="https://" spellcheck="false" value="${esc(VC.site)}"><small class="fine">A sua IA lê o link (só leitura) e sugere temas e as cores da sua marca.</small></label>`
   if (P.k === 'fim') {
     const parte = (passo, txt, vazio) => `<button type="button" class="vc-parte${txt ? '' : ' vazio'}" data-vc-ir="${passo}">${esc(txt || vazio)}</button>`
-    const areaTxt = VC.area === 'Outra área' ? VC.outra : VC.area, lista = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || ''
+    const lista = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || '', areaTxt = lista(vcAreas())
     h = `<div class="vc-resumo glass">
       <div class="vc-r-h"><span class="avatar" style="${$('[data-vc-av]').style.backgroundImage ? `background-image:${$('[data-vc-av]').style.backgroundImage};color:transparent` : ''}">${inicial(VC.nome || '?')}</span><span><b>${esc(VC.nome || 'Você')}</b><small>${esc([vcEspTxt(), areaTxt].filter(Boolean).join(' · ') || 'área a definir')}</small></span></div>
       <p>${parte(1, lista([...VC.esps, VC.cargo.trim()].filter(Boolean)), 'o que você faz')} em ${parte(0, areaTxt, 'sua área')}, ${parte(2, VC.nivel && VC.nivel.toLowerCase(), 'momento da carreira')}. Quer ${parte(3, lista(VC.objetivo.map(o => o.toLowerCase())), 'um objetivo')}, falando com ${parte(4, lista(VC.publico.map(o => o.toLowerCase())), 'o seu público')}, num tom ${parte(5, lista(VC.tom.map(o => o.toLowerCase())), 'do seu jeito')}, ${parte(6, VC.frequencia && VC.frequencia.toLowerCase(), 'na frequência que quiser')}.</p>
@@ -520,14 +521,15 @@ function vcEscolher(v, campo) {
     if (VC[k].includes(v)) VC[k] = VC[k].filter(x => x !== v)
     else if (VC[k].length >= P.multi) return pill(`Escolha até ${P.multi}`, 'Tire uma opção para marcar outra.', 'var(--amber)')
     else VC[k] = [...VC[k], v]
-    Som.tique(); return desenharVoce()
+    if (k === 'area') { const ops = VC.area.flatMap(a => VC_ESPEC[a] || []); VC.esps = VC.esps.filter(e => ops.includes(e)) }
+    Som.tique(); desenharVoce()
+    if (k === 'area' && v === 'Outra área' && VC.area.includes(v)) setTimeout(() => $('[data-vc=outra]')?.focus(), 50)
+    return
   }
   const era = VC[k] === v
   VC[k] = era ? '' : v
-  if (k === 'area' && !era) VC.esps = VC.esps.filter(e => (VC_ESPEC[v] || []).includes(e))   // trocou de área: as especialidades antigas não valem mais
   Som.liga(); desenharVoce()
   if (!era) $('[data-vc-ok]')?.focus({ preventScroll: true })
-  if (k === 'area' && v === 'Outra área') setTimeout(() => $('[data-vc=outra]')?.focus(), 50)
 }
 function vcAvancar() { if (VC_PASSOS[VC.passo].k === 'fim') return salvarVoce(); vcIr(VC.passo + 1) }
 function vcVoltar() { if (VC.passo > 0) vcIr(VC.passo - 1) }
@@ -557,7 +559,7 @@ function teclaVoce(e, k) {
 }
 async function salvarVoce() {
   if (!VC) return proximaCena()
-  const areaNome = VC.area === 'Outra área' ? VC.outra.trim() : VC.area
+  const areaNome = vcAreas().join(', ')
   const area = [vcEspTxt(), areaNome].filter(Boolean).join(' · ')
   const site = /^https?:\/\/\S+\.\S+/i.test(VC.site.trim()) ? VC.site.trim() : ''
   if (VC.site.trim() && !site) { vcIr(VC_PASSOS.findIndex(p => p.k === 'frequencia')); return pill('Confira o link', 'Ele precisa começar com http:// ou https://', 'var(--amber)') }
@@ -650,7 +652,7 @@ async function entrarSync() {
   const a = AGS?.agentes.find(x => x.id === aId) || { id: aId, nome: ST?.agente?.nome || NOMES[aId] || 'agente', cor: null }
   $('[data-sync-glyph]').innerHTML = glifo(a.id, a.cor); $('[data-sync-orb]').style.setProperty('--c', a.cor || 'var(--accent)')
   $('[data-sync-t]').textContent = `Preparando o ${a.nome}…`
-  $('[data-sync-s]').textContent = 'Instalando o que ele precisa para trabalhar no Farol. Leva menos de um minuto.'
+  $('[data-sync-s]').textContent = 'Instalando o que ele precisa para trabalhar no Vynco. Leva menos de um minuto.'
   $('[data-sync-cta]').hidden = true; $('[data-steps]').classList.remove('done')
   SYNC_ON = true; $('#back').hidden = true; $('[data-sync-orb]').toggleAttribute('data-busy', true); humor('work')
   let s
@@ -673,7 +675,7 @@ async function entrarSync() {
     $('[data-sync-cta]').innerHTML = `<button class="btn accent lg" data-act="sync-again">Tentar de novo</button><button class="link" data-goscene="agente">Escolher outra IA</button>`
   } else {
     Som.publica(); humor('live'); ST = null; status(); analisarDepoisDaTriagem()
-    $('[data-sync-t]').innerHTML = `Pronto. <span class="soft">O ${esc(a.nome)} já conhece o Farol.</span>`
+    $('[data-sync-t]').innerHTML = `Pronto. <span class="soft">O ${esc(a.nome)} já conhece o Vynco.</span>`
     $('[data-sync-s]').innerHTML = `<span class="summary"><span>${s.resumo.skills} skills</span><span>${s.resumo.prompts} prompts</span><span>${s.resumo.plugins ? '1 plugin' : 'sem plugins'}</span><span>publicação travada</span></span>${avisos.length ? `<br><small class="fine">${avisos.length === 1 ? 'Um aviso' : avisos.length + ' avisos'} acima: dá para resolver depois em Ajustes.</small>` : ''}`
     $('[data-sync-cta]').innerHTML = `<button class="btn accent lg" data-next>Continuar</button><span class="hint"><kbd class="sm">Enter</kbd></span>`
   }
@@ -780,7 +782,7 @@ function detalhe() {
     ${cartaoFeed(i, { aberto: verMais, quandoTxt: i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora' })}
     ${i.agendado && !i.published ? `<div class="fp-ag${i.approved ? '' : ' warn'}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${i.approved ? 'Sai sozinho' : 'Agendado, mas só sai se você aprovar'} · <b>${quandoCurto(i.agendado)}</b></span></div>` : ''}
     <div class="fp-actions">${acoes}${i.file && (!i.pasta || ST?.desktop) ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">${i.pasta ? 'Abrir a pasta' : 'Abrir o arquivo'}</a>` : ''}</div>
-    ${AG_AB && !i.published && !i.rascunho ? `<div class="fp-agform"><label><span>Dia e hora</span><input type="datetime-local" data-ag-quando value="${i.agendado ? localISO(new Date(i.agendado)) : localISO(proximaHora())}" min="${localISO(new Date())}"></label><button class="btn sm accent" data-q="ag-salvar">${i.approved || i.kind === 'series' ? 'Agendar' : 'Aprovar e agendar'}</button>${i.agendado ? '<button class="link soft" data-q="ag-tirar">Tirar da agenda</button>' : ''}<p class="fine">O Farol publica no horário enquanto estiver aberto. Se estiver fechado, publica assim que você abrir.</p></div>` : ''}
+    ${AG_AB && !i.published && !i.rascunho ? `<div class="fp-agform"><label><span>Dia e hora</span><input type="datetime-local" data-ag-quando value="${i.agendado ? localISO(new Date(i.agendado)) : localISO(proximaHora())}" min="${localISO(new Date())}"></label><button class="btn sm accent" data-q="ag-salvar">${i.approved || i.kind === 'series' ? 'Agendar' : 'Aprovar e agendar'}</button>${i.agendado ? '<button class="link soft" data-q="ag-tirar">Tirar da agenda</button>' : ''}<p class="fine">O Vynco publica no horário enquanto estiver aberto. Se estiver fechado, publica assim que você abrir.</p></div>` : ''}
     <p class="fp-note${passou ? ' bad' : ''}">${passou ? `O texto tem ${chars.toLocaleString('pt-BR')} caracteres: o LinkedIn aceita até ${LIMITE.toLocaleString('pt-BR')}. Encurte a legenda para publicar.` : `${chars.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')} caracteres`}${!i.published && !l.connected ? ' · Conecte o LinkedIn em Ajustes para publicar.' : l.connected && !i.published ? ` · sai como ${esc(l.name || '')}` : ''}</p>`
 }
 async function acao(q) {
@@ -1192,7 +1194,7 @@ async function carregarImgAjustes() {
 }
 $('[data-img-ajustes]').addEventListener('click', async e => {
   if (!e.target.closest('[data-img-remover]')) return
-  if (!(await confirmar('Remover a chave do Magnific?', 'O Farol para de conseguir gerar e melhorar imagens até você salvar outra.', 'Remover'))) return
+  if (!(await confirmar('Remover a chave do Magnific?', 'O Vynco para de conseguir gerar e melhorar imagens até você salvar outra.', 'Remover'))) return
   try { await api('/api/imagem/chave', { provedor: prov().id, chave: '' }); Som.desliga(); pill('Chave removida', '', 'var(--amber)'); carregarImgAjustes() } catch (err) { falha(err) }
 })
 
@@ -1245,7 +1247,7 @@ function desenharPrevia() {
       <span class="pf-btn">Saiba mais</span>
     </div>
     <ul class="pf-checks">${checks.map(([t, r, min]) => `<li class="${r >= min ? 'ok' : 'warn'}"><span class="ic"></span>${t}: ${r.toFixed(1).replace('.', ',')}:1 ${r >= min ? '' : `<small>(o mínimo é ${String(min).replace('.', ',')}:1)</small>`}</li>`).join('')}</ul>
-    <div class="pf-usa"><b>Como o Farol usa isto</b><ul>
+    <div class="pf-usa"><b>Como o Vynco usa isto</b><ul>
       <li>A sua IA lê o perfil antes de escrever cada post (tom, público, temas e pilares).</li>
       <li>${PF.marca.usarNoEstudio ? 'O Estúdio de imagens usa as cores, o estilo e a primeira referência.' : 'O Estúdio de imagens não usa a marca (desligado).'}</li>
       <li>${PF.marca.aplicarNoMotor ? 'As peças das rotinas saem com as suas cores e fontes.' : 'As peças das rotinas continuam com o design system atual.'}</li></ul></div>`
@@ -1430,7 +1432,7 @@ function desenharRotinas() {
         <div class="dias" role="group" aria-label="Dias da semana">${DIAS_C.map((c, k) => `<button type="button" data-rot-dia="${k}" class="${ROT_FORM.dias.includes(k) ? 'on' : ''}" aria-pressed="${ROT_FORM.dias.includes(k)}" title="${DIAS_N[k]}">${c}</button>`).join('')}</div>
         <label class="hora"><span>às</span><input type="time" data-rot-hora value="${esc(ROT_FORM.hora)}"></label>
         <div class="row"><button class="btn sm accent" data-rot-salvar="${r.id}">Salvar</button>${r.agenda?.ativo ? `<button class="btn sm" data-rot-parar="${r.id}">Parar de repetir</button>` : ''}<button class="link soft" data-rot-fechar>Cancelar</button></div>
-        <p class="fine">Roda enquanto o Farol estiver aberto (se estiver fechado, roda quando você abrir). A peça vai para a Fila esperando você.</p></div>` : ''
+        <p class="fine">Roda enquanto o Vynco estiver aberto (se estiver fechado, roda quando você abrir). A peça vai para a Fila esperando você.</p></div>` : ''
     return `<article class="glass rot${rodando ? ' rodando' : ''}">
       <div class="rot-art">${wire(r.formato === 'imagem' ? 'gif' : r.formato)}</div>
       <div class="rot-c">
@@ -1685,7 +1687,7 @@ document.addEventListener('click', async e => {
     if (act === 'li-add') { if (await confirmar('Entrar com outra conta?', 'Antes, saia do LinkedIn no navegador (ou use outro perfil do navegador). Senão o LinkedIn entra direto com a conta que já está aberta.', 'Continuar')) { voltarPara = atual.dataset.scene; cena('linkedin'); setTimeout(conectarLinkedin, 450) } return }
     if (act === 'li-off') {
       const c = (ST?.linkedin?.contas || []).find(x => x.ativa), varias = (ST?.linkedin?.contas || []).length > 1
-      if (await confirmar(`Desconectar ${c ? c.nome : 'o LinkedIn'}?`, varias ? 'A outra conta conectada passa a ser a usada para publicar.' : 'O Farol para de conseguir publicar até você conectar de novo.', 'Desconectar')) { await api('/api/linkedin/disconnect', c ? { id: c.id } : {}); Som.desliga(); status() }
+      if (await confirmar(`Desconectar ${c ? c.nome : 'o LinkedIn'}?`, varias ? 'A outra conta conectada passa a ser a usada para publicar.' : 'O Vynco para de conseguir publicar até você conectar de novo.', 'Desconectar')) { await api('/api/linkedin/disconnect', c ? { id: c.id } : {}); Som.desliga(); status() }
       return
     }
     if (act === 'outros') return menuOutros()

@@ -1,5 +1,5 @@
 'use strict'
-// Contas do LinkedIn conectadas ao Farol (várias pessoas ou perfis na mesma máquina). Tudo fica no cofre cifrado.
+// Contas do LinkedIn conectadas ao Vynco (várias pessoas ou perfis na mesma máquina). Tudo fica no cofre cifrado.
 //   linkedin.contas = { <sub>: { access_token, expires_at, author, nome, foto, via } }    linkedin.ativa = <sub>
 // O token da versão anterior (linkedin.token, uma conta só) vira a primeira conta na primeira leitura.
 const S = require('../segredos.js')

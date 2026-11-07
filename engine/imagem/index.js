@@ -1,5 +1,5 @@
 'use strict'
-// Geração e melhoria de imagens no Farol, com qualquer provedor que siga a interface de engine/imagem/provedores/.
+// Geração e melhoria de imagens no Vynco, com qualquer provedor que siga a interface de engine/imagem/provedores/.
 // - pedir(): confere chave e limites do mês, inicia uma tarefa por versão e guarda tudo em workspace/imagens/tarefas.json
 // - um laço consulta as tarefas em andamento e, quando ficam prontas, baixa as imagens na hora para a biblioteca
 //   (workspace/midia), com prompt, provedor, operação, custo estimado e a imagem "mãe" (quando é uma melhoria)

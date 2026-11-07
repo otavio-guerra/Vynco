@@ -957,7 +957,7 @@ dependencies = [
 
 [[package]]
 name = "farol"
-version = "0.4.4"
+version = "0.5.0"
 dependencies = [
  "serde_json",
  "tauri",

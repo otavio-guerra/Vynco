@@ -50,7 +50,7 @@ async function conferir(link) {
     let atual = link
     for (let i = 0; i < 5; i++) {
       if (!(await publico(atual))) return 'invalido'
-      const r = await fetch(atual, { redirect: 'manual', signal: AbortSignal.timeout(9000), headers: { 'User-Agent': 'Mozilla/5.0 (Farol)' } })
+      const r = await fetch(atual, { redirect: 'manual', signal: AbortSignal.timeout(9000), headers: { 'User-Agent': 'Mozilla/5.0 (Vynco)' } })
       if (r.status >= 300 && r.status < 400 && r.headers.get('location')) { atual = new URL(r.headers.get('location'), atual).href; continue }
       if (r.status < 400) return 'ok'
       return [404, 410].includes(r.status) ? 'quebrado' : 'bloqueado'   // 403, 429 e o 999 do LinkedIn: o site barra robôs

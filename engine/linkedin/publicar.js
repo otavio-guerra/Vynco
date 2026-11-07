@@ -125,8 +125,8 @@ function cliente(tok) {
 async function publicar(p, { conta, confirmar = false, soEnviar = false, aviso } = {}) {
   validar(p)
   const tok = contas.token(conta)
-  if (!tok || !tok.access_token) throw new Error('O LinkedIn não está conectado. Conecte no Farol (Ajustes).')
-  if (Date.now() > tok.expires_at - 864e5) throw new Error(`O acesso de ${tok.nome} ao LinkedIn venceu (ou vence hoje). Reconecte no Farol (Ajustes).`)
+  if (!tok || !tok.access_token) throw new Error('O LinkedIn não está conectado. Conecte no Vynco (Ajustes).')
+  if (Date.now() > tok.expires_at - 864e5) throw new Error(`O acesso de ${tok.nome} ao LinkedIn venceu (ou vence hoje). Reconecte no Vynco (Ajustes).`)
   const resumo = { autor: tok.nome, formato: p.formato, arquivos: p.arquivos.map(f => path.basename(f)), caracteres: p.legenda.length, alt: p.alts.filter(Boolean).length, artigo: p.artigo || undefined, inicio: p.legenda.slice(0, 120) }
   if (!confirmar && !soEnviar) return { ensaio: true, ...resumo }
 
@@ -156,7 +156,7 @@ async function publicar(p, { conta, confirmar = false, soEnviar = false, aviso }
 }
 
 // ---------------------------------------------------------------- histórico local (a API não deixa ler os próprios posts sem aprovação)
-// workspace/publicados.json: uma linha por post. "imagem" é o nome do arquivo ou da pasta (o Farol usa para não publicar duas vezes).
+// workspace/publicados.json: uma linha por post. "imagem" é o nome do arquivo ou da pasta (o Vynco usa para não publicar duas vezes).
 function registrar(linha) {
   const lista = historico()
   lista.push(linha)

@@ -1,12 +1,12 @@
 'use strict'
 // Provedor de imagens: Magnific (API REST oficial, antiga Freepik API). Documentação: https://docs.magnific.com
-// - Autenticação pelo cabeçalho x-magnific-api-key; a chave fica no cofre do Farol e nunca vai para a tela nem para a IA.
-// - Tudo é assíncrono: o POST devolve um task_id e o Farol consulta GET <mesmo caminho>/<task_id> até COMPLETED ou FAILED.
+// - Autenticação pelo cabeçalho x-magnific-api-key; a chave fica no cofre do Vynco e nunca vai para a tela nem para a IA.
+// - Tudo é assíncrono: o POST devolve um task_id e o Vynco consulta GET <mesmo caminho>/<task_id> até COMPLETED ou FAILED.
 //   (O aviso por webhook exige um endereço público; o app desktop não tem, então consulta em intervalos.)
 // - Os links das imagens prontas vencem em 30 minutos: quem chama baixa na hora para a biblioteca.
 // - A API cobra créditos em toda chamada, à parte da assinatura do site (os planos "ilimitados" valem só no app web).
 //
-// Interface de um provedor (para somar outros depois sem mudar o resto do Farol):
+// Interface de um provedor (para somar outros depois sem mudar o resto do Vynco):
 //   { id, nome, chaveUrl, nota, recursos, validar(chave), estimar(op, params, origem), iniciar(op, params, chave, imagemBase64), consultar(tarefa, chave) }
 const BASE = 'https://api.magnific.com'
 

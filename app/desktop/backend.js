@@ -4,7 +4,7 @@
 //    sem tocar no que é dele (config/, workspace/ e o que a IA escreveu em dias/ e pautas/);
 // 2) põe um "node" na frente do PATH, para as IAs (as rotinas chamam "node engine/..." mesmo sem Node instalado);
 // 3) sobe o painel (app/server.js), que avisa a porta numa linha "Farol: http://127.0.0.1:<porta>/" (o Tauri lê e abre a janela).
-// O Tauri passa FAROL_RECURSOS (<recursos do app>\farol) e FAROL_HOME (<Documentos>\Farol).
+// O Tauri passa FAROL_RECURSOS (<recursos do app>\farol) e FAROL_HOME (<Documentos>\Vynco).
 const fs = require('fs')
 const path = require('path')
 
@@ -30,7 +30,7 @@ function nodeParaAsIas() {
   process.env.PATH = bin + path.delimiter + (process.env.PATH || '')
 }
 
-try { sincronizar(); nodeParaAsIas() } catch (e) { console.error('Farol: não consegui preparar a pasta de trabalho:', e.message); process.exit(3) }
+try { sincronizar(); nodeParaAsIas() } catch (e) { console.error('Vynco: não consegui preparar a pasta de trabalho:', e.message); process.exit(3) }
 process.env.FAROL_DESKTOP = '1'      // o painel passa a abrir links e arquivos fora da janela do app
 process.env.FAROL_PORTA_LIVRE = '1'  // se a porta 4800 estiver ocupada, usa outra livre
 process.chdir(CASA)

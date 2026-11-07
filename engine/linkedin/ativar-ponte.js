@@ -13,7 +13,7 @@ const vercel = (args, input) => execFileSync(IS_WIN ? 'vercel.cmd' : 'vercel', a
 
 ;(async () => {
   const app = S.get('linkedin.app')
-  if (!app || !app.client_id || !app.client_secret) throw new Error('Não há chaves do seu app do LinkedIn no cofre. Salve-as no Farol (Usar meu próprio app do LinkedIn).')
+  if (!app || !app.client_id || !app.client_secret) throw new Error('Não há chaves do seu app do LinkedIn no cofre. Salve-as no Vynco (Usar meu próprio app do LinkedIn).')
   try { console.log('Vercel: logado como', vercel(['whoami']).trim()) } catch { throw new Error('A Vercel CLI não está logada. Rode "vercel login" e depois este script de novo.') }
 
   const vars = { LINKEDIN_CLIENT_ID: app.client_id, LINKEDIN_CLIENT_SECRET: app.client_secret, FAROL_URL: PONTE }

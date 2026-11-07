@@ -1,6 +1,6 @@
 'use strict'
-// Modelos de post do Farol: peças prontas que a IA cria a partir do perfil (área, público, tom, pilares), para qualquer profissão.
-// Cada modelo vira uma rotina: o Farol escreve as instruções em workspace/rotinas/<id>.md e a IA escolhida executa.
+// Modelos de post do Vynco: peças prontas que a IA cria a partir do perfil (área, público, tom, pilares), para qualquer profissão.
+// Cada modelo vira uma rotina: o Vynco escreve as instruções em workspace/rotinas/<id>.md e a IA escolhida executa.
 // - carrossel: a IA escreve uma pauta em engine/noticias/pautas/ (o mesmo motor dos carrosséis) e exporta PNG + PDF
 // - texto: a IA cria uma pasta em workspace/avulsos/ com legenda.txt e post.json (entra na fila para aprovação)
 // - Daily UI e o carrossel de notícias de design continuam, mas só aparecem para quem é da área de design.
@@ -44,16 +44,16 @@ Não invente fatos, números, datas, falas, clientes ou resultados sobre a pesso
 Formato: carrossel (PDF). Escreva engine/noticias/pautas/${id}.js no mesmo formato de engine/noticias/pautas/2026-11-03-a.js: exporta { titulo, accent, tema, fontes, slides, caption }. De 5 a 8 slides; use só as peças k.kick, k.title, k.para, k.cards e k.bubble e os tokens T de engine/brand/lib.js (nunca cores fixas). O primeiro slide é o gancho; o último termina com uma pergunta.
 A legenda (caption) segue a skill farol-legendas.
 Depois rode: node engine/noticias/carrossel.js engine/noticias/pautas/${id}.js e node engine/noticias/exportar.js ${id}. Abra os PNG em workspace/noticias/png/${id}/ e corrija textos cortados ou sobrepostos.
-Termine dizendo o título e "Pronto para aprovação no Farol." Não publique nada.`
+Termine dizendo o título e "Pronto para aprovação no Vynco." Não publique nada.`
   return `${comum}
 
 Formato: post de texto. Crie a pasta workspace/avulsos/${id}/ com dois arquivos:
 - legenda.txt: o post completo (até 1.300 caracteres), seguindo a skill farol-legendas;
 - post.json: {"titulo": "<um título curto para a pessoa achar o post>", "rascunho": false}.
-Termine dizendo o título e "Pronto para aprovação no Farol." Não publique nada.`
+Termine dizendo o título e "Pronto para aprovação no Vynco." Não publique nada.`
 }
 
-// escreve as instruções do modelo e devolve o caminho relativo à raiz do Farol (para a rotina)
+// escreve as instruções do modelo e devolve o caminho relativo à raiz do Vynco (para a rotina)
 function preparar(id) {
   const m = MODELOS.find(x => x.id === id); if (!m) throw new Error('modelo desconhecido')
   if (m.prompt) return { titulo: m.titulo, prompt: m.prompt }

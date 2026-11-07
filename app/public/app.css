@@ -1,29 +1,32 @@
-/* Farol · linguagem visual inspirada no onboarding do Mutto (Fluent, Windows 11):
-   fundo marinho com brilho ambiente que muda com o estado, uma ideia por tela, vidro, keycaps e chips. */
+/* Vynco · linguagem visual inspirada no onboarding do Mutto (Fluent, Windows 11):
+   fundo Midnight com brilho ambiente roxo que muda com o estado, uma ideia por tela, vidro, keycaps e chips.
+   Paleta da marca: Vynco Purple #6C63FF · Cloud #F4F5FA · Midnight #0C1220 · Mint #7FFFD4.
+   O roxo puro fica na marca, nos brilhos e nas superfícies grandes; texto e botões usam tons com contraste AA. */
 :root {
-  --bg: #0e1524; --bg-2: #0a101c; --bg-3: #131c2e; --text: #eef1f8; --soft: #a3aec4; --faint: #8a96b0;
+  --brand: #6C63FF; --cloud: #F4F5FA; --midnight: #0C1220; --mint: #7FFFD4;
+  --bg: #0C1220; --bg-2: #080d18; --bg-3: #131a2b; --text: #F4F5FA; --soft: #aab0c8; --faint: #8d93ad;
   --glass: rgba(255, 255, 255, .045); --glass-2: rgba(255, 255, 255, .08); --glass-3: rgba(255, 255, 255, .12); --edge: rgba(255, 255, 255, .09); --edge-2: rgba(255, 255, 255, .16);
-  --accent: #4cc2ff; --accent-ink: #052033; --red: #ff6470; --green: #3ddc84; --amber: #ffb547; --violet: #8b7cff;
+  --accent: #8C85FF; --accent-ink: #0C1220; --btn: #625AF6; --btn-ink: #ffffff; --red: #ff6470; --green: #7FFFD4; --amber: #ffb547; --violet: #a39dff;
   --li: #0a66c2; --li-hi: #0b74dd;
-  --mood: #2f6bff; --mood-2: #1b2a55;
-  --wf-bg: #121a2b; --wf-a: rgba(255, 255, 255, .1); --wf-b: rgba(255, 255, 255, .18); --wf-c: rgba(255, 255, 255, .32);
+  --mood: #6C63FF; --mood-2: #1d1850;
+  --wf-bg: #121828; --wf-a: rgba(255, 255, 255, .1); --wf-b: rgba(255, 255, 255, .18); --wf-c: rgba(255, 255, 255, .32);
   --font: 'Segoe UI Variable Display', 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --mono: 'Cascadia Code', Consolas, ui-monospace, monospace;
   --ease: cubic-bezier(.2, .8, .2, 1); --spring: cubic-bezier(.34, 1.56, .64, 1);
   --r: 16px; --shadow: 0 12px 40px rgba(0, 0, 0, .22);
 }
 [data-theme=light] {
-  --bg: #eef2f8; --bg-2: #e2e8f2; --bg-3: #f7f9fc; --text: #13203a; --soft: #4b586f; --faint: #5a667d;
+  --bg: #F4F5FA; --bg-2: #e8e9f3; --bg-3: #ffffff; --text: #0C1220; --soft: #4a4f66; --faint: #5c6178;
   --glass: rgba(255, 255, 255, .62); --glass-2: rgba(255, 255, 255, .86); --glass-3: #fff; --edge: rgba(19, 32, 58, .1); --edge-2: rgba(19, 32, 58, .18);
-  --accent: #0a7fd1; --accent-ink: #ffffff; --mood-2: #c9d6ef; --amber: #d98a14; --green: #1a9e57; --red: #d93a49;
-  --wf-bg: #e6ecf5; --wf-a: rgba(19, 32, 58, .08); --wf-b: rgba(19, 32, 58, .15); --wf-c: rgba(19, 32, 58, .3);
+  --accent: #5a51f0; --accent-ink: #ffffff; --btn: #5a51f0; --btn-ink: #ffffff; --mood-2: #dcd9ff; --amber: #b8730f; --green: #0b7a5c; --red: #d93a49; --violet: #6C63FF;
+  --wf-bg: #e9eaf4; --wf-a: rgba(19, 32, 58, .08); --wf-b: rgba(19, 32, 58, .15); --wf-c: rgba(19, 32, 58, .3);
   --shadow: 0 12px 36px rgba(19, 32, 58, .1);
 }
 [data-mood=waiting] { --mood: #ff9f2e; --mood-2: #3a2a1a }
-[data-mood=live] { --mood: #2fcf78; --mood-2: #163a2c }
+[data-mood=live] { --mood: #3fe0b0; --mood-2: #10332c }
 [data-mood=error] { --mood: #ff4d5e; --mood-2: #3a1720 }
-[data-mood=work] { --mood: #8b7cff; --mood-2: #241f4d }
-[data-theme=light][data-mood=waiting] { --mood-2: #f6e2c6 } [data-theme=light][data-mood=live] { --mood-2: #cdeedc } [data-theme=light][data-mood=error] { --mood-2: #f5d0d5 } [data-theme=light][data-mood=work] { --mood-2: #ddd8fb }
+[data-mood=work] { --mood: #8C85FF; --mood-2: #241f4d }
+[data-theme=light][data-mood=waiting] { --mood-2: #f6e2c6 } [data-theme=light][data-mood=live] { --mood-2: #c9f5e6 } [data-theme=light][data-mood=error] { --mood-2: #f5d0d5 } [data-theme=light][data-mood=work] { --mood-2: #ddd8fb }
 
 * { box-sizing: border-box }
 [hidden] { display: none !important }
@@ -45,7 +48,7 @@ button { font-family: inherit }
 .bar::before { content: ''; position: absolute; inset: 0; background: linear-gradient(var(--bg) 30%, transparent); opacity: .85; pointer-events: none; z-index: -1 }
 .bar-l { display: flex; align-items: center; gap: 10px; min-width: 0 }
 .wordmark { display: inline-flex; align-items: center; gap: 7px; font-weight: 650; letter-spacing: .01em; color: var(--soft); font-size: 14px }
-.wordmark svg { width: 20px; height: 20px; color: var(--text) }
+.wordmark svg { width: 22px; height: 22px; color: var(--text) } .wordmark { font-size: 15px; letter-spacing: -.01em; text-transform: lowercase }
 .back { display: inline-flex; align-items: center; gap: 4px; font: 600 13px var(--font); color: var(--soft); background: var(--glass); border: 1px solid var(--edge); border-radius: 999px; padding: 6px 12px 6px 8px; min-height: 34px; cursor: pointer; transition: color .2s, background .2s }
 .back:hover { color: var(--text); background: var(--glass-2) } .back svg { width: 16px; height: 16px }
 .back:not([hidden]) + .wordmark { display: none }
@@ -95,9 +98,12 @@ h3 { margin: 0; font-size: 16px; font-weight: 650 }
 
 /* ícone do app e marcas de cena */
 .appicon { position: relative; width: 96px; height: 96px; border-radius: 26px; display: grid; place-items: center; color: var(--text); background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--edge-2); box-shadow: 0 18px 50px rgba(0, 0, 0, .35); margin-bottom: 4px }
-.appicon svg { width: 56px; height: 56px } .appicon .lamp { fill: var(--amber); filter: drop-shadow(0 0 6px var(--amber)) }
-.appicon .beam { position: absolute; top: 14px; left: 50%; width: 160px; height: 60px; transform-origin: 0 50%; background: linear-gradient(90deg, color-mix(in srgb, var(--amber) 45%, transparent), transparent); clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 55%); filter: blur(2px); animation: farol 4.5s linear infinite; opacity: .7 }
-@keyframes farol { from { transform: rotate(-30deg) } 50% { transform: rotate(210deg) } to { transform: rotate(330deg) } }
+.appicon { background: linear-gradient(180deg, #161d33, var(--midnight)); border-color: color-mix(in srgb, var(--brand) 45%, var(--edge-2)); color: var(--cloud) }
+.appicon svg { position: relative; width: 60px; height: 60px }
+/* brilho roxo que respira atrás do símbolo */
+.appicon .aura { position: absolute; inset: -18px; border-radius: 40px; background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 55%, transparent), transparent); filter: blur(10px); animation: aura 3.6s ease-in-out infinite; z-index: -1 }
+@keyframes aura { 0%, 100% { opacity: .55; transform: scale(.92) } 50% { opacity: 1; transform: scale(1.08) } }
+.tagline { margin: -6px 0 0; font-size: clamp(18px, 2.2vw, 22px); font-weight: 500; color: var(--soft) } .tagline span { color: var(--accent); font-weight: 650 }
 .scene-mark { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; color: #fff; box-shadow: 0 14px 40px rgba(0, 0, 0, .3) }
 .scene-mark svg { width: 34px; height: 34px } .scene-mark.li { background: var(--li) }
 
@@ -113,9 +119,9 @@ h3 { margin: 0; font-size: 16px; font-weight: 650 }
 .btn:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--glass-2) 70%, var(--accent) 12%) } .btn:active { transform: scale(.97) }
 .btn.lg { min-height: 50px; padding: 12px 30px; font-size: 15.5px }
 .btn.sm { min-height: 34px; padding: 6px 14px; font-size: 13px }
-.btn.accent { background: var(--accent); color: var(--accent-ink); border-color: transparent; box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 38%, transparent) }
-.btn.accent:hover { background: color-mix(in srgb, var(--accent) 88%, white) }
-.btn.good { background: var(--green); color: #04210f; border-color: transparent }
+.btn.accent { background: var(--btn); color: var(--btn-ink); border-color: transparent; box-shadow: 0 6px 24px color-mix(in srgb, var(--brand) 42%, transparent) }
+.btn.accent:hover { background: color-mix(in srgb, var(--btn) 90%, black) }
+.btn.good { background: var(--green); color: #04261c; border-color: transparent } [data-theme=light] .btn.good { color: #ffffff }
 .btn[disabled] { opacity: .45; pointer-events: none }
 .btn kbd { height: 22px; min-width: 22px; padding: 0 6px; font-size: 11.5px; border-bottom-width: 2px; border-radius: 6px; background: rgba(0, 0, 0, .12); border-color: currentColor; color: inherit; opacity: .8 }
 .link { font: 600 14px var(--font); color: var(--accent); background: none; border: 0; padding: 8px 6px; min-height: 36px; cursor: pointer; border-radius: 8px }
@@ -703,7 +709,7 @@ dialog p { color: var(--soft); margin: 0 }
 }
 /* ?captura=1: tudo já no lugar (capturas de tela automáticas não rodam as animações) */
 .static [data-in] { opacity: 1 !important; transform: none !important; filter: none !important; animation: none !important }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important } .appicon .beam { display: none } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important }  }
 
 /* fila e biblioteca: linhas centralizadas, inclusive a última (nada sobrando encostado à esquerda) */
 .cards > .post { flex: 0 0 184px } .cards > :not(.post) { flex: 1 1 100% }

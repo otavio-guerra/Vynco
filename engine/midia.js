@@ -1,5 +1,5 @@
 'use strict'
-// Biblioteca de mídia do Farol: tudo o que pode ir num post. Os arquivos ficam onde estão:
+// Biblioteca de mídia do Vynco: tudo o que pode ir num post. Os arquivos ficam onde estão:
 //   workspace/midia/          o que você enviou (e, na Etapa 4, o que os provedores de imagem gerarem)
 //   dailyui/, series/, noticias/  o que as rotinas geraram (só leitura aqui)
 // workspace/midia/index.json guarda o que não dá para ler do arquivo: texto alternativo, origem, prompt, provedor,

@@ -1,6 +1,6 @@
 'use strict'
 // Publica um post no seu perfil do LinkedIn pela API oficial. Sem --confirmo, só mostra o que seria publicado.
-// Só use --confirmo depois que o post for aprovado no Farol. Formatos e regras: engine/linkedin/publicar.js
+// Só use --confirmo depois que o post for aprovado no Vynco. Formatos e regras: engine/linkedin/publicar.js
 // Uso: node postar.js <arquivo | pasta | -> [legenda.txt] [--confirmo] [--so-enviar] [--conta <id>]
 //   arquivo .png/.jpg/.gif/.pdf/.pptx/.docx/.mp4 · pasta com imagens (várias imagens) ou com link.json (artigo) · "-" só texto
 //   --so-enviar  manda os arquivos para o LinkedIn e para aí (nada é publicado; serve para testar vídeo e imagens)

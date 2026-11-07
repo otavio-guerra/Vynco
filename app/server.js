@@ -1,5 +1,5 @@
 'use strict'
-// Farol (painel local): conexões (LinkedIn e o agente de IA), sincronização, fila de posts, aprovação e publicação.
+// Vynco (painel local): conexões (LinkedIn e o agente de IA), sincronização, fila de posts, aprovação e publicação.
 // Sem dependências. Escuta só em 127.0.0.1; toda ação exige o token desta sessão (contra sites tentando agir pelo navegador).
 // Uso: node app/server.js   → http://127.0.0.1:4800
 const fs = require('fs')
@@ -34,7 +34,7 @@ const run = (cmd, args, o = {}) => new Promise(ok => execFile(cmd, args, { cwd: 
 const readJSON = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')) } catch { return d } }
 const readJSONText = t => { try { return JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)) } catch { return null } }
 const exists = p => { try { return !!p && fs.existsSync(p) } catch { return false } }
-// CSP do painel: só os arquivos do próprio Farol rodam; fotos de perfil do LinkedIn; nada de iframe de outros sites
+// CSP do painel: só os arquivos do próprio Vynco rodam; fotos de perfil do LinkedIn; nada de iframe de outros sites
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://media.licdn.com; media-src 'self' blob:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 const send = (res, code, body, type = 'application/json; charset=utf-8', extra = {}) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'Cross-Origin-Resource-Policy': 'same-origin', ...extra }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)) }
 const body = req => new Promise(ok => { let s = ''; req.on('data', c => { s += c; if (s.length > 1e5) req.destroy() }); req.on('end', () => { try { ok(JSON.parse(s || '{}')) } catch { ok({}) } }) })
@@ -47,7 +47,7 @@ function linkedinStatus() {
   const k = S.get('linkedin.app'), lista = CONTAS.lista(), a = lista.find(c => c.ativa)
   return { proprio: !!(k && k.client_id && k.client_secret), connected: !!(a && a.valida), name: a && a.nome, foto: a && a.foto, expiresAt: a && a.expiresAt, dias: a ? a.dias : null, via: a && a.via, contas: lista, redirectUri: C.cfg.linkedin.redirectUri, aguardando: !!(LI && LI.expira > Date.now()) }
 }
-// login em andamento pela ponte do Farol (o state confere que o token que volta é deste pedido)
+// login em andamento pela ponte do Vynco (o state confere que o token que volta é deste pedido)
 let LI = null
 let ponteCache = { t: 0, ok: false }
 async function ponteOk() { if (Date.now() - ponteCache.t < 60000) return ponteCache.ok; try { const r = await fetch(PONTE + '/api/linkedin/ping', { signal: AbortSignal.timeout(6000) }); const j = await r.json(); ponteCache = { t: Date.now(), ok: !!j.pronto }; return ponteCache.ok } catch { ponteCache = { t: Date.now(), ok: false }; return false } }
@@ -59,18 +59,18 @@ async function salvarToken(access_token, expires_in, via) {
   perfilAtivo()
   return me.name
 }
-const PAGINA_VOLTA = () => `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Farol · LinkedIn</title>
-<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0f1626;color:#e9edf6;font:16px/1.5 'Segoe UI',system-ui,sans-serif;text-align:center;padding:24px">
-<main><div id="i" style="width:56px;height:56px;margin:0 auto 18px;border-radius:50%;border:3px solid #2a3550;border-top-color:#4cc2ff;animation:g 1s linear infinite"></div>
-<h1 id="t" style="font-weight:600;margin:0 0 6px;font-size:26px">Conectando ao Farol…</h1><p id="s" style="color:#9ba7bf;margin:0">Só um instante.</p></main>
+const PAGINA_VOLTA = () => `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Vynco · LinkedIn</title>
+<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0C1220;color:#e9edf6;font:16px/1.5 'Segoe UI',system-ui,sans-serif;text-align:center;padding:24px">
+<main><div id="i" style="width:56px;height:56px;margin:0 auto 18px;border-radius:50%;border:3px solid #2a3550;border-top-color:#8C85FF;animation:g 1s linear infinite"></div>
+<h1 id="t" style="font-weight:600;margin:0 0 6px;font-size:26px">Conectando ao Vynco…</h1><p id="s" style="color:#aab0c8;margin:0">Só um instante.</p></main>
 <style>@keyframes g{to{transform:rotate(360deg)}}</style>
 <script>
 const h = new URLSearchParams(location.hash.slice(1)); history.replaceState(null, '', location.pathname)
-const fim = (ok, t, s) => { const i = document.getElementById('i'); i.style.animation = 'none'; i.style.border = '0'; i.style.background = ok ? '#3ddc84' : '#ff5f6d'; document.getElementById('t').textContent = t; document.getElementById('s').textContent = s }
-if (h.get('error')) fim(false, 'Não deu certo', h.get('error') + ' Volte ao Farol e tente de novo.')
+const fim = (ok, t, s) => { const i = document.getElementById('i'); i.style.animation = 'none'; i.style.border = '0'; i.style.background = ok ? '#7FFFD4' : '#ff5f6d'; document.getElementById('t').textContent = t; document.getElementById('s').textContent = s }
+if (h.get('error')) fim(false, 'Não deu certo', h.get('error') + ' Volte ao Vynco e tente de novo.')
 else fetch('/api/linkedin/salvar', { method: 'POST', headers: { 'X-Engine-Token': '${TOKEN}', 'Content-Type': 'application/json' }, body: JSON.stringify({ state: h.get('state'), access_token: h.get('access_token'), expires_in: h.get('expires_in') }) })
-  .then(r => r.json().then(j => r.ok ? fim(true, 'Pronto, ' + (j.nome || '') + '.', 'Pode fechar esta aba e voltar ao Farol.') : fim(false, 'Não deu certo', j.erro || 'Tente de novo.')))
-  .catch(() => fim(false, 'O Farol não respondeu', 'Abra o Farol e tente de novo.'))
+  .then(r => r.json().then(j => r.ok ? fim(true, 'Pronto, ' + (j.nome || '') + '.', 'Pode fechar esta aba e voltar ao Vynco.') : fim(false, 'Não deu certo', j.erro || 'Tente de novo.')))
+  .catch(() => fim(false, 'O Vynco não respondeu', 'Abra o Vynco e tente de novo.'))
 </script></body></html>`
 
 // ---------------------------------------------------------------- Desigma (achado sozinho; ajustável em Ajustes)
@@ -164,7 +164,7 @@ async function publicarItem(it) {
 }
 
 // ---------------------------------------------------------------- agenda: { "kind:id": "2026-11-10T12:00:00.000Z" }
-// O Farol publica no horário só o que já está aprovado e só enquanto o app estiver aberto (se estiver fechado, publica ao abrir).
+// O Vynco publica no horário só o que já está aprovado e só enquanto o app estiver aberto (se estiver fechado, publica ao abrir).
 const AGENDA = () => C.ws('agenda.json')
 const agenda = () => readJSON(AGENDA(), {})
 const AVISOS = []   // o que a agenda fez ou não conseguiu fazer (aparece no app)
@@ -327,7 +327,7 @@ const server = http.createServer(async (req, res) => {
         if (d.guessed) C.save({ desigma: { exe: d.exe, mcpExe: d.mcpExe } })   // guarda o que foi achado sozinho
         try { return send(res, 200, AG.sincronizar(id, d)) } catch (e) { return send(res, 409, { erro: e.message }) }
       }
-      // ---- LinkedIn: um botão (ponte do Farol) ou o app próprio do usuário
+      // ---- LinkedIn: um botão (ponte do Vynco) ou o app próprio do usuário
       case '/api/linkedin/connect': {
         if (await ponteOk() && !b.proprio) {
           LI = { state: crypto.randomBytes(16).toString('hex'), expira: Date.now() + 10 * 60000 }
@@ -340,7 +340,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ok: true, modo: 'proprio', msg: 'Abri o LinkedIn no navegador. Entre e clique em Permitir.' })
       }
       case '/api/linkedin/salvar': {
-        if (!LI || LI.expira < Date.now() || typeof b.state !== 'string' || !crypto.timingSafeEqual(Buffer.from(b.state.padEnd(32).slice(0, 32)), Buffer.from(LI.state))) return send(res, 400, { erro: 'Este login expirou ou não foi pedido por este Farol.' })
+        if (!LI || LI.expira < Date.now() || typeof b.state !== 'string' || !crypto.timingSafeEqual(Buffer.from(b.state.padEnd(32).slice(0, 32)), Buffer.from(LI.state))) return send(res, 400, { erro: 'Este login expirou ou não foi pedido por este Vynco.' })
         if (!b.access_token) return send(res, 400, { erro: 'O LinkedIn não mandou o acesso.' })
         LI = null
         try { return send(res, 200, { ok: true, nome: await salvarToken(String(b.access_token), b.expires_in, 'farol') }) } catch (e) { return send(res, 400, { erro: e.message }) }
@@ -434,6 +434,6 @@ const server = http.createServer(async (req, res) => {
 server.on('listening', () => { console.log(`Farol: http://127.0.0.1:${porta()}/`); IMAGEM.retomar() })
 server.on('error', e => {
   if (e.code === 'EADDRINUSE' && process.env.FAROL_PORTA_LIVRE && server.listening === false && !server._tentouLivre) { server._tentouLivre = true; return server.listen(0, '127.0.0.1') }
-  console.error('Farol: não consegui abrir o painel:', e.message); process.exit(1)
+  console.error('Vynco: não consegui abrir o painel:', e.message); process.exit(1)
 })
 server.listen(PORT, '127.0.0.1')

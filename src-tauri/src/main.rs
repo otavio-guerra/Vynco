@@ -1,4 +1,4 @@
-// Farol desktop: uma janela nativa (WebView2) para o painel local do Farol.
+// Vynco desktop: uma janela nativa (WebView2) para o painel local do Vynco.
 // O Tauri inicia o Node que vem com o app (sidecar "farol-node") rodando app/desktop/backend.js, espera a linha
 // "Farol: http://127.0.0.1:<porta>/" e leva a janela para lá. Fechar a janela encerra o backend.
 // Em desenvolvimento (npm run desktop:dev), a janela abre direto no servidor do "npm start" (devUrl), sem sidecar.
@@ -13,7 +13,7 @@ struct Backend(Mutex<Option<CommandChild>>);
 
 fn main() {
     let app = tauri::Builder::default()
-        // um Farol só: abrir de novo traz a janela que já existe para a frente
+        // um Vynco só: abrir de novo traz a janela que já existe para a frente
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(janela) = app.get_webview_window("main") {
                 let _ = janela.unminimize();
@@ -23,9 +23,9 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .manage(Backend(Mutex::new(None)))
         .setup(|app| {
-            // começa na tela "Abrindo o Farol..." (app/desktop/janela); em dev, já no servidor local
+            // começa na tela "Abrindo o Vynco..." (app/desktop/janela); em dev, já no servidor local
             let janela = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-                .title("Farol")
+                .title("Vynco")
                 .inner_size(1240.0, 840.0)
                 .min_inner_size(900.0, 640.0)
                 .center()
@@ -84,7 +84,7 @@ fn main() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("não consegui iniciar o Farol");
+        .expect("não consegui iniciar o Vynco");
 
     app.run(|app, evento| {
         if let RunEvent::Exit = evento {

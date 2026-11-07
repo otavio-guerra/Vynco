@@ -1,5 +1,5 @@
 'use strict'
-// Cofre de segredos do Farol (token e chaves do LinkedIn, chaves de API de provedores).
+// Cofre de segredos do Vynco (token e chaves do LinkedIn, chaves de API de provedores).
 // No Windows, tudo fica num único arquivo cifrado com a DPAPI: só o seu usuário, neste computador, consegue abrir.
 // Fora do Windows (por enquanto), o arquivo fica em texto com permissão 600, e protegido() devolve false.
 // Sem dependências: a DPAPI é chamada pelo PowerShell, com o conteúdo pela entrada padrão (nunca na linha de comando).

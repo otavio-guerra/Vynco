@@ -1,9 +1,9 @@
 ---
 name: farol-legendas
-description: Escrever a legenda de um post do LinkedIn no Farol (gancho, pontos curtos, hashtags) sem inventar nada. Use ao criar ou revisar qualquer arquivo em workspace/*/legendas/.
+description: Escrever a legenda de um post do LinkedIn no Vynco (gancho, pontos curtos, hashtags) sem inventar nada. Use ao criar ou revisar qualquer arquivo em workspace/*/legendas/.
 ---
 
-# Legendas do Farol
+# Legendas do Vynco
 
 - Leia `workspace/perfil.md` antes: escreva para o público e no tom que estão lá, e prefira os pilares de conteúdo do perfil.
 - Primeira linha é o gancho: diz o assunto em até 12 palavras. O LinkedIn corta o resto em "ver mais".

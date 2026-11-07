@@ -1,6 +1,6 @@
 'use strict'
 // Autoriza este script a publicar no seu perfil do LinkedIn (OAuth da API oficial). Rode uma vez, e de novo a cada ~60 dias.
-// Usa o seu próprio app do LinkedIn (client_id e client_secret salvos pelo Farol em Ajustes, guardados no cofre cifrado).
+// Usa o seu próprio app do LinkedIn (client_id e client_secret salvos pelo Vynco em Ajustes, guardados no cofre cifrado).
 // Uso: node auth.js   → abre o navegador; você entra na sua conta e autoriza; o token vai para o cofre (só nesta máquina).
 const http = require('http')
 const crypto = require('crypto')
@@ -9,7 +9,7 @@ const { exec } = require('child_process')
 const C = require('../config.js')
 const S = require('../segredos.js')
 const app = S.get('linkedin.app')
-if (!app || !app.client_id || !app.client_secret) { console.error('Faltam o Client ID e o Client Secret: salve-os no Farol (Usar meu próprio app do LinkedIn).'); process.exit(2) }
+if (!app || !app.client_id || !app.client_secret) { console.error('Faltam o Client ID e o Client Secret: salve-os no Vynco (Usar meu próprio app do LinkedIn).'); process.exit(2) }
 const cfg = { ...app, redirect_uri: C.cfg.linkedin.redirectUri }
 const redirect = cfg.redirect_uri || 'http://localhost:8765/callback'
 const port = +new URL(redirect).port

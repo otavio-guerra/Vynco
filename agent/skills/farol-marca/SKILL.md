@@ -1,9 +1,9 @@
 ---
 name: farol-marca
-description: Desenhar peças de LinkedIn com o design system do usuário no Farol (tokens, fontes, molduras, pixel art). Use sempre que for criar ou corrigir uma imagem, GIF, slide de carrossel ou tela do Daily UI.
+description: Desenhar peças de LinkedIn com o design system do usuário no Vynco (tokens, fontes, molduras, pixel art). Use sempre que for criar ou corrigir uma imagem, GIF, slide de carrossel ou tela do Daily UI.
 ---
 
-# Design system no Farol
+# Design system no Vynco
 
 As peças são SVG gerados por código e exportados para PNG/PDF pelo Edge.
 

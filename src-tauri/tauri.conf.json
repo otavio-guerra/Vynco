@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Farol",
+  "productName": "Vynco",
   "version": "../package.json",
   "identifier": "app.farol.desktop",
   "build": {
@@ -18,7 +18,7 @@
     "publisher": "Otavio Guerra",
     "copyright": "MIT",
     "category": "Productivity",
-    "shortDescription": "Seus posts no LinkedIn, feitos pela sua IA e aprovados por você",
+    "shortDescription": "Vynco: sua carreira em outro nível. Posts no LinkedIn feitos pela sua IA e aprovados por você",
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico", "icons/icon.png"],
     "externalBin": ["binaries/farol-node"],
     "resources": {

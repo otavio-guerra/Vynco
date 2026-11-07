@@ -1,5 +1,5 @@
 'use strict'
-// Perfis do Farol: quem publica, para quem, com que tom, sobre o quê e com que cara.
+// Perfis do Vynco: quem publica, para quem, com que tom, sobre o quê e com que cara.
 // - Um perfil por conta do LinkedIn (id = id da conta) ou "principal" quando ainda não há conta.
 //   Fica em workspace/perfis/<id>/perfil.json.
 // - workspace/perfis/ativo.json diz qual perfil está em uso (o motor de peças lê para aplicar a marca, se o perfil pedir).
@@ -75,7 +75,7 @@ function lista(contas = []) {
 function resumo(p) {
   const l = (rot, v) => v && (Array.isArray(v) ? v.length : true) ? `- **${rot}:** ${Array.isArray(v) ? v.join(', ') : v}\n` : ''
   const c = p.marca.cores, cores = CORES.filter(k => c[k]).map(k => `${k} ${c[k]}`).join(', ')
-  return `<!-- gerado pelo Farol a partir do perfil "${p.id}". Edite na tela Perfil. -->
+  return `<!-- gerado pelo Vynco a partir do perfil "${p.id}". Edite na tela Perfil. -->
 # Perfil de quem publica
 
 ${l('Nome', p.nome)}${l('Área de atuação', p.area)}${l('Momento da carreira', p.nivel)}${l('Público', p.publico)}${l('Objetivo no LinkedIn', p.objetivo)}${l('Tom de voz', p.tom)}${l('Frequência de posts', p.frequencia)}${l('Temas', p.temas)}${l('Evitar', p.evitar)}${l('Site', p.links.site)}${l('Portfólio', p.links.portfolio)}

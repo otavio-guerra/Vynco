@@ -3,30 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Farol</title>
+<title>Vynco</title>
 <style>
-  :root { --bg: #0e1524; --text: #eef1f8; --soft: #a3aec4; --edge: rgba(255, 255, 255, .16); --accent: #4cc2ff; --amber: #ffb547; --red: #ff6470 }
-  @media (prefers-color-scheme: light) { :root { --bg: #eef2f8; --text: #13203a; --soft: #4b586f; --edge: rgba(19, 32, 58, .18); --accent: #0a7fd1; --amber: #d98a14; --red: #d93a49 } }
+  :root { --bg: #0C1220; --text: #F4F5FA; --soft: #aab0c8; --edge: rgba(255, 255, 255, .16); --accent: #8C85FF; --brand: #6C63FF; --red: #ff6470 }
+  @media (prefers-color-scheme: light) { :root { --bg: #F4F5FA; --text: #0C1220; --soft: #4a4f66; --edge: rgba(12, 18, 32, .18); --accent: #5a51f0; --brand: #6C63FF; --red: #d93a49 } }
   html, body { height: 100% } body { margin: 0; display: grid; place-items: center; background: var(--bg); color: var(--text); font: 15px/1.5 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif; text-align: center; overflow: hidden }
-  body::before { content: ''; position: fixed; width: 70vw; height: 70vw; left: 15vw; top: 40vh; border-radius: 50%; filter: blur(90px); background: radial-gradient(closest-side, color-mix(in srgb, #2f6bff 30%, transparent), transparent) }
+  body::before { content: ''; position: fixed; width: 70vw; height: 70vw; left: 15vw; top: 40vh; border-radius: 50%; filter: blur(90px); background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 34%, transparent), transparent) }
   main { position: relative; display: grid; justify-items: center; gap: 14px; padding: 24px; max-width: 520px }
   .icone { position: relative; width: 88px; height: 88px; border-radius: 24px; display: grid; place-items: center; border: 1px solid var(--edge); background: rgba(255, 255, 255, .06) }
-  .icone svg { width: 52px; height: 52px; color: var(--text) } .lampada { fill: var(--amber); filter: drop-shadow(0 0 6px var(--amber)) }
-  .feixe { position: absolute; top: 13px; left: 50%; width: 150px; height: 56px; transform-origin: 0 50%; background: linear-gradient(90deg, color-mix(in srgb, var(--amber) 45%, transparent), transparent); clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 55%); animation: gira 4.5s linear infinite; opacity: .7 }
-  @keyframes gira { from { transform: rotate(-30deg) } 50% { transform: rotate(210deg) } to { transform: rotate(330deg) } }
+  .icone { background: linear-gradient(180deg, #161d33, #0C1220); border-color: rgba(108, 99, 255, .5) } .icone svg { position: relative; width: 56px; height: 56px; color: #F4F5FA }
+  .aura { position: absolute; inset: -16px; border-radius: 36px; background: radial-gradient(closest-side, rgba(108, 99, 255, .55), transparent); filter: blur(10px); animation: aura 3.6s ease-in-out infinite; z-index: -1 }
+  @keyframes aura { 0%, 100% { opacity: .55; transform: scale(.92) } 50% { opacity: 1; transform: scale(1.08) } }
   h1 { margin: 6px 0 0; font-size: 26px; font-weight: 650; letter-spacing: -.02em } p { margin: 0; color: var(--soft) }
   .carregando { width: 120px; height: 3px; border-radius: 99px; background: var(--edge); overflow: hidden; margin-top: 6px }
   .carregando i { display: block; height: 100%; width: 40%; border-radius: 99px; background: var(--accent); animation: anda 1.2s ease-in-out infinite }
   @keyframes anda { from { transform: translateX(-100%) } to { transform: translateX(250%) } }
   pre { display: none; max-width: 480px; max-height: 160px; overflow: auto; text-align: left; font: 12px/1.45 Consolas, monospace; color: var(--soft); background: rgba(0, 0, 0, .2); border: 1px solid var(--edge); border-radius: 10px; padding: 10px 12px; white-space: pre-wrap }
-  .erro .carregando { display: none } .erro pre { display: block } .erro .lampada { fill: var(--red); filter: none } .erro .feixe { display: none }
-  @media (prefers-reduced-motion: reduce) { .feixe, .carregando i { animation: none } }
+  .erro .carregando { display: none } .erro pre { display: block } .erro .aura { display: none } .erro .icone { border-color: var(--red) }
+  @media (prefers-reduced-motion: reduce) { .aura, .carregando i { animation: none } }
 </style>
 </head>
 <body>
 <main>
-  <div class="icone" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M27 22h10l3.5 28h-17z" fill="currentColor"/><rect x="25" y="16" width="14" height="7" rx="2" fill="currentColor" opacity=".7"/><circle cx="32" cy="12" r="5" class="lampada"/></svg><span class="feixe"></span></div>
-  <h1 id="t">Abrindo o Farol…</h1>
+  <div class="icone" aria-hidden="true"><span class="aura"></span><svg viewBox="115 121 260 260" aria-hidden="true"><path fill="currentColor" d="M127 144 L224 144 L236 163 L237 167 L168 167 L167 169 L258 325 L245 347 Z"/><path fill="currentColor" d="M362 144 L335 145 L274 252 L269 247 L255 220 L300 144 L274 144 L245 193 L212 193 L273 297 L278 292 Z"/></svg></div>
+  <h1 id="t">Abrindo o Vynco…</h1>
   <p id="s">Preparando a sua pasta de trabalho em Documentos\Farol.</p>
   <div class="carregando" aria-hidden="true"><i></i></div>
   <pre id="d"></pre>
@@ -35,7 +35,7 @@
   // chamado pelo app (src-tauri/src/main.rs) se o backend cair antes de abrir o painel
   window.falhou = detalhe => {
     document.body.classList.add('erro')
-    document.getElementById('t').textContent = 'O Farol não conseguiu abrir.'
+    document.getElementById('t').textContent = 'O Vynco não conseguiu abrir.'
     document.getElementById('s').textContent = 'Feche e abra de novo. Se continuar, os detalhes abaixo ajudam a entender o que houve.'
     document.getElementById('d').textContent = detalhe || 'sem detalhes'
   }

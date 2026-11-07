@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Farol</title>
+<title>Vynco</title>
 <meta name="engine-token" content="__TOKEN__">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23141b2b'/%3E%3Cpath d='M28 20h8l3 30H25z' fill='%23e8ecf5'/%3E%3Ccircle cx='32' cy='16' r='5' fill='%23ffb547'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='120' fill='%230C1220'/%3E%3Cpath fill='%23F4F5FA' d='M127 144 L224 144 L236 163 L237 167 L168 167 L167 169 L258 325 L245 347 Z'/%3E%3Cpath fill='%23F4F5FA' d='M362 144 L335 145 L274 252 L269 247 L255 220 L300 144 L274 144 L245 193 L212 193 L273 297 L278 292 Z'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
 <header class="bar">
   <div class="bar-l">
     <button class="back" id="back" hidden aria-label="Voltar"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Voltar</button>
-    <span class="wordmark" id="wordmark"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M27 22h10l3.5 28h-17z" fill="currentColor"/><rect x="25" y="16" width="14" height="7" rx="2" fill="currentColor" opacity=".7"/><circle cx="32" cy="11" r="5" fill="var(--amber)"/></svg>Farol</span>
+    <span class="wordmark" id="wordmark"><svg viewBox="115 121 260 260" aria-hidden="true"><path fill="currentColor" d="M127 144 L224 144 L236 163 L237 167 L168 167 L167 169 L258 325 L245 347 Z"/><path fill="currentColor" d="M362 144 L335 145 L274 252 L269 247 L255 220 L300 144 L274 144 L245 193 L212 193 L273 297 L278 292 Z"/></svg>Vynco</span>
     <div class="conta" id="conta">
       <button class="conns" id="conns" hidden aria-label="Sua conta: perfil, conexões e ajustes" aria-haspopup="menu" aria-expanded="false"></button>
       <div class="conta-menu" id="conta-menu" role="menu" hidden></div>
@@ -29,8 +29,9 @@
 <main id="stage">
   <!-- ===================================== ENTRADA (uma ideia por tela) -->
   <section class="scene" data-scene="ola" hidden>
-    <div class="appicon" data-in><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M27 22h10l3.5 28h-17z" fill="currentColor"/><rect x="25" y="16" width="14" height="7" rx="2" fill="currentColor" opacity=".7"/><circle cx="32" cy="12" r="5" class="lamp"/></svg><span class="beam"></span></div>
-    <h1 class="hero" data-in>Farol</h1>
+    <div class="appicon" data-in><span class="aura" aria-hidden="true"></span><svg viewBox="115 121 260 260" aria-hidden="true"><path fill="currentColor" d="M127 144 L224 144 L236 163 L237 167 L168 167 L167 169 L258 325 L245 347 Z"/><path fill="currentColor" d="M362 144 L335 145 L274 252 L269 247 L255 220 L300 144 L274 144 L245 193 L212 193 L273 297 L278 292 Z"/></svg></div>
+    <h1 class="hero" data-in>vynco</h1>
+    <p class="tagline" data-in>Sua carreira em <span>outro nível.</span></p>
     <p class="sub" data-in>Seus posts no LinkedIn, feitos pela sua IA e aprovados por você. Nada sai sem o seu ok.</p>
     <ol class="trio" data-in>
       <li><span class="num">1</span><b>Conecte o LinkedIn</b><small>um botão e três toques</small></li>
@@ -38,7 +39,7 @@
       <li><span class="num">3</span><b>Aprove e publique</b><small>uma tecla</small></li>
     </ol>
     <div class="cta" data-in><button class="btn accent lg" data-next>Começar</button><span class="hint"><kbd class="sm">Enter</kbd></span></div>
-    <p class="fine" data-in>Leva uns dois minutos. Nenhuma senha passa pelo Farol.</p>
+    <p class="fine" data-in>Leva uns dois minutos. Nenhuma senha passa pelo Vynco.</p>
   </section>
 
   <section class="scene" data-scene="linkedin" hidden>
@@ -58,7 +59,7 @@
         <span class="ok-badge"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Conectado</span>
       </div>
     </div>
-    <p class="fine li-dica" data-in data-li-dica hidden>Na primeira vez, o LinkedIn pede uns 5 minutos de passo a passo (criar um "app" seu). O Farol guia cada clique.</p>
+    <p class="fine li-dica" data-in data-li-dica hidden>Na primeira vez, o LinkedIn pede uns 5 minutos de passo a passo (criar um "app" seu). O Vynco guia cada clique.</p>
     <ul class="perms" data-in>
       <li class="yes">Publicar no seu perfil quando você mandar</li>
       <li class="yes">Ver o seu nome e foto</li>
@@ -84,7 +85,7 @@
 
   <section class="scene" data-scene="agente" hidden>
     <h1 data-in>Agora, a sua IA.</h1>
-    <p class="sub" data-in>Ela pesquisa, escreve e desenha as peças. Entre com a conta que você já usa; se faltar algo no computador, o Farol instala.</p>
+    <p class="sub" data-in>Ela pesquisa, escreve e desenha as peças. Entre com a conta que você já usa; se faltar algo no computador, o Vynco instala.</p>
     <div class="sso-list" data-in data-agentes></div>
     <div class="login-card glass" data-login hidden></div>
     <p class="fine" data-in>Cada IA usa a sua própria conta e plano. Dá para trocar depois em Ajustes.</p>
@@ -93,7 +94,7 @@
   <section class="scene" data-scene="sync" hidden>
     <div class="sync-orb" data-in data-sync-orb><svg class="ring-prog" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" class="track"/><circle cx="60" cy="60" r="54" class="fill" data-ring/></svg><span class="glyph" data-sync-glyph></span></div>
     <h1 data-in data-sync-t>Preparando a sua IA…</h1>
-    <p class="sub" data-in data-sync-s>Instalando o que ela precisa para trabalhar no Farol. Leva menos de um minuto.</p>
+    <p class="sub" data-in data-sync-s>Instalando o que ela precisa para trabalhar no Vynco. Leva menos de um minuto.</p>
     <ol class="steps glass" data-in data-steps aria-live="polite"></ol>
     <div class="cta" data-sync-cta hidden></div>
   </section>
@@ -348,7 +349,7 @@
     <label><span>Primary Client Secret <small>clique no olho para ver e copie</small></span><input name="client_secret" type="password" spellcheck="false" placeholder="fica só no cofre deste computador" required></label>
     <p class="full as-val" data-as-val></p>
   </form>
-  <div class="f-act"><button class="btn" type="button" data-as="voltar">Voltar</button><span class="soft as-salvo">Dá para fechar e continuar depois: o Farol lembra o passo.</span><button class="btn accent" type="button" data-as="proximo">Próximo</button></div>
+  <div class="f-act"><button class="btn" type="button" data-as="voltar">Voltar</button><span class="soft as-salvo">Dá para fechar e continuar depois: o Vynco lembra o passo.</span><button class="btn accent" type="button" data-as="proximo">Próximo</button></div>
 </div></dialog>
 <dialog id="picker"><div class="glass sheet sheet-lg">
   <header class="ed-box-h"><h3>Escolher da biblioteca</h3><div class="filters chips" data-pk-filtro><button data-v="todas" class="on">Todas</button><button data-v="imagem">Imagens</button><button data-v="video">Vídeos</button><button data-v="documento">Documentos</button></div></header>
