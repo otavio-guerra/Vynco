@@ -19,7 +19,7 @@
   </div>
   <div class="pill-zone" aria-live="polite"><div class="pill" id="pill" hidden><span class="dot"></span><span><b id="pill-t"></b><small id="pill-s"></small></span></div></div>
   <nav class="seg" id="nav" aria-label="Seções" hidden>
-    <button data-view="fila" aria-current="page">Fila</button><button data-view="biblioteca">Biblioteca</button><button data-view="perfil">Perfil</button><button data-view="rotinas">Rotinas</button><button data-view="ajustes">Ajustes</button>
+    <button data-view="fila" aria-current="page">Fila</button><button data-view="biblioteca">Biblioteca</button><button data-view="perfil">Perfil</button><button data-view="rede">Rede</button><button data-view="rotinas">Rotinas</button><button data-view="ajustes">Ajustes</button>
   </nav>
 </header>
 
@@ -223,6 +223,26 @@
         <div class="ed-acoes"><button class="btn accent" data-pf-salvar>Salvar perfil <kbd>Ctrl S</kbd></button></div>
       </div>
       <aside class="feed glass pf-prev" data-pf-prev aria-label="Prévia da marca"></aside>
+    </div>
+  </section>
+
+  <section class="scene view" data-scene="rede" hidden>
+    <div class="view-head" data-in>
+      <div><h1>Rede.</h1><p class="sub" data-rd-sub>Pessoas para se conectar e vagas que combinam com você, sugeridas pela sua IA a partir do seu perfil.</p></div>
+    </div>
+    <section class="glass ed-box rd-prefs" data-in>
+      <div class="fields two">
+        <label><span>Onde <small>cidade, país ou "remoto"</small></span><input data-rd="local" maxlength="80" placeholder="Ex.: São Paulo, Brasil"></label>
+        <div class="es-linha"><span>Modalidade</span><div class="chips" data-rd-chips="modalidade"></div></div>
+        <div class="es-linha full"><span>Nível</span><div class="chips" data-rd-chips="senioridade"></div></div>
+      </div>
+      <div class="ed-acoes"><button class="btn accent" data-rd-ir="ambos">Buscar conexões e vagas</button><button class="btn" data-rd-ir="conexoes">Só conexões</button><button class="btn" data-rd-ir="vagas">Só vagas</button></div>
+      <p class="fine">O LinkedIn não deixa apps verem pessoas, conexões ou vagas. Por isso a sua IA pesquisa na web (só leitura), sugere <b>tipos</b> de pessoas com a busca pronta para abrir no LinkedIn, e confere os links das vagas antes de mostrar. Convites e candidaturas: sempre você.</p>
+    </section>
+    <div class="rd-estado" data-in data-rd-estado></div>
+    <div class="rd-grid" data-in>
+      <section class="glass ed-box"><header class="ed-box-h"><h3>Conexões para a sua área</h3><span class="tag" data-rd-nc></span></header><div class="rd-lista" data-rd-conexoes></div><div data-rd-seguir></div></section>
+      <section class="glass ed-box"><header class="ed-box-h"><h3>Vagas interessantes</h3><span class="tag" data-rd-nv></span></header><div class="rd-lista" data-rd-vagas></div></section>
     </div>
   </section>
 

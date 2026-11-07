@@ -16,6 +16,7 @@ const BIBLIOTECA = require('../engine/midia.js')
 const POSTS = require('../engine/posts.js')
 const IMAGEM = require('../engine/imagem/index.js')
 const PERFIS = require('../engine/perfis.js')
+const REDE = require('../engine/rede.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -229,6 +230,7 @@ const server = http.createServer(async (req, res) => {
           const ativo = perfilAtivo(), id = u.searchParams.get('id') || ativo
           try { return send(res, 200, { perfil: PERFIS.carregar(id), ativo, perfis: PERFIS.lista(CONTAS.lista()), analise: PERFIS.estadoAnalise(), agente: agenteId() && AG.AGENTES[agenteId()].nome }) } catch (e) { return send(res, 400, { erro: e.message }) }
         }
+        case '/api/rede': { const id = perfilAtivo(), p = PERFIS.carregar(id); return send(res, 200, { rede: REDE.carregar(id), estado: REDE.estado(), perfil: { area: p.area, objetivo: p.objetivo, temas: p.temas }, agente: agenteId() && AG.AGENTES[agenteId()].nome }) }
         case '/api/linkedin/ponte': return send(res, 200, { pronto: await ponteOk() })
         case '/api/perfil/analise': return send(res, 200, PERFIS.estadoAnalise() || {})
         case '/api/runs': {
@@ -307,6 +309,10 @@ const server = http.createServer(async (req, res) => {
       }
       case '/api/imagem/estimar': { try { return send(res, 200, IMAGEM.estimar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/imagem/pedir': { try { return send(res, 200, await IMAGEM.pedir(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/rede/buscar': {
+        const ag = agenteId(); if (!ag) return send(res, 400, { erro: 'Conecte uma IA em Ajustes antes.' })
+        try { return send(res, 200, REDE.buscar(perfilAtivo(), ag, AG.perguntar, b)) } catch (e) { return send(res, 400, { erro: e.message }) }
+      }
       // ---- perfil (quem publica, público, tom, pilares, marca)
       case '/api/perfil/salvar': { try { return send(res, 200, PERFIS.salvar(String(b.id || perfilAtivo()), b.perfil || {})) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/perfil/analisar': {

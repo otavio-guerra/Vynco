@@ -56,6 +56,12 @@ Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fi
   - **Análise com a IA:** a sua IA lê o que você preencheu e os seus links, só leitura e pesquisa na web, sem mexer em arquivo nenhum. Ela sugere área, público, tom, temas, pilares de conteúdo e as cores do site. Cada sugestão tem "Aplicar", e nada muda sem você.
   - **Pilares de conteúdo:** os assuntos em que você quer ser lembrado, com ideias de post. Clicar numa ideia abre o editor com ela, e o editor lembra para quem e em que tom escrever.
   - **Como o perfil é usado:** a IA lê `workspace/perfil.md` antes de escrever cada post. O Estúdio usa as cores, o estilo e a primeira referência, e dá para desligar na hora. Com "Usar nas peças das rotinas" ligado, o Daily UI, a série e os carrosséis saem com as suas cores e fontes; desligado, nada muda.
+- **Rede:** conexões e vagas para a sua área. A API do LinkedIn não deixa apps verem pessoas, conexões ou vagas, e automatizar isso viola os termos dele. Por isso a sua IA pesquisa na web, só leitura, a partir do seu perfil e das suas preferências (local, modalidade, nível).
+  - **Conexões:** sugere tipos de pessoa (nunca nomes inventados), com o motivo, a busca pronta para abrir no próprio LinkedIn e uma mensagem de convite no seu tom.
+  - **Para seguir:** comunidades, eventos e hashtags da área.
+  - **Vagas:** só vagas públicas recentes cujo link a IA abriu. O Farol confere cada link e descarta os quebrados.
+  - Convites e candidaturas são sempre feitos por você.
+- **Conexão com o LinkedIn sem a ponte:** quando a ponte de um clique não está ligada, o Farol abre um passo a passo de 5 passos: Página, app, 2 produtos, endereço de retorno e chaves. Cada passo tem botão para a página certa, "Copiar" e validação, e o Farol lembra onde você parou.
 - **Rascunhos:** salvar (`Ctrl S`) guarda um rascunho, que fica na fila em "Rascunhos" até você mandar para aprovação. Sair do editor com algo escrito salva sozinho. Editar um post que já estava aprovado pede a aprovação de novo.
 
 - **Teclado:** `A` aprova, `P` publica, `←` e `→` navegam, `Enter` avança e `Esc` volta na entrada.

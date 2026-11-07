@@ -51,7 +51,7 @@ const D = DEMO && (() => {
     agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
     escolhido: ja ? 'claude' : null, sincronizado: ja,
     lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
-    jobs: {}, sync: null, posts: {}, tarefas: [], ops: 0, gasto: 0, analise: null,
+    jobs: {}, sync: null, posts: {}, tarefas: [], ops: 0, gasto: 0, analise: null, rede: { conexoes: [], seguir: [], vagas: [], prefs: {} }, redeEstado: null,
     perfil: { id: 'principal', nome: 'Seu Nome', area: '', publico: '', objetivo: '', tom: '', temas: [], evitar: [], links: { site: '', portfolio: '' }, sobre: '', pilares: [], marca: { cores: { principal: '', secundaria: '', acento: '', fundo: '', texto: '' }, fontes: { titulo: '', texto: '' }, estilo: '', referencias: [], aplicarNoMotor: false, usarNoEstudio: true }, analise: null, atualizado: null },
     // biblioteca de exemplo: imagens desenhadas aqui mesmo (wireframes), nenhuma peça real
     midia: [['#4cc2ff', 'tela-de-login.png', 'envio', 'Tela de login com campos de e-mail e senha.'], ['#8b7cff', 'antes.png', 'envio', ''], ['#3ddc84', 'depois.png', 'envio', ''], ['#ffb547', 'daily-ui-003.png', 'dailyui', '']].map(([cor, nome, origem, alt], k) => ({
@@ -147,6 +147,21 @@ async function apiDemo(path, data) {
     case '/api/perfil': return { perfil: D.perfil, ativo: 'principal', perfis: [{ id: 'principal', nome: D.perfil.nome || 'Perfil principal', conta: D.linkedin.connected ? D.linkedin.name : null }], analise: D.analise, agente: 'Claude' }
     case '/api/perfil/salvar': D.perfil = { ...JSON.parse(JSON.stringify(data.perfil)), atualizado: new Date().toISOString() }; return D.perfil
     case '/api/perfil/analise': return D.analise || {}
+    case '/api/rede': return { rede: D.rede, estado: D.redeEstado, perfil: { area: D.perfil.area, objetivo: D.perfil.objetivo, temas: D.perfil.temas }, agente: 'Claude' }
+    case '/api/rede/buscar': {
+      D.redeEstado = { estado: 'rodando', tipo: data.tipo }
+      setTimeout(() => {
+        const q = encodeURIComponent
+        Object.assign(D.rede, {
+          conexoes: [['Líderes de produto em startups', 'decidem quem contratar e avaliam portfólio', 'head of product startup', 'Oi! Acompanho o seu trabalho em produto e queria trocar ideias sobre design em times pequenos.'], ['Recrutadores de design', 'abrem as vagas antes de elas ficarem públicas', 'recrutador design', 'Oi! Sou designer de produto e gostaria de ficar no seu radar para vagas da área.'], ['Designers sêniores da sua área', 'trocam referências e indicam oportunidades', 'senior product designer', 'Oi! Gosto muito dos seus estudos de caso e queria acompanhar o seu trabalho.']].map(([perfil, por_que, busca, convite]) => ({ perfil, por_que, busca, convite, url: 'https://www.linkedin.com/search/results/people/?keywords=' + q(busca) })),
+          seguir: [{ nome: '#uxdesign', tipo: 'hashtag', por_que: 'onde a área conversa' }, { nome: 'Comunidades de design de produto', tipo: 'comunidade', por_que: 'eventos e vagas' }],
+          vagas: data.tipo === 'conexoes' ? D.rede.vagas : [{ titulo: 'Exemplo: Designer de produto pleno', empresa: 'Empresa de exemplo', local: data.local || 'Remoto', modalidade: data.modalidade || 'Remoto', link: 'https://example.com/vaga', por_que: 'Demonstração: na versão real, só aparecem vagas que a IA achou e cujo link existe.', publicada: 'há 3 dias', conferido: true }],
+          maisVagas: 'https://www.linkedin.com/jobs/search/?keywords=' + q(D.perfil.area || 'design'), quando: new Date().toISOString(), prefs: { local: data.local, modalidade: data.modalidade, senioridade: data.senioridade },
+        })
+        D.redeEstado = { estado: 'pronto', tipo: data.tipo }
+      }, 2600)
+      return { estado: 'rodando' }
+    }
     case '/api/perfil/analisar': {
       D.analise = { id: 'principal', estado: 'rodando', agente: 'claude' }
       setTimeout(() => {
@@ -253,7 +268,7 @@ function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
   fila: () => carregarFila(), rotinas: () => carregarRotinas(), ajustes: () => { status(); carregarImgAjustes() },
-  biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(),
+  biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(), rede: () => carregarRede(),
 }
 
 // ---------------------------------------------------------------- estado geral
@@ -549,7 +564,7 @@ async function carregarFila() {
   desenharFila(); atualizarHumor()
 }
 function atualizarHumor() {
-  if (!['fila', 'rotinas', 'ajustes', 'biblioteca', 'editor', 'perfil'].includes(atual?.dataset.scene)) return
+  if (!['fila', 'rotinas', 'ajustes', 'biblioteca', 'editor', 'perfil', 'rede'].includes(atual?.dataset.scene)) return
   humor(FILA.some(CONTA.pendente) ? 'waiting' : FILA.some(CONTA.pronto) ? 'live' : 'neutral')
 }
 const capa = i => i.formato === 'texto' ? wire('texto', { texto: (i.caption || '').slice(0, 160) })
@@ -1153,6 +1168,56 @@ $('[data-scene=perfil]').addEventListener('click', e => {
   if (t.dataset.aplicar) return aplicarSugestao(t.dataset.aplicar)
   if (t.matches('[data-pf-analisar]')) return analisarPerfil()
   if (t.matches('[data-pf-salvar]')) return salvarPerfil()
+})
+
+// ---------------------------------------------------------------- rede: conexões e vagas (a IA pesquisa na web; convites e candidaturas são da pessoa)
+let RD = null, RD_P = { local: '', modalidade: '', senioridade: '' }, rdT = null
+const MODALIDADES = ['Remoto', 'Híbrido', 'Presencial'], NIVEIS = ['Júnior', 'Pleno', 'Sênior', 'Liderança']
+async function carregarRede() {
+  try { RD = await api('/api/rede') } catch (e) { return falha(e) }
+  RD_P = { ...RD_P, ...(RD.rede.prefs || {}) }
+  $('[data-rd=local]').value = RD_P.local || ''
+  desenharRede()
+  if (RD.estado?.estado === 'rodando') acompanharRede()
+}
+function desenharRede() {
+  const r = RD.rede, rodando = RD.estado?.estado === 'rodando'
+  for (const [k, ops] of [['modalidade', MODALIDADES], ['senioridade', NIVEIS]]) $(`[data-rd-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${o}" class="${RD_P[k] === o ? 'on' : ''}">${o}</button>`).join('')
+  $$('[data-rd-ir]').forEach(b => (b.disabled = rodando))
+  $('[data-rd-sub]').textContent = RD.perfil.area ? `Sugestões para ${RD.perfil.area}${RD.perfil.objetivo ? `, com foco em: ${RD.perfil.objetivo.toLowerCase()}` : ''}. Feitas pela sua IA a partir do seu perfil.` : 'Preencha a sua área no Perfil: é dela que saem as sugestões de conexões e vagas.'
+  $('[data-rd-estado]').innerHTML = rodando ? `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>A ${esc(RD.agente || 'sua IA')} está pesquisando ${RD.estado.tipo === 'vagas' ? 'vagas' : RD.estado.tipo === 'conexoes' ? 'conexões' : 'conexões e vagas'}</b><small>Leva de 1 a 4 minutos. Os links das vagas são conferidos antes de aparecer.</small></span></li></div>`
+    : RD.estado?.estado === 'falhou' ? `<p class="ed-erro">${esc(RD.estado.erro || 'A busca não deu certo.')}</p>` : r.quando ? `<p class="fine">Última busca em ${new Date(r.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}${r.descartadas ? ` · ${r.descartadas} ${r.descartadas === 1 ? 'vaga descartada' : 'vagas descartadas'} por link quebrado` : ''}.</p>` : ''
+  $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
+  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card"><b>${esc(c.perfil)}</b><p>${esc(c.por_que)}</p>
+      ${c.convite ? `<div class="rd-convite"><small>Mensagem de convite</small><span>${esc(c.convite)}</span></div>` : ''}
+      <div class="rd-a"><a class="btn sm accent" href="${esc(c.url)}" target="_blank" rel="noopener">Buscar no LinkedIn ↗</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">Copiar o convite</button>` : ''}</div></article>`).join('')
+    : `<div class="es-vazio"><p>Aqui aparecem os tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e uma mensagem de convite no seu tom.</p></div>`
+  $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<div class="rd-seguir"><small>Para seguir</small>${r.seguir.map(s => `<span class="rd-tag" title="${esc(s.por_que)}">${esc(s.nome)}<i>${esc(s.tipo)}</i></span>`).join('')}</div>` : ''
+  $('[data-rd-nv]').textContent = r.vagas.length ? `${r.vagas.length} ${r.vagas.length === 1 ? "vaga" : "vagas"}` : ''
+  $('[data-rd-vagas]').innerHTML = (r.vagas.length ? r.vagas.map(v => `<article class="rd-card"><b>${esc(v.titulo)}</b><small class="rd-meta">${[v.empresa, v.local, v.modalidade, v.publicada].filter(Boolean).map(esc).join(' · ')}</small><p>${esc(v.por_que)}</p>
+      <div class="rd-a"><a class="btn sm accent" href="${esc(v.link)}" target="_blank" rel="noopener">Abrir a vaga ↗</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? 'link conferido' : 'o site não deixa conferir o link'}</span></div></article>`).join('')
+    : `<div class="es-vazio"><p>${r.quando ? 'A IA não achou vagas recentes com essas preferências. Tente outro local ou modalidade.' : 'Aqui aparecem vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
+    + (r.maisVagas ? `<a class="link" href="${esc(r.maisVagas)}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
+}
+async function buscarRede(tipo) {
+  RD_P.local = $('[data-rd=local]').value
+  try { await api('/api/rede/buscar', { tipo, ...RD_P }); RD.estado = { estado: 'rodando', tipo }; humor('work'); Som.tique(); desenharRede(); acompanharRede() } catch (e) { falha(e) }
+}
+function acompanharRede() {
+  clearTimeout(rdT)
+  rdT = setTimeout(async () => {
+    let r; try { r = await api('/api/rede') } catch { return acompanharRede() }
+    const era = RD.estado?.estado; RD = r
+    if (r.estado?.estado === 'rodando') { if (atual?.dataset.scene === 'rede') desenharRede(); return acompanharRede() }
+    if (era === 'rodando') { r.estado?.estado === 'pronto' ? (Som.liga(), pill('Sugestões prontas', 'Veja as conexões e as vagas na aba Rede.', 'var(--green)')) : (Som.erro(), pill('A busca não deu certo', r.estado?.erro || '', 'var(--red)')) }
+    atualizarHumor(); if (atual?.dataset.scene === 'rede') desenharRede()
+  }, DEMO ? 800 : 3000)
+}
+$('[data-scene=rede]').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return
+  if (b.closest('[data-rd-chips]')) { const k = b.closest('[data-rd-chips]').dataset.rdChips; RD_P[k] = RD_P[k] === b.dataset.v ? '' : b.dataset.v; Som.tique(); return desenharRede() }
+  if (b.dataset.rdIr) return buscarRede(b.dataset.rdIr)
+  if (b.dataset.rdCopia != null) { try { await navigator.clipboard.writeText(RD.rede.conexoes[+b.dataset.rdCopia].convite); Som.tique(); pill('Convite copiado', 'Cole na mensagem do convite no LinkedIn.', 'var(--green)') } catch { pill('Não consegui copiar', '', 'var(--amber)') } }
 })
 
 // ---------------------------------------------------------------- rotinas
