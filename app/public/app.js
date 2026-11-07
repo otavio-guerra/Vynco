@@ -4,6 +4,8 @@
 const TOKEN = document.querySelector('meta[name=engine-token]').content
 const $ = (s, el = document) => el.querySelector(s)
 const $$ = (s, el = document) => [...el.querySelectorAll(s)]
+// link de fora (IA, web, LinkedIn): só http(s); qualquer outra coisa vira um link vazio
+const urlOk = u => /^https?:\/\/[^\s"<>]+$/i.test(String(u || '')) ? u : '#'
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const store = { get: (k, d) => { try { return localStorage.getItem('farol.' + k) ?? d } catch { return d } }, set: (k, v) => { try { localStorage.setItem('farol.' + k, v) } catch {} } }
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -624,7 +626,7 @@ function detalhe() {
   const l = ST?.linkedin || {}, nome = l.name || 'Você'
   const chars = i.caracteres ?? (i.caption || '').trim().length, passou = chars > LIMITE
   const editar = i.kind === 'avulsos' && i.pasta && !i.published ? `<button class="btn" data-q="editar">Editar</button>` : ''
-  const acoes = i.published ? `<a class="btn" href="${esc(i.published.link)}" target="_blank" rel="noopener">Ver no LinkedIn</a>`
+  const acoes = i.published ? `<a class="btn" href="${esc(urlOk(i.published.link))}" target="_blank" rel="noopener">Ver no LinkedIn</a>`
     : i.rascunho ? `<button class="btn accent" data-q="enviar">Enviar para aprovação</button>${editar}<button class="link soft" data-q="excluir">Excluir</button>`
     : [editar, !i.hasFile ? `<button class="btn" data-q="export">Exportar</button>` : '',
        i.kind !== 'series' ? `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>` : '',
@@ -1206,13 +1208,13 @@ function desenharRede() {
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
   $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card"><b>${esc(c.perfil)}</b><p>${esc(c.por_que)}</p>
       ${c.convite ? `<div class="rd-convite"><small>Mensagem de convite</small><span>${esc(c.convite)}</span></div>` : ''}
-      <div class="rd-a"><a class="btn sm accent" href="${esc(c.url)}" target="_blank" rel="noopener">Buscar no LinkedIn ↗</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">Copiar o convite</button>` : ''}</div></article>`).join('')
+      <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">Buscar no LinkedIn ↗</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">Copiar o convite</button>` : ''}</div></article>`).join('')
     : `<div class="es-vazio"><p>Aqui aparecem os tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e uma mensagem de convite no seu tom.</p></div>`
   $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<div class="rd-seguir"><small>Para seguir</small>${r.seguir.map(s => `<span class="rd-tag" title="${esc(s.por_que)}">${esc(s.nome)}<i>${esc(s.tipo)}</i></span>`).join('')}</div>` : ''
   $('[data-rd-nv]').textContent = r.vagas.length ? `${r.vagas.length} ${r.vagas.length === 1 ? "vaga" : "vagas"}` : ''
   $('[data-rd-vagas]').innerHTML = (r.vagas.length ? r.vagas.map(cartaoVaga).join('')
     : `<div class="es-vazio"><p>${r.quando ? 'A IA não achou vagas recentes com essas preferências. Tente outro local ou modalidade.' : 'Aqui aparecem vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
-    + (r.maisVagas ? `<a class="link" href="${esc(r.maisVagas)}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
+    + (r.maisVagas ? `<a class="link" href="${esc(urlOk(r.maisVagas))}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
 }
 // a vaga em duas camadas: o essencial à vista (cargo, empresa, etiquetas, por que combina) e o resto em "Ver detalhes"
 function cartaoVaga(v) {
@@ -1228,7 +1230,7 @@ function cartaoVaga(v) {
       ${v.combina || v.falta ? `<div class="vg-fit">${v.combina ? `<div class="vg-bloco ok"><small>O que você já tem</small><p>${esc(v.combina)}</p></div>` : ''}${v.falta ? `<div class="vg-bloco falta"><small>O que pode faltar</small><p>${esc(v.falta)}</p></div>` : ''}</div>` : ''}
       ${v.candidatura ? `<div class="vg-bloco"><small>Como se candidatar</small><p>${esc(v.candidatura)}</p></div>` : ''}
     </details>` : ''}
-    <div class="rd-a"><a class="btn sm accent" href="${esc(v.link)}" target="_blank" rel="noopener">Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''} ↗</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? 'link conferido' : 'o site não deixa conferir o link'}</span></div></article>`
+    <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''} ↗</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? 'link conferido' : 'o site não deixa conferir o link'}</span></div></article>`
 }
 async function buscarRede(tipo) {
   RD_P.local = $('[data-rd=local]').value
@@ -1272,7 +1274,7 @@ function desenharRotinas() {
   const f = $('[data-rot-filtro]')
   if (temDesign && !$('[data-v=design]', f)) f.insertAdjacentHTML('beforeend', '<button data-v="design">Design</button>')
   $$('button', f).forEach(b => b.classList.toggle('on', b.dataset.v === ROT_F))
-  $('[data-rot-avisos]').innerHTML = (d.avisos || []).slice(0, 3).map(a => `<div class="cr-aviso ${a.ok ? 'ok' : 'bad'}"><span class="dot"></span><span><b>${esc(a.titulo)}</b> · ${esc(a.texto)}</span>${a.link ? `<a class="link" href="${esc(a.link)}" target="_blank" rel="noopener">Ver no LinkedIn ↗</a>` : ''}</div>`).join('')
+  $('[data-rot-avisos]').innerHTML = (d.avisos || []).slice(0, 3).map(a => `<div class="cr-aviso ${a.ok ? 'ok' : 'bad'}"><span class="dot"></span><span><b>${esc(a.titulo)}</b> · ${esc(a.texto)}</span>${a.link ? `<a class="link" href="${esc(urlOk(a.link))}" target="_blank" rel="noopener">Ver no LinkedIn ↗</a>` : ''}</div>`).join('')
   const lista = d.rotinas.filter(r => ROT_F === 'todos' || (ROT_F === 'design' ? r.design : r.formato === ROT_F && !r.design))
   $('[data-rotinas]').innerHTML = lista.map(r => {
     const u = d.runs.find(x => x.id === r.id), rodando = u && u.status === 'rodando', ag = agendaTxt(r.agenda)
@@ -1371,7 +1373,7 @@ function desenharDia() {
     <div class="cal-lista">${ev.length ? ev.map(e => e.t === 'rot'
       ? `<div class="cal-li rot"><i>${e.hora}</i><span><b>${esc(e.r.titulo)}</b><small>a sua IA cria e manda para a Fila</small></span><button class="link" data-view="rotinas">Ajustar</button></div>`
       : `<div class="cal-li ${e.t}"><i>${e.hora}</i><span><b>${esc(e.i.title)}</b><small>${e.t === 'pub' ? 'no ar' : e.i.approved ? 'agendado · sai sozinho' : 'agendado · falta aprovar'}</small></span>
-          ${e.t === 'pub' ? `<a class="link" href="${esc(e.i.published.link)}" target="_blank" rel="noopener">Ver ↗</a>` : `<span class="cal-li-a"><input type="time" value="${e.hora}" data-cal-hora="${esc(chaveIt(e.i))}" aria-label="Horário"><button class="link" data-cal-fila="${esc(chaveIt(e.i))}">Abrir</button><button class="link soft" data-cal-tirar="${esc(chaveIt(e.i))}">Tirar</button></span>`}</div>`).join('')
+          ${e.t === 'pub' ? `<a class="link" href="${esc(urlOk(e.i.published.link))}" target="_blank" rel="noopener">Ver ↗</a>` : `<span class="cal-li-a"><input type="time" value="${e.hora}" data-cal-hora="${esc(chaveIt(e.i))}" aria-label="Horário"><button class="link" data-cal-fila="${esc(chaveIt(e.i))}">Abrir</button><button class="link soft" data-cal-tirar="${esc(chaveIt(e.i))}">Tirar</button></span>`}</div>`).join('')
       : `<p class="fine">${passado ? 'Nada neste dia.' : 'Dia livre.'}</p>`}</div>
     ${!passado && sem.length ? `<div class="cal-add"><select data-cal-add aria-label="Post para agendar">${sem.map(i => `<option value="${esc(chaveIt(i))}">${esc(i.title)}${i.approved ? '' : ' (falta aprovar)'}</option>`).join('')}</select><input type="time" data-cal-add-hora value="${store.get('hora', '09:00')}" aria-label="Horário"><button class="btn sm accent" data-cal-agendar>Agendar</button></div>` : ''}`
 }

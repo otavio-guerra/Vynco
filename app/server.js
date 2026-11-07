@@ -34,7 +34,9 @@ const run = (cmd, args, o = {}) => new Promise(ok => execFile(cmd, args, { cwd: 
 const readJSON = (p, d = null) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')) } catch { return d } }
 const readJSONText = t => { try { return JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)) } catch { return null } }
 const exists = p => { try { return !!p && fs.existsSync(p) } catch { return false } }
-const send = (res, code, body, type = 'application/json; charset=utf-8') => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)) }
+// CSP do painel: só os arquivos do próprio Farol rodam; fotos de perfil do LinkedIn; nada de iframe de outros sites
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://media.licdn.com; media-src 'self' blob:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+const send = (res, code, body, type = 'application/json; charset=utf-8', extra = {}) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'Cross-Origin-Resource-Policy': 'same-origin', ...extra }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)) }
 const body = req => new Promise(ok => { let s = ''; req.on('data', c => { s += c; if (s.length > 1e5) req.destroy() }); req.on('end', () => { try { ok(JSON.parse(s || '{}')) } catch { ok({}) } }) })
 const publicados = () => readJSON(C.PUBLICADOS, [])
 const agenteId = () => (C.load().agente || {}).id || null
@@ -247,13 +249,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && !u.pathname.startsWith('/api/') && !u.pathname.startsWith('/files/')) {
       const f = u.pathname === '/' ? 'index.html' : u.pathname.slice(1)
       const p = path.join(PUB, path.normalize(f))
-      if (!p.startsWith(PUB) || !exists(p)) return send(res, 404, 'não encontrado', 'text/plain')
+      if (!p.startsWith(PUB + path.sep) || !exists(p) || !fs.statSync(p).isFile()) return send(res, 404, 'não encontrado', 'text/plain')
       let b = fs.readFileSync(p)
       if (f === 'index.html') b = b.toString('utf8').replace('__TOKEN__', TOKEN)
-      return send(res, 200, b, MIME[path.extname(p)] || 'application/octet-stream')
+      return send(res, 200, b, MIME[path.extname(p)] || 'application/octet-stream', path.extname(p) === '.html' ? { 'Content-Security-Policy': CSP } : {})
     }
     // arquivos gerados (só de dentro do workspace)
     if (req.method === 'GET' && u.pathname.startsWith('/files/')) {
+      if (['cross-site', 'same-site'].includes(req.headers['sec-fetch-site'])) return send(res, 403, 'não permitido', 'text/plain')
       const p = path.join(C.WS, path.normalize(decodeURIComponent(u.pathname.slice(7))))
       if (!p.startsWith(C.WS + path.sep) || !exists(p)) return send(res, 404, 'não encontrado', 'text/plain')
       return send(res, 200, fs.readFileSync(p), MIME[path.extname(p).toLowerCase()] || 'application/octet-stream')

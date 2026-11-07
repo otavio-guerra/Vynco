@@ -34,12 +34,28 @@ Responda SOMENTE com um bloco JSON neste formato:
 }
 
 // confere cada link de vaga: some o que não existe (404, 410, endereço inválido); fica marcado o que o site não deixa conferir
+// O link vem da IA, que leu páginas da web: só conferimos endereços públicos (nunca o roteador, a rede de casa ou este computador),
+// e cada redirecionamento passa pela mesma checagem.
+const PRIVADO = [/^0\./, /^10\./, /^127\./, /^169\.254\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./, /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./, /^(::1?|fc|fd|fe80:)/i, /^::ffff:(10|127|192\.168|169\.254)\./i]
+async function publico(u) {
+  let url; try { url = new URL(u) } catch { return false }
+  if (!/^https?:$/.test(url.protocol) || url.username || url.password) return false
+  const host = url.hostname.replace(/^\[|\]$/g, '')
+  if (/^localhost$|\.local$|\.internal$|\.lan$|\.home$/i.test(host)) return false
+  try { const ips = await require('dns').promises.lookup(host, { all: true }); return ips.length > 0 && ips.every(a => !PRIVADO.some(r => r.test(a.address))) } catch { return false }
+}
 async function conferir(link) {
   if (!/^https?:\/\/[^\s"<>]+$/i.test(link || '')) return 'invalido'
   try {
-    const r = await fetch(link, { redirect: 'follow', signal: AbortSignal.timeout(9000), headers: { 'User-Agent': 'Mozilla/5.0 (Farol)' } })
-    if (r.status < 400) return 'ok'
-    return [404, 410].includes(r.status) ? 'quebrado' : 'bloqueado'   // 403, 429 e o 999 do LinkedIn: o site barra robôs
+    let atual = link
+    for (let i = 0; i < 5; i++) {
+      if (!(await publico(atual))) return 'invalido'
+      const r = await fetch(atual, { redirect: 'manual', signal: AbortSignal.timeout(9000), headers: { 'User-Agent': 'Mozilla/5.0 (Farol)' } })
+      if (r.status >= 300 && r.status < 400 && r.headers.get('location')) { atual = new URL(r.headers.get('location'), atual).href; continue }
+      if (r.status < 400) return 'ok'
+      return [404, 410].includes(r.status) ? 'quebrado' : 'bloqueado'   // 403, 429 e o 999 do LinkedIn: o site barra robôs
+    }
+    return 'bloqueado'
   } catch { return 'quebrado' }
 }
 
