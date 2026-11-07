@@ -1,17 +1,33 @@
-<img src="app/public/marca/vynco-logo-lockup.svg" alt="Vynco" width="320">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="app/public/marca/vynco-logo-lockup.svg">
+  <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
+</picture>
+
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.5.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
+
+> [!WARNING]
+> **O Vynco está em beta test.** É uma versão de teste: pode ter erros, telas e funções podem mudar sem aviso, e nem tudo foi testado em todos os computadores. Use com calma, confira cada post antes de aprovar (nada é publicado sem você) e conte o que encontrar nas [issues](https://github.com/AbapaOnSwamp/farol/issues).
 
 O Vynco (antes Farol) é um motor de conteúdo para LinkedIn, para qualquer profissão:
 - a **sua IA** (Claude, ChatGPT, Gemini ou outra) pesquisa e desenha as peças no seu design system;
 - o **Desigma** monta tudo num projeto editável;
 - o **app local do Vynco** cuida da parte que é sua: olhar, aprovar e publicar.
 
-**[Ver a demonstração online](https://farol-otavio-guerra.vercel.app)** · **[Baixar para testar](https://github.com/AbapaOnSwamp/farol/releases/latest)**
+**[Ver a demonstração online](https://farol-otavio-guerra.vercel.app)** · **[Baixar o beta para testar](https://github.com/AbapaOnSwamp/farol/releases)** (Windows, instalador `.exe`)
 
-| LinkedIn | Sua IA | Sincronização | Formatos |
-|---|---|---|---|
-| ![LinkedIn](docs/img/farol-linkedin.png) | ![IA](docs/img/farol-ia.png) | ![Sincronização](docs/img/farol-sync.png) | ![Formatos](docs/img/farol-formatos.png) |
+![Boas-vindas do Vynco](docs/img/vynco-boas-vindas.png)
+
+| Apresentação | Fila |
+|---|---|
+| ![Apresentação: uma pergunta por tela](docs/img/vynco-apresentacao.png) | ![Fila com a prévia no feed](docs/img/vynco-fila.png) |
+| **Calendário** | **Criar** |
+| ![Calendário com posts agendados](docs/img/vynco-calendario.png) | ![Modelos de post para qualquer área](docs/img/vynco-criar.png) |
+| **Biblioteca** | **Rede** |
+| ![Biblioteca de mídia](docs/img/vynco-biblioteca.png) | ![Conexões e vagas](docs/img/vynco-rede.png) |
+
+<sub>Capturas da demonstração, com dados de exemplo.</sub>
 
 ![Como um post nasce](docs/img/fluxo.png)
 

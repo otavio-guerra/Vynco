@@ -715,3 +715,8 @@ dialog p { color: var(--soft); margin: 0 }
 .cards > .post { flex: 0 0 184px } .cards > :not(.post) { flex: 1 1 100% }
 .midias:not(.pk) { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start } .midias:not(.pk) > .midia { flex: 0 0 156px } .midias:not(.pk) > :not(.midia) { flex: 1 1 100% }
 @media (max-width: 700px) { .vc-tiles, .vc-tiles.tres { grid-template-columns: 1fr 1fr } .vc-tile { min-height: 0; padding: 14px 8px 12px } .vc-tile small { font-size: 12px } .vc-k { display: none } .vc-tons { grid-template-columns: 1fr } .vc-resumo p { font-size: 15.5px } }
+
+/* selo de versão de teste (beta) */
+.selo-beta { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1.5; color: var(--mint); background: color-mix(in srgb, var(--mint) 12%, transparent); border: 1px solid color-mix(in srgb, var(--mint) 40%, transparent); vertical-align: middle }
+[data-theme=light] .selo-beta { color: #0b7a5c; background: color-mix(in srgb, #0b7a5c 10%, transparent); border-color: color-mix(in srgb, #0b7a5c 35%, transparent) }
+.aviso-beta { display: inline-flex; align-items: center; gap: 2px; margin: 0; padding: 6px 14px 6px 6px; border-radius: 99px; font-size: 13px; color: var(--soft); background: var(--glass); border: 1px solid var(--edge) } .aviso-beta .selo-beta { margin: 0 8px 0 0 }
