@@ -42,6 +42,10 @@ Uma ideia por tela, com o mínimo de atrito. A entrada tem quatro passos e nenhu
 
 Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fica no feed. **Rotinas** roda a sua IA e **Ajustes** troca de IA, reconecta o LinkedIn e liga o Desigma.
 
+- **Biblioteca:** tudo o que pode ir num post, num lugar só. Ficam ali o que você envia (arraste para a tela ou use "Enviar arquivos") e o que as rotinas geram (Daily UI, série, carrosséis). Cada mídia mostra medidas, tamanho e origem e avisa se passar dos limites do LinkedIn. As imagens ganham **texto alternativo**, que vai junto para o post. Excluir manda para a lixeira do workspace e não quebra posts que já usam o arquivo.
+- **Editor:** "Novo post" na fila (ou "Usar em novo post" na biblioteca) abre o editor: título, texto com contador de 3.000 caracteres, mídias da biblioteca ou enviadas na hora, ordem com ‹ e ›, texto alternativo por imagem e link com cartão (artigo). O formato sai sozinho das mídias (só texto, imagem, várias imagens, vídeo, documento ou artigo), e as regras do LinkedIn são conferidas enquanto você escreve. A prévia ao lado é o mesmo cartão da fila.
+- **Rascunhos:** salvar (`Ctrl S`) guarda um rascunho, que fica na fila em "Rascunhos" até você mandar para aprovação. Sair do editor com algo escrito salva sozinho. Editar um post que já estava aprovado pede a aprovação de novo.
+
 - **Teclado:** `A` aprova, `P` publica, `←` e `→` navegam, `Enter` avança e `Esc` volta na entrada.
 - **Brilho de fundo:** muda com o estado. Fica âmbar quando há post esperando você, verde quando tudo está aprovado, roxo enquanto a IA trabalha e vermelho quando algo dá errado.
 - **Sons:** tudo em Ré maior. Cada tela tem um pad suave, aprovar e desfazer são dois toques numa quinta (Ré5 e Lá5) e publicar é um arpejo.
@@ -136,16 +140,20 @@ engine/
   linkedin/     OAuth e publicação pela API oficial (imagem, GIF, PDF, vídeo)
   agentes.js    instalar, entrar e sincronizar cada IA
   segredos.js   cofre cifrado (DPAPI) para tokens e chaves
+  midia.js      biblioteca de mídia (envio, medidas, limites, texto alternativo, origem)
+  posts.js      posts do editor (rascunhos em workspace/avulsos/<id>/)
   caixa.js      caixa de permissões para o código escrito pela IA
 agent/          regras e skills que o Farol entrega à sua IA (fonte única)
 api/linkedin/   ponte do login de um clique (Vercel)
 prompts/        instruções das rotinas (viram comandos /farol-* na IA)
 examples/assets imagens de exemplo (pixel art do meu portfólio)
-workspace/      tudo o que é gerado (fora do Git). Em avulsos/, cada post é:
+workspace/      tudo o que é gerado (fora do Git). midia/ é a biblioteca (index.json guarda texto alternativo e origem);
+                lixeira/ recebe o que você exclui. Em avulsos/, cada post é:
                   nome.png|gif|jpg|mp4|pdf + nome.txt      um arquivo com legenda
                   nome.txt                                 só texto
                   pasta/ imagens + legenda.txt             várias imagens (2 a 20; <imagem>.alt.txt = texto alternativo)
                   pasta/ link.json + legenda.txt           artigo ({"url", "titulo", "descricao"}; miniatura.png opcional)
+                  pasta/ do editor                         01-, 02-... na ordem, post.json (título, rascunho), um vídeo ou documento, ou só texto
 config/         configuração local e o cofre segredos.dat (fora do Git)
 
 FAROL_DATA      variável opcional: muda a pasta de config/ e workspace/

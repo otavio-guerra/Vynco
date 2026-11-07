@@ -19,7 +19,7 @@
   </div>
   <div class="pill-zone" aria-live="polite"><div class="pill" id="pill" hidden><span class="dot"></span><span><b id="pill-t"></b><small id="pill-s"></small></span></div></div>
   <nav class="seg" id="nav" aria-label="Seções" hidden>
-    <button data-view="fila" aria-current="page">Fila</button><button data-view="rotinas">Rotinas</button><button data-view="ajustes">Ajustes</button>
+    <button data-view="fila" aria-current="page">Fila</button><button data-view="biblioteca">Biblioteca</button><button data-view="rotinas">Rotinas</button><button data-view="ajustes">Ajustes</button>
   </nav>
 </header>
 
@@ -93,11 +93,64 @@
   <section class="scene view" data-scene="fila" hidden>
     <div class="view-head" data-in>
       <div><h1 data-fila-title>Carregando a fila…</h1><p class="sub" data-fila-sub></p></div>
-      <div class="filters chips" data-filter><button data-v="pendente">Esperando</button><button data-v="pronto">Aprovados</button><button data-v="publicado">No ar</button><button data-v="todos">Todos</button></div>
+      <div class="head-a">
+        <div class="filters chips" data-filter><button data-v="pendente">Esperando</button><button data-v="pronto">Aprovados</button><button data-v="publicado">No ar</button><button data-v="rascunho">Rascunhos</button><button data-v="todos">Todos</button></div>
+        <button class="btn accent sm" data-novo-post><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Novo post</button>
+      </div>
     </div>
     <div class="fila-grid" data-in>
       <div class="cards" data-strip tabindex="0" aria-label="Posts"></div>
       <aside class="feed glass" data-detail aria-label="Prévia no feed"></aside>
+    </div>
+  </section>
+
+  <section class="scene view" data-scene="biblioteca" hidden>
+    <div class="view-head" data-in>
+      <div><h1>Biblioteca.</h1><p class="sub" data-bib-sub>Tudo o que pode ir num post: o que você envia e o que a sua IA gera.</p></div>
+      <div class="head-a">
+        <div class="filters chips" data-bib-filtro><button data-v="todas">Todas</button><button data-v="imagem">Imagens</button><button data-v="gif">GIFs</button><button data-v="video">Vídeos</button><button data-v="documento">Documentos</button><button data-v="ia">Das rotinas</button></div>
+        <label class="btn accent sm"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Enviar arquivos<input type="file" multiple hidden data-enviar accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.ppt,.pptx,.doc,.docx"></label>
+      </div>
+    </div>
+    <div class="bib-grid" data-in>
+      <div class="midias solta-alvo" data-midias tabindex="0" aria-label="Mídias"></div>
+      <aside class="glass midia-det" data-midia-det aria-label="Detalhes da mídia"></aside>
+    </div>
+  </section>
+
+  <section class="scene view" data-scene="editor" hidden>
+    <div class="view-head" data-in>
+      <div><h1 data-ed-t>Novo post.</h1><p class="sub" data-ed-s>Escreva, junte as mídias e veja ao lado como fica no feed.</p></div>
+      <div class="head-a"><span class="ed-salvo" data-ed-salvo></span></div>
+    </div>
+    <div class="ed-grid" data-in>
+      <div class="ed-col">
+        <section class="glass ed-box">
+          <label class="ed-campo"><span>Título <small>só para você achar o post na fila</small></span><input data-ed-titulo maxlength="80" placeholder="Ex.: Antes e depois do app de agenda"></label>
+          <label class="ed-campo"><span>Texto do post</span><textarea data-ed-texto rows="9" placeholder="Comece pelo gancho: só as primeiras linhas aparecem antes do “…ver mais”."></textarea></label>
+          <div class="ed-meta"><span data-ed-conta>0 de 3.000</span><span data-ed-dica></span></div>
+        </section>
+        <section class="glass ed-box">
+          <header class="ed-box-h"><h3>Mídias</h3><span class="tag" data-ed-fmt>Só texto</span></header>
+          <div class="ed-midias solta-alvo" data-ed-midias></div>
+          <p class="fine" data-ed-regra>Até 20 imagens, ou um vídeo, ou um documento. Arraste arquivos para cá.</p>
+        </section>
+        <section class="glass ed-box">
+          <label class="ed-switch"><input type="checkbox" data-ed-artigo><span><b>Compartilhar um link</b><small>O LinkedIn mostra um cartão com título, site e miniatura (a primeira imagem).</small></span></label>
+          <div class="fields two" data-ed-art hidden>
+            <label><span>Link</span><input data-art-url type="url" placeholder="https://"></label>
+            <label><span>Título do cartão</span><input data-art-titulo maxlength="200"></label>
+            <label class="full"><span>Descrição <small>opcional</small></span><input data-art-desc maxlength="300"></label>
+          </div>
+        </section>
+        <p class="ed-erro" data-ed-erro hidden></p>
+        <div class="ed-acoes">
+          <button class="btn accent" data-ed="enviar">Enviar para aprovação</button>
+          <button class="btn" data-ed="salvar">Salvar rascunho <kbd>Ctrl S</kbd></button>
+          <button class="link soft" data-ed="descartar">Descartar</button>
+        </div>
+      </div>
+      <aside class="feed glass" data-ed-previa aria-label="Prévia no feed"></aside>
     </div>
   </section>
 
@@ -166,6 +219,11 @@
     <label><span>Client Secret</span><input name="client_secret" type="password" spellcheck="false" placeholder="fica só neste computador" required></label>
     <div class="f-act"><button class="btn" type="button" data-close>Fechar</button><button class="btn accent" type="submit">Salvar e conectar</button></div>
   </form>
+</div></dialog>
+<dialog id="picker"><div class="glass sheet sheet-lg">
+  <header class="ed-box-h"><h3>Escolher da biblioteca</h3><div class="filters chips" data-pk-filtro><button data-v="todas" class="on">Todas</button><button data-v="imagem">Imagens</button><button data-v="video">Vídeos</button><button data-v="documento">Documentos</button></div></header>
+  <div class="midias pk" data-pk-lista></div>
+  <div class="f-act"><span class="soft" data-pk-n>Nada escolhido</span><button class="btn" type="button" data-close>Cancelar</button><button class="btn accent" type="button" data-pk-ok disabled>Adicionar</button></div>
 </div></dialog>
 <script src="app.js"></script>
 </body>

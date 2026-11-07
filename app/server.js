@@ -12,6 +12,8 @@ const AG = require('../engine/agentes.js')
 const S = require('../engine/segredos.js')
 const CONTAS = require('../engine/linkedin/contas.js')
 const PUB_LI = require('../engine/linkedin/publicar.js')
+const BIBLIOTECA = require('../engine/midia.js')
+const POSTS = require('../engine/posts.js')
 
 const ROOT = C.ROOT, PUB = path.join(__dirname, 'public')
 const TOKEN = crypto.randomBytes(24).toString('hex')
@@ -119,18 +121,20 @@ function queue() {
     const id = f.slice(0, -4), file = path.join(av, f)
     add('avulsos', id, id, file, null, file, okAv(id), { formato: 'texto' })
   }
+  // pastas (também os posts do editor): post.json diz o título e se ainda é rascunho
   for (const d of noAv.filter(d => d !== 'aprovados' && fs.statSync(path.join(av, d)).isDirectory())) {
     const dir = path.join(av, d)
-    let p; try { p = PUB_LI.montar(dir) } catch { continue }   // pasta sem legenda.txt ou sem imagens: ainda não é um post
-    if (p.formato === 'texto') continue
-    add('avulsos', d, d, dir, p.arquivos[0] || null, path.join(dir, 'legenda.txt'), okAv(d), { formato: p.formato, arquivos: p.arquivos.map(f => path.relative(C.WS, f)), artigo: p.artigo || undefined })
+    let p; try { p = PUB_LI.montar(dir) } catch { continue }   // pasta sem legenda.txt: ainda não é um post
+    const meta = readJSON(path.join(dir, 'post.json'), {})
+    const capa = p.arquivos.find(f => /\.(png|gif|jpe?g)$/i.test(f)) || null
+    add('avulsos', d, meta.titulo || d, dir, capa, path.join(dir, 'legenda.txt'), okAv(d), { formato: p.formato, pasta: true, rascunho: !!meta.rascunho, editor: !!meta.criado, arquivos: p.arquivos.map(f => path.relative(C.WS, f)), artigo: p.artigo || undefined })
   }
   for (const it of items) it.caracteres = it.caption.trim().length
   return items.sort((a, b) => (a.published ? 1 : 0) - (b.published ? 1 : 0) || a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
 }
 function ls(d) { try { return fs.readdirSync(d).sort() } catch { return [] } }
 const findItem = (kind, id) => queue().find(i => i.kind === kind && i.id === id)
-const legendaDe = it => it.kind !== 'avulsos' ? C.ws(it.kind, 'legendas', it.id + '.txt') : ['multi', 'artigo'].includes(it.formato) || (it.formato === 'imagem' && it.arquivos) ? C.ws('avulsos', it.id, 'legenda.txt') : C.ws('avulsos', it.id + '.txt')
+const legendaDe = it => it.kind !== 'avulsos' ? C.ws(it.kind, 'legendas', it.id + '.txt') : it.pasta ? C.ws('avulsos', it.id, 'legenda.txt') : C.ws('avulsos', it.id + '.txt')
 
 // ---------------------------------------------------------------- rotinas (o agente escolhido, em modo não interativo)
 const RUNS = []
@@ -189,6 +193,11 @@ const server = http.createServer(async (req, res) => {
     const origin = req.headers.origin
     if (origin && !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin)) return send(res, 403, { erro: 'origem não permitida' })
 
+    // envio de arquivo para a biblioteca: o corpo é o próprio arquivo (sem JSON), com o nome na URL
+    if (req.method === 'POST' && u.pathname === '/api/midia/upload') {
+      try { return send(res, 200, await BIBLIOTECA.receber(String(u.searchParams.get('nome') || 'arquivo'), req)) } catch (e) { return send(res, 400, { erro: e.message }) }
+    }
+
     if (req.method === 'GET') {
       switch (u.pathname) {
         case '/api/status': {
@@ -206,6 +215,8 @@ const server = http.createServer(async (req, res) => {
         case '/api/agente/job': return send(res, 200, AG.job(u.searchParams.get('id')) || {})
         case '/api/sync': return send(res, 200, AG.estadoSync() || {})
         case '/api/queue': return send(res, 200, queue())
+        case '/api/midia': return send(res, 200, { itens: BIBLIOTECA.listar(), limites: BIBLIOTECA.LIMITES })
+        case '/api/post': { try { return send(res, 200, POSTS.carregar(u.searchParams.get('id'))) } catch (e) { return send(res, 404, { erro: e.message }) } }
         case '/api/runs': {
           const ag = agenteId()
           return send(res, 200, {
@@ -267,9 +278,16 @@ const server = http.createServer(async (req, res) => {
       }
       case '/api/desigma/open': { const d = desigmaStatus(); if (!d.exeOk) return send(res, 400, { erro: 'Desigma não encontrado.' }); spawn(d.exe, ['--bridge', ...(d.projectOk ? [d.project] : [])], { detached: true, stdio: 'ignore' }).unref(); return send(res, 200, { ok: true }) }
       case '/api/config': { const patch = {}; for (const k of ['assetsDir', 'dailyUiStart']) if (typeof b[k] === 'string') patch[k] = b[k].trim(); C.save(patch); return send(res, 200, { ok: true, msg: 'Salvo. Reinicie o painel para valer em tudo.' }) }
+      // ---- biblioteca e editor
+      case '/api/midia/alt': { try { BIBLIOTECA.definirAlt(b.arquivo, b.alt); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/midia/excluir': { try { BIBLIOTECA.excluir(String(b.arquivo || '')); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/post/salvar': { try { return send(res, 200, POSTS.salvar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/post/enviar': { try { POSTS.enviar(String(b.id || '')); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/post/excluir': { try { POSTS.excluir(String(b.id || '')); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       // ---- fila
       case '/api/approve': case '/api/unapprove': {
         const it = findItem(b.kind, b.id); if (!it || it.kind === 'series') return send(res, 400, { erro: 'Item não encontrado.' })
+        if (it.rascunho && u.pathname === '/api/approve') return send(res, 400, { erro: 'Este post ainda é rascunho: envie para aprovação antes.' })
         const ok = it.kind === 'avulsos' ? C.ws('avulsos', 'aprovados', it.id + '.ok') : path.join(C.ws(it.kind, 'aprovados'), it.id + '.ok')
         if (u.pathname === '/api/approve') { fs.mkdirSync(path.dirname(ok), { recursive: true }); fs.writeFileSync(ok, `${new Date().toISOString()} aprovado no painel\n`) } else if (exists(ok)) fs.unlinkSync(ok)
         return send(res, 200, { ok: true })
@@ -281,7 +299,8 @@ const server = http.createServer(async (req, res) => {
         if (it.published) return send(res, 409, { erro: 'Esse post já foi publicado.' })
         if (!linkedinStatus().connected) return send(res, 400, { erro: 'Conecte o LinkedIn antes.' })
         if (it.caracteres > PUB_LI.LIMITE) return send(res, 400, { erro: `O texto tem ${it.caracteres} caracteres; o LinkedIn aceita até ${PUB_LI.LIMITE}.` })
-        const alvo = it.formato === 'texto' ? '-' : path.join(C.WS, it.file)
+        if (it.rascunho) return send(res, 400, { erro: 'Este post ainda é rascunho: envie para aprovação antes.' })
+        const alvo = it.formato === 'texto' && !it.pasta ? '-' : path.join(C.WS, it.file)
         const r = await run(process.execPath, [path.join(ROOT, 'engine', 'linkedin', 'postar.js'), alvo, legendaDe(it), '--confirmo'], { timeout: 600000 })
         const j = readJSONText(r.out)
         return send(res, r.code === 0 && j && j.ok ? 200 : 500, r.code === 0 && j ? j : { erro: (r.err || r.out).slice(0, 400) })

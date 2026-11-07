@@ -6,6 +6,8 @@
 // O alvo diz o formato:
 //   arquivo .png/.jpg/.gif/.pdf/.pptx/.docx/.mp4  →  um arquivo
 //   pasta com imagens (+ legenda.txt)               →  várias imagens (uma imagem só vira post de imagem)
+//   pasta com um vídeo ou documento (+ legenda.txt) →  vídeo ou documento (posts do editor)
+//   pasta só com legenda.txt                        →  só texto
 //   pasta com link.json (+ miniatura opcional)      →  artigo   { "url": "...", "titulo": "...", "descricao": "..." }
 //   "-" ou nada                                     →  só texto
 // Texto alternativo: um arquivo <imagem>.alt.txt ao lado da imagem.
@@ -33,9 +35,13 @@ function montar(alvo, legendaArq) {
       const mini = imgs.find(f => /^miniatura\./i.test(path.basename(f))) || imgs[0]
       p.formato = 'artigo'; p.artigo = { url: j.url, titulo: j.titulo || j.title, descricao: j.descricao || j.description || '' }
       if (mini) { p.arquivos = [mini]; p.alts = [altDe(mini)] }
-    } else {
+    } else if (imgs.length) {
       p.formato = imgs.length === 1 ? (/\.gif$/i.test(imgs[0]) ? 'gif' : 'imagem') : 'multi'
       p.arquivos = imgs; p.alts = imgs.map(altDe)
+    } else {
+      // pasta do editor com um vídeo ou documento, ou só com a legenda (post de texto)
+      const um = nomes.find(n => VID.test(n) || DOC.test(n))
+      if (um) { p.arquivos = [path.join(p.alvo, um)]; p.alts = [undefined]; p.formato = VID.test(um) ? 'video' : 'documento' }
     }
     legendaArq = legendaArq || path.join(p.alvo, 'legenda.txt')
   } else if (p.alvo) {

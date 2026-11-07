@@ -51,7 +51,13 @@ const D = DEMO && (() => {
     agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
     escolhido: ja ? 'claude' : null, sincronizado: ja,
     lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
-    jobs: {}, sync: null,
+    jobs: {}, sync: null, posts: {},
+    // biblioteca de exemplo: imagens desenhadas aqui mesmo (wireframes), nenhuma peça real
+    midia: [['#4cc2ff', 'tela-de-login.png', 'envio', 'Tela de login com campos de e-mail e senha.'], ['#8b7cff', 'antes.png', 'envio', ''], ['#3ddc84', 'depois.png', 'envio', ''], ['#ffb547', 'daily-ui-003.png', 'dailyui', '']].map(([cor, nome, origem, alt], k) => ({
+      arquivo: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect width="400" height="500" fill="#16203a"/><rect x="40" y="40" width="320" height="260" rx="18" fill="${cor}" opacity=".22"/><circle cx="112" cy="112" r="30" fill="${cor}"/><path d="M40 280 150 175l70 60 50-40 90 80v5H40z" fill="${cor}" opacity=".6"/><rect x="40" y="340" width="230" height="22" rx="11" fill="#fff" opacity=".35"/><rect x="40" y="380" width="300" height="16" rx="8" fill="#fff" opacity=".18"/><rect x="40" y="410" width="200" height="16" rx="8" fill="#fff" opacity=".18"/></svg>`),
+      nome, tipo: 'imagem', bytes: 180000 + k * 41000, largura: 1080, altura: 1350, criado: Date.now() - k * 36e5, origem, alt, avisos: [], apagavel: origem === 'envio' })).concat([
+      { arquivo: 'demo:processo.mp4', nome: 'processo.mp4', tipo: 'video', bytes: 8.4 * 1048576, criado: Date.now() - 9e6, origem: 'envio', alt: '', avisos: [], apagavel: true },
+      { arquivo: 'demo:guia.pdf', nome: 'guia-de-estilo.pdf', tipo: 'documento', bytes: 2.1 * 1048576, criado: Date.now() - 2e7, origem: 'envio', alt: '', avisos: [], apagavel: true }]),
     fila: [
       { kind: 'dailyui', id: '003', title: 'Daily UI 003 · Tela de entrada', formato: 'gif', hasFile: true, approved: false, published: null, caption: 'Daily UI 003 · Tela de entrada\n\nUm campo por vez, erro que explica o que fazer e foco sempre visível.\n\n- Rótulo fora do campo, para não sumir ao digitar\n- Mensagem de erro perto do erro\n- Botão com o verbo da ação\n\n#dailyui #uidesign #ux' },
       { kind: 'noticias', id: 'hoje-a', title: 'Carrossel A · notícias do dia', formato: 'carrossel', paginas: 7, hasFile: true, approved: false, published: null, caption: 'O assunto do dia em 7 slides: o que aconteceu, o outro lado e o que muda para quem desenha.\n\nFontes checadas no último slide.\n\n#design #ia #tecnologia' },
@@ -101,6 +107,22 @@ async function apiDemo(path, data) {
     case '/api/unapprove': it.approved = false; return { ok: true }
     case '/api/publish': it.published = { link: 'https://github.com/AbapaOnSwamp/farol', quando: new Date().toISOString() }; return { ok: true }
     case '/api/run': throw new Error('Na demonstração as rotinas não rodam. Baixe o Farol para usar de verdade.')
+    case '/api/midia': return { itens: D.midia, limites: {} }
+    case '/api/midia/alt': { const m = D.midia.find(x => x.arquivo === data.arquivo); if (m) m.alt = String(data.alt || '').trim(); return { ok: true } }
+    case '/api/midia/excluir': D.midia = D.midia.filter(x => x.arquivo !== data.arquivo); return { ok: true }
+    case '/api/post': { const p = D.posts[id]; if (!p) throw new Error('post não encontrado'); return p }
+    case '/api/post/salvar': {
+      const pid = data.id || (String(data.titulo || data.legenda || 'post').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').slice(0, 30) || 'post') + '-' + Date.now().toString(36).slice(-4)
+      const midias = data.midias.map(m => ({ ...m, tipo: tipoM(m), nome: (D.midia.find(x => x.arquivo === m.arquivo) || {}).nome || 'mídia' }))
+      const p = D.posts[pid] = { id: pid, titulo: data.titulo || (data.legenda || '').split('\n')[0].slice(0, 60) || pid, legenda: data.legenda, midias, artigo: data.artigo, aprovado: false, atualizado: new Date().toISOString() }
+      const imgs = midias.filter(m => ['imagem', 'gif'].includes(m.tipo)), t = midias.map(m => m.tipo)
+      const formato = data.artigo ? 'artigo' : t.includes('video') ? 'video' : t.includes('documento') ? 'documento' : imgs.length > 1 ? 'multi' : imgs.length ? 'imagem' : 'texto'
+      const item = { kind: 'avulsos', id: pid, title: p.titulo, formato, pasta: true, editor: true, rascunho: !data.enviar, hasFile: true, approved: false, published: null, caption: data.legenda, caracteres: data.legenda.trim().length, cover: imgs[0]?.arquivo, arquivos: formato === 'multi' ? imgs.map(m => m.arquivo) : undefined, artigo: data.artigo || undefined }
+      const k = D.fila.findIndex(x => x.kind === 'avulsos' && x.id === pid); k >= 0 ? (D.fila[k] = item) : D.fila.unshift(item)
+      return p
+    }
+    case '/api/post/enviar': { const it = D.fila.find(x => x.id === id); if (it) it.rascunho = false; return { ok: true } }
+    case '/api/post/excluir': D.fila = D.fila.filter(x => x.id !== id); delete D.posts[id]; return { ok: true }
     default: return { ok: true, msg: 'Demonstração: nada foi alterado de verdade.' }
   }
 }
@@ -165,6 +187,7 @@ const ONB = ['ola', 'linkedin', 'agente', 'sync', 'formatos']
 let atual = null, voltarPara = null
 function cena(nome, { som = true } = {}) {
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
+  if (atual?.dataset.scene === 'editor') guardarAoSair()
   const ant = atual; atual = prox
   const mostrar = () => {
     if (ant) { ant.hidden = true; ant.classList.remove('on', 'leaving') }
@@ -196,6 +219,7 @@ function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
   fila: () => carregarFila(), rotinas: () => carregarRotinas(), ajustes: () => status(),
+  biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(),
 }
 
 // ---------------------------------------------------------------- estado geral
@@ -385,16 +409,16 @@ const TIPO = { dailyui: 'Daily UI', noticias: 'Carrossel', series: 'Série', avu
 const FMT_TXT = { imagem: 'Imagem', gif: 'GIF', carrossel: 'Carrossel', documento: 'Documento', video: 'Vídeo', multi: 'Várias imagens', texto: 'Só texto', artigo: 'Artigo' }
 const LIMITE = 3000   // caracteres do texto de um post no LinkedIn
 const dominio = u => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return '' } }
-const estado = i => i.published ? 'pub' : i.approved ? 'ok' : ''
-const estadoTxt = i => i.published ? 'no ar' : i.approved ? 'aprovado' : 'esperando você'
-const CONTA = { pendente: i => !i.published && !i.approved, pronto: i => !i.published && i.approved, publicado: i => !!i.published, todos: () => true }
+const estado = i => i.published ? 'pub' : i.rascunho ? 'draft' : i.approved ? 'ok' : ''
+const estadoTxt = i => i.published ? 'no ar' : i.rascunho ? 'rascunho' : i.approved ? 'aprovado' : 'esperando você'
+const CONTA = { pendente: i => !i.published && !i.approved && !i.rascunho, pronto: i => !i.published && i.approved && !i.rascunho, publicado: i => !!i.published, rascunho: i => !i.published && !!i.rascunho, todos: () => true }
 const visiveis = () => FILA.filter(CONTA[FILTRO])
 async function carregarFila() {
   try { [FILA] = await Promise.all([api('/api/queue'), ST ? null : status()]) } catch (e) { return falha(e) }
   desenharFila(); atualizarHumor()
 }
 function atualizarHumor() {
-  if (!['fila', 'rotinas', 'ajustes'].includes(atual?.dataset.scene)) return
+  if (!['fila', 'rotinas', 'ajustes', 'biblioteca', 'editor'].includes(atual?.dataset.scene)) return
   humor(FILA.some(CONTA.pendente) ? 'waiting' : FILA.some(CONTA.pronto) ? 'live' : 'neutral')
 }
 const capa = i => i.formato === 'texto' ? wire('texto', { texto: (i.caption || '').slice(0, 160) })
@@ -413,7 +437,18 @@ function midiaFeed(i) {
     return `<div class="fp-media fp-link">${i.cover ? `<img src="${arquivo(i.cover)}" alt="">` : wire('artigo')}<span><b>${esc(art.titulo || 'Título do artigo')}</b><small>${esc(dominio(art.url) || 'site.com')}</small></span></div>`
   }
   const media = i.formato === 'video' && i.file && !DEMO ? `<video src="${arquivo(i.file)}" controls preload="metadata"></video>` : i.cover ? `<img src="${arquivo(i.cover)}" alt="Prévia de ${esc(i.title)}">` : wire(i.formato || 'imagem', { paginas: i.paginas })
-  return `<div class="fp-media">${media}${['carrossel', 'documento'].includes(i.formato) ? `<span class="fp-pages">${i.paginas || 7} páginas</span>` : ''}</div>`
+  return `<div class="fp-media">${media}${['carrossel', 'documento'].includes(i.formato) ? `<span class="fp-pages">${i.paginas ? i.paginas + ' páginas' : 'Documento'}</span>` : ''}</div>`
+}
+// o cartão do post como aparece no feed (usado na fila e no editor)
+function cartaoFeed(i, { aberto = false, quandoTxt = 'agora' } = {}) {
+  const l = ST?.linkedin || {}, nome = l.name || 'Você'
+  const longa = (i.caption || '').length > 180 || (i.caption || '').split('\n').length > 3
+  return `<article class="fp">
+      <header class="fp-head"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(nome)}</span><span><b>${esc(nome)}</b><small>${quandoTxt} · Público</small></span></header>
+      <div class="fp-cap${longa && !aberto ? ' clamp' : ''}">${esc(i.caption || 'Sem legenda.')}</div>${longa ? `<div class="fp-more"><button class="link" data-q="mais">${aberto ? 'ver menos' : '…ver mais'}</button></div>` : ''}
+      ${midiaFeed(i)}
+      <div class="fp-foot"><span><svg viewBox="0 0 16 16"><path d="M5 7v6H3V7zm2 6V7l3-5c1 0 1.6.8 1.4 1.8L11 6h2.4c.9 0 1.5.8 1.3 1.7l-1 4.5c-.2.5-.6.8-1.2.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Gostei</span><span><svg viewBox="0 0 16 16"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Comentar</span><span><svg viewBox="0 0 16 16"><path d="M9.5 3 13 6.5 9.5 10M13 6.5H7a4 4 0 0 0-4 4V13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Compartilhar</span></div>
+    </article>`
 }
 function desenharFila() {
   const v = visiveis(), pend = FILA.filter(CONTA.pendente).length, prontos = FILA.filter(CONTA.pronto).length
@@ -432,26 +467,25 @@ function detalhe() {
   if (!i) { d.hidden = true; return } d.hidden = false
   const l = ST?.linkedin || {}, nome = l.name || 'Você'
   const chars = i.caracteres ?? (i.caption || '').trim().length, passou = chars > LIMITE
+  const editar = i.kind === 'avulsos' && i.pasta && !i.published ? `<button class="btn" data-q="editar">Editar</button>` : ''
   const acoes = i.published ? `<a class="btn" href="${esc(i.published.link)}" target="_blank" rel="noopener">Ver no LinkedIn</a>`
-    : [!i.hasFile ? `<button class="btn" data-q="export">Exportar</button>` : '',
+    : i.rascunho ? `<button class="btn accent" data-q="enviar">Enviar para aprovação</button>${editar}<button class="link soft" data-q="excluir">Excluir</button>`
+    : [editar, !i.hasFile ? `<button class="btn" data-q="export">Exportar</button>` : '',
        i.kind !== 'series' ? `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>` : '',
        i.approved && i.hasFile ? `<button class="btn${i.kind === 'series' || i.approved ? ' good' : ''}" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : ''].join('')
-  const longa = (i.caption || '').length > 180 || (i.caption || '').split('\n').length > 3
   d.innerHTML = `<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
-    <article class="fp">
-      <header class="fp-head"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(nome)}</span><span><b>${esc(nome)}</b><small>${i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora'} · Público</small></span></header>
-      <div class="fp-cap${longa && !verMais ? ' clamp' : ''}">${esc(i.caption || 'Sem legenda.')}</div>${longa ? `<div class="fp-more"><button class="link" data-q="mais">${verMais ? 'ver menos' : '…ver mais'}</button></div>` : ''}
-      ${midiaFeed(i)}
-      <div class="fp-foot"><span><svg viewBox="0 0 16 16"><path d="M5 7v6H3V7zm2 6V7l3-5c1 0 1.6.8 1.4 1.8L11 6h2.4c.9 0 1.5.8 1.3 1.7l-1 4.5c-.2.5-.6.8-1.2.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Gostei</span><span><svg viewBox="0 0 16 16"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Comentar</span><span><svg viewBox="0 0 16 16"><path d="M9.5 3 13 6.5 9.5 10M13 6.5H7a4 4 0 0 0-4 4V13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Compartilhar</span></div>
-    </article>
-    <div class="fp-actions">${acoes}${i.file ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">Abrir o arquivo</a>` : ''}</div>
+    ${cartaoFeed(i, { aberto: verMais, quandoTxt: i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora' })}
+    <div class="fp-actions">${acoes}${i.file && (!i.pasta || ST?.desktop) ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">${i.pasta ? 'Abrir a pasta' : 'Abrir o arquivo'}</a>` : ''}</div>
     <p class="fp-note${passou ? ' bad' : ''}">${passou ? `O texto tem ${chars.toLocaleString('pt-BR')} caracteres: o LinkedIn aceita até ${LIMITE.toLocaleString('pt-BR')}. Encurte a legenda para publicar.` : `${chars.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')} caracteres`}${!i.published && !l.connected ? ' · Conecte o LinkedIn em Ajustes para publicar.' : l.connected && !i.published ? ` · sai como ${esc(l.name || '')}` : ''}</p>`
 }
 async function acao(q) {
   const i = visiveis()[foco]; if (!i) return
   if (q === 'mais') { verMais = !verMais; return detalhe() }
+  if (q === 'editar') return abrirEditor({ id: i.id })
   const item = { kind: i.kind, id: i.id }
   try {
+    if (q === 'enviar') { await api('/api/post/enviar', { id: i.id }); Som.liga(); pill('Enviado para aprovação', i.title, 'var(--amber)'); FILTRO = 'pendente' }
+    if (q === 'excluir') { if (!(await confirmar('Excluir este rascunho?', `"${i.title}" vai para a lixeira do workspace (dá para recuperar).`, 'Excluir'))) return; await api('/api/post/excluir', { id: i.id }); Som.desliga(); pill('Rascunho excluído', i.title, 'var(--amber)') }
     if (q === 'toggle' && i.kind !== 'series' && !i.published) {
       const era = i.approved
       await api(era ? '/api/unapprove' : '/api/approve', item)
@@ -475,6 +509,215 @@ async function acao(q) {
 $('[data-strip]').addEventListener('click', e => { const p = e.target.closest('.post'); if (!p) return; foco = +p.dataset.n; verMais = false; Som.tique(); desenharFila() })
 $('[data-detail]').addEventListener('click', e => { const q = e.target.closest('[data-q]')?.dataset.q; if (q) acao(q) })
 $$('[data-filter] button').forEach(b => b.addEventListener('click', () => { FILTRO = b.dataset.v; foco = 0; Som.tique(); carregarFila() }))
+
+// ---------------------------------------------------------------- biblioteca de mídia
+let BIB = [], BIB_F = 'todas', BIB_SEL = null
+const ORIGEM = { envio: 'Enviado por você', dailyui: 'Daily UI', serie: 'Série', noticias: 'Carrossel de notícias' }
+const TIPO_M = { imagem: 'Imagem', gif: 'GIF', video: 'Vídeo', documento: 'Documento' }
+const tamanho = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'
+const filtroBib = (m, f) => f === 'todas' || (f === 'ia' ? m.origem !== 'envio' : m.tipo === f)
+function miniatura(m, { controles = false } = {}) {
+  if (m.tipo === 'imagem' || m.tipo === 'gif') return `<img src="${arquivo(m.arquivo)}" alt="${esc(m.alt || '')}" loading="lazy">`
+  if (m.tipo === 'video' && !DEMO && !String(m.arquivo).startsWith('blob:')) return `<video src="${arquivo(m.arquivo)}" muted preload="metadata"${controles ? ' controls' : ''}></video>`
+  return wire(m.tipo === 'video' ? 'video' : 'documento')
+}
+async function carregarBiblioteca() {
+  try { BIB = (await api('/api/midia')).itens } catch (e) { return falha(e) }
+  desenharBiblioteca()
+}
+function desenharBiblioteca() {
+  const v = BIB.filter(m => filtroBib(m, BIB_F))
+  $$('[data-bib-filtro] button').forEach(b => { b.classList.toggle('on', b.dataset.v === BIB_F); const n = BIB.filter(m => filtroBib(m, b.dataset.v)).length; b.innerHTML = `${b.textContent.replace(/\d+$/, '').trim()}<span class="n">${n}</span>` })
+  $('[data-bib-sub]').textContent = BIB.length ? `${BIB.length} ${BIB.length === 1 ? 'mídia' : 'mídias'}. Arraste arquivos para cá para enviar; clique numa para ver detalhes e escrever o texto alternativo.` : 'Tudo o que pode ir num post: o que você envia e o que a sua IA gera.'
+  if (!BIB.find(m => m.arquivo === BIB_SEL)) BIB_SEL = v[0]?.arquivo || null
+  $('[data-midias]').innerHTML = v.length ? v.map(m => `<button class="midia${m.arquivo === BIB_SEL ? ' focus' : ''}" data-m="${esc(m.arquivo)}"><div class="shot">${miniatura(m)}<span class="wf-badge">${TIPO_M[m.tipo]}</span>${m.avisos?.length ? '<span class="m-aviso" title="Tem um aviso">!</span>' : ''}</div><footer><b>${esc(m.nome)}</b><small>${esc(ORIGEM[m.origem] || m.origem)}${m.alt ? ' · com texto alternativo' : ''}</small></footer></button>`).join('')
+    : `<div class="empty"><div class="wf-row">${wire('imagem')}${wire('gif')}${wire('video')}</div><h3>${BIB.length ? 'Nada neste filtro.' : 'A biblioteca está vazia.'}</h3><p>Arraste fotos, GIFs, vídeos ou PDFs para cá, ou use "Enviar arquivos". O que as rotinas gerarem também aparece aqui.</p></div>`
+  detalheMidia()
+}
+function detalheMidia() {
+  const m = BIB.find(x => x.arquivo === BIB_SEL), d = $('[data-midia-det]')
+  if (!m) { d.hidden = true; return } d.hidden = false
+  const visual = m.tipo === 'imagem' || m.tipo === 'gif'
+  d.innerHTML = `<div class="fp-label"><span>${TIPO_M[m.tipo]}</span><span>${esc(ORIGEM[m.origem] || m.origem)}</span></div>
+    <div class="md-prev">${miniatura(m, { controles: true })}</div>
+    <div class="md-info">
+      <b>${esc(m.nome)}</b>
+      <small>${[m.largura ? `${m.largura} × ${m.altura}` : '', m.quadros > 1 ? `${m.quadros} quadros` : '', tamanho(m.bytes), quando(m.criado)].filter(Boolean).join(' · ')}</small>
+      ${(m.avisos || []).map(a => `<p class="md-aviso">${esc(a)}</p>`).join('')}
+      ${m.prompt ? `<p class="soft"><b>Prompt:</b> ${esc(m.prompt)}</p>` : ''}
+    </div>
+    ${visual ? `<label class="ed-campo md-alt"><span>Texto alternativo <small>descreve a imagem para quem usa leitor de tela</small></span><textarea data-alt rows="3" maxlength="4086" placeholder="Ex.: Tela de cadastro com campos de nome e e-mail e um botão roxo.">${esc(m.alt || '')}</textarea></label>` : ''}
+    <div class="fp-actions">
+      <button class="btn accent" data-mq="usar">Usar em novo post</button>
+      <a class="link" href="${arquivo(m.arquivo)}" target="_blank" rel="noopener">Abrir o arquivo</a>
+      ${m.apagavel ? `<button class="link soft" data-mq="excluir">Excluir</button>` : ''}
+    </div>`
+}
+async function acaoMidia(q) {
+  const m = BIB.find(x => x.arquivo === BIB_SEL); if (!m) return
+  try {
+    if (q === 'usar') return abrirEditor({ midias: [{ arquivo: m.arquivo, alt: m.alt || '', tipo: m.tipo, nome: m.nome }] })
+    if (q === 'excluir') {
+      if (!(await confirmar('Excluir da biblioteca?', `"${m.nome}" vai para a lixeira do workspace. Posts que já usam este arquivo continuam com a cópia deles.`, 'Excluir'))) return
+      await api('/api/midia/excluir', { arquivo: m.arquivo }); Som.desliga(); pill('Excluído', m.nome, 'var(--amber)'); BIB_SEL = null; carregarBiblioteca()
+    }
+  } catch (e) { falha(e) }
+}
+async function salvarAlt(texto) {
+  const m = BIB.find(x => x.arquivo === BIB_SEL); if (!m || (m.alt || '') === texto.trim()) return
+  try { await api('/api/midia/alt', { arquivo: m.arquivo, alt: texto }); m.alt = texto.trim(); Som.tique(); pill('Texto alternativo salvo', m.nome, 'var(--green)'); desenharBiblioteca() } catch (e) { falha(e) }
+}
+$('[data-midias]').addEventListener('click', e => { const b = e.target.closest('.midia'); if (!b) return; BIB_SEL = b.dataset.m; Som.tique(); desenharBiblioteca() })
+$('[data-midia-det]').addEventListener('click', e => { const q = e.target.closest('[data-mq]')?.dataset.mq; if (q) acaoMidia(q) })
+$('[data-midia-det]').addEventListener('focusout', e => { if (e.target.matches('[data-alt]')) salvarAlt(e.target.value) })
+$$('[data-bib-filtro] button').forEach(b => b.addEventListener('click', () => { BIB_F = b.dataset.v; Som.tique(); desenharBiblioteca() }))
+
+// envio de arquivos (botão ou arrastar e soltar): vai para a biblioteca e, no editor, entra no post
+async function enviarArquivos(lista) {
+  const arqs = [...lista], feitos = []
+  for (const [k, f] of arqs.entries()) {
+    pill(`Enviando ${arqs.length > 1 ? `${k + 1} de ${arqs.length}` : 'arquivo'}…`, f.name, 'var(--violet)')
+    try {
+      if (DEMO) { const t = /\.gif$/i.test(f.name) ? 'gif' : /^image\//.test(f.type) ? 'imagem' : /^video\//.test(f.type) ? 'video' : 'documento'; const m = { arquivo: URL.createObjectURL(f), nome: f.name, tipo: t, bytes: f.size, criado: Date.now(), origem: 'envio', alt: '', avisos: [], apagavel: true }; D.midia.unshift(m); feitos.push(m); continue }
+      const r = await fetch('/api/midia/upload?nome=' + encodeURIComponent(f.name), { method: 'POST', headers: { 'X-Engine-Token': TOKEN }, body: f })
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(`${f.name}: ${j.erro || 'erro ' + r.status}`)
+      feitos.push(j)
+    } catch (e) { falha(e) }
+  }
+  if (feitos.length) { Som.liga(); pill(feitos.length === 1 ? 'Arquivo na biblioteca' : `${feitos.length} arquivos na biblioteca`, feitos.map(m => m.nome).join(', ').slice(0, 80), 'var(--green)') }
+  return feitos
+}
+$('[data-enviar]').addEventListener('change', async e => { const f = await enviarArquivos(e.target.files); e.target.value = ''; if (f.length) { BIB_SEL = f[0].arquivo; carregarBiblioteca() } })
+// arrastar e soltar na biblioteca e nas mídias do editor
+for (const alvo of $$('.solta-alvo')) {
+  alvo.addEventListener('dragover', e => { if ([...e.dataTransfer.types].includes('Files')) { e.preventDefault(); alvo.classList.add('solta') } })
+  alvo.addEventListener('dragleave', e => { if (!alvo.contains(e.relatedTarget)) alvo.classList.remove('solta') })
+  alvo.addEventListener('drop', async e => {
+    e.preventDefault(); alvo.classList.remove('solta')
+    const f = await enviarArquivos(e.dataTransfer.files); if (!f.length) return
+    if (alvo.matches('[data-ed-midias]')) { ED.midias.push(...f.map(m => ({ arquivo: m.arquivo, alt: m.alt || '', tipo: m.tipo, nome: m.nome }))); edMudou() }
+    else { BIB_SEL = f[0].arquivo; carregarBiblioteca() }
+  })
+}
+
+// ---------------------------------------------------------------- editor de posts
+let ED = null, ED_PEDIDO = null, edVerMais = false
+const edNovo = () => ({ id: null, titulo: '', legenda: '', midias: [], artigo: null, sujo: false, salvoEm: null, aprovado: false, rascunho: true })
+// abre o editor: { id } edita um post salvo; { midias } começa um post novo com essas mídias
+function abrirEditor(pedido = {}) { ED_PEDIDO = pedido; voltarPara = ['fila', 'biblioteca', 'rotinas', 'ajustes'].includes(atual?.dataset.scene) ? atual.dataset.scene : 'fila'; if (atual?.dataset.scene === 'editor') entrarEditor(); else cena('editor') }
+async function entrarEditor() {
+  const p = ED_PEDIDO || {}; ED_PEDIDO = null
+  if (!p.id && !p.midias && ED && ED.sujo) { desenharEditor(); return }   // voltou para o editor com algo por salvar
+  ED = edNovo()
+  if (p.midias) ED.midias = p.midias
+  if (p.id) {
+    try { const r = await api('/api/post?id=' + encodeURIComponent(p.id)); Object.assign(ED, { id: r.id, titulo: r.titulo === r.id ? '' : r.titulo, legenda: r.legenda, midias: r.midias, artigo: r.artigo, aprovado: r.aprovado, rascunho: r.rascunho, salvoEm: r.atualizado }) } catch (e) { falha(e) }
+  }
+  edVerMais = false
+  $('[data-ed-titulo]').value = ED.titulo; $('[data-ed-texto]').value = ED.legenda
+  $('[data-ed-artigo]').checked = !!ED.artigo
+  $('[data-art-url]').value = ED.artigo?.url || ''; $('[data-art-titulo]').value = ED.artigo?.titulo || ''; $('[data-art-desc]').value = ED.artigo?.descricao || ''
+  desenharEditor()
+  setTimeout(() => (ED.legenda ? null : $('[data-ed-texto]').focus()), 350)
+}
+const tipoM = m => m.tipo || (/\.gif$/i.test(m.arquivo) ? 'gif' : /\.(png|jpe?g)$/i.test(m.arquivo) ? 'imagem' : /\.mp4$/i.test(m.arquivo) ? 'video' : 'documento')
+function formatoEd() {
+  if (ED.artigo) return 'artigo'
+  const t = ED.midias.map(tipoM), imgs = t.filter(x => x === 'imagem' || x === 'gif')
+  if (t.includes('video')) return 'video'
+  if (t.includes('documento')) return 'documento'
+  return imgs.length > 1 ? 'multi' : imgs.length === 1 ? (t[0] === 'gif' ? 'gif' : 'imagem') : 'texto'
+}
+// as mesmas regras do servidor (engine/posts.js), para avisar antes de salvar
+function errosEd() {
+  const t = ED.midias.map(tipoM), imgs = t.filter(x => x === 'imagem' || x === 'gif').length, vd = t.filter(x => x === 'video' || x === 'documento').length, e = []
+  if (ED.legenda.length > LIMITE) e.push(`O texto passou do limite: ${ED.legenda.length.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')} caracteres.`)
+  if (vd > 1 || (vd && imgs)) e.push('Vídeo e documento vão sozinhos no post: tire as outras mídias.')
+  if (imgs > 20) e.push('Até 20 imagens por post.')
+  if (ED.artigo && (vd || imgs > 1)) e.push('Um link leva só uma imagem, a miniatura do cartão.')
+  if (ED.artigo && !/^https?:\/\/\S+$/i.test(ED.artigo.url || '')) e.push('O link precisa começar com http:// ou https://.')
+  if (ED.artigo && !(ED.artigo.titulo || '').trim()) e.push('Dê um título ao cartão do link.')
+  if (!ED.midias.length && !ED.artigo && !ED.legenda.trim()) e.push('Escreva um texto ou adicione uma mídia.')
+  return e
+}
+function edMudou() { ED.sujo = true; desenharEditor() }
+function desenharEditor() {
+  if (!ED) return
+  const f = formatoEd(), n = ED.legenda.length, erros = errosEd()
+  $('[data-ed-t]').textContent = ED.id ? 'Editar post.' : 'Novo post.'
+  $('[data-ed-s]').textContent = ED.aprovado ? 'Este post estava aprovado: salvar uma mudança pede a aprovação de novo.' : 'Escreva, junte as mídias e veja ao lado como fica no feed.'
+  const conta = $('[data-ed-conta]'); conta.textContent = `${n.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')}`; conta.className = n > LIMITE ? 'bad' : n > LIMITE * 0.9 ? 'warn' : ''
+  const tags = (ED.legenda.match(/#[\p{L}\p{N}_]+/gu) || []).length
+  $('[data-ed-dica]').textContent = [n > 210 ? 'o feed corta depois da 3ª linha (“…ver mais”)' : '', tags ? `${tags} ${tags === 1 ? 'hashtag' : 'hashtags'}` : ''].filter(Boolean).join(' · ')
+  $('[data-ed-fmt]').textContent = FMT_TXT[f]
+  $('[data-ed-art]').hidden = !ED.artigo
+  $('[data-ed-midias]').innerHTML = ED.midias.map((m, k) => `<div class="ed-m">
+      <div class="shot">${miniatura({ ...m, tipo: tipoM(m) })}<span class="wf-badge">${k + 1}</span></div>
+      <div class="ed-m-a"><button class="ic-btn" data-em="esq" data-k="${k}" title="Mover para a esquerda" ${k ? '' : 'disabled'}>‹</button><button class="ic-btn" data-em="dir" data-k="${k}" title="Mover para a direita" ${k < ED.midias.length - 1 ? '' : 'disabled'}>›</button><button class="ic-btn" data-em="tirar" data-k="${k}" title="Tirar do post">×</button></div>
+      ${['imagem', 'gif'].includes(tipoM(m)) ? `<input class="ed-m-alt" data-em-alt="${k}" value="${esc(m.alt || '')}" maxlength="4086" placeholder="Texto alternativo" aria-label="Texto alternativo da mídia ${k + 1}">` : `<small class="soft">${TIPO_M[tipoM(m)]}</small>`}
+    </div>`).join('') + `<div class="ed-add"><button class="ed-add-b" data-ed="biblioteca"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 11 6 7.5l3 3 2-2 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Da biblioteca</button><label class="ed-add-b"><svg viewBox="0 0 16 16"><path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Enviar arquivo<input type="file" multiple hidden data-ed-enviar accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.ppt,.pptx,.doc,.docx"></label></div>`
+  const erro = $('[data-ed-erro]'); erro.hidden = !erros.length; erro.innerHTML = erros.map(esc).join('<br>')
+  $('[data-ed=enviar]').disabled = !!erros.length
+  $('[data-ed=enviar]').textContent = ED.rascunho ? 'Enviar para aprovação' : 'Salvar e voltar para a fila'
+  $('[data-ed=salvar]').innerHTML = `${ED.rascunho ? 'Salvar rascunho' : 'Salvar'} <kbd>Ctrl S</kbd>`
+  $('[data-ed-salvo]').textContent = ED.sujo ? 'Mudanças não salvas' : ED.salvoEm ? `Salvo ${new Date(ED.salvoEm).toLocaleTimeString('pt-BR', { timeStyle: 'short' })}` : ''
+  // prévia ao vivo com o mesmo cartão da fila
+  const imgs = ED.midias.filter(m => ['imagem', 'gif'].includes(tipoM(m)))
+  const item = { kind: 'avulsos', title: ED.titulo, formato: f, caption: ED.legenda, cover: imgs[0]?.arquivo, arquivos: f === 'multi' ? imgs.map(m => m.arquivo) : undefined, file: f === 'video' ? ED.midias[0]?.arquivo : undefined, artigo: ED.artigo }
+  $('[data-ed-previa]').innerHTML = `<div class="fp-label"><span>Prévia no feed</span><span>${FMT_TXT[f]}</span></div>${cartaoFeed(item, { aberto: edVerMais })}<p class="fp-note">${ST?.linkedin?.connected ? `Sai como ${esc(ST.linkedin.name)}, depois de você aprovar na fila.` : 'Conecte o LinkedIn em Ajustes para publicar.'}</p>`
+}
+async function salvarEd({ enviar = false, quieto = false } = {}) {
+  if (!ED) return
+  const erros = errosEd()
+  if (enviar && erros.length) return pill('Falta ajustar', erros[0], 'var(--amber)')
+  try {
+    const dados = { id: ED.id, titulo: ED.titulo, legenda: ED.legenda, midias: ED.midias.map(m => ({ arquivo: m.arquivo, alt: m.alt || '' })), artigo: ED.artigo, enviar }
+    const r = await api('/api/post/salvar', dados)
+    Object.assign(ED, { id: r.id, sujo: false, salvoEm: r.atualizado || new Date().toISOString(), midias: r.midias || ED.midias, aprovado: false, rascunho: r.rascunho ?? !enviar })
+    if (enviar) { Som.liga(); pill('Enviado para aprovação', r.titulo || '', 'var(--amber)'); FILTRO = 'pendente'; ED = null; voltarPara = null; return cena('fila') }
+    if (!quieto) { Som.tique(); pill(ED.rascunho ? 'Rascunho salvo' : 'Salvo', ED.rascunho ? r.titulo || '' : 'Continua na fila, esperando a sua aprovação.', 'var(--green)') }
+    desenharEditor()
+  } catch (e) { falha(e) }
+}
+// sair do editor com algo escrito salva como rascunho, sem perguntar
+function guardarAoSair() {
+  if (atual?.dataset.scene !== 'editor' || !ED?.sujo || errosEd().some(x => /Escreva/.test(x))) return
+  const era = ED.rascunho
+  salvarEd({ quieto: true }).then(() => pill(era ? 'Rascunho salvo' : 'Mudanças salvas', era ? 'Está na fila, em Rascunhos.' : 'Continua na fila, esperando a sua aprovação.', 'var(--green)'))
+}
+$('[data-ed-texto]').addEventListener('input', e => { ED.legenda = e.target.value; edMudou() })
+$('[data-ed-titulo]').addEventListener('input', e => { ED.titulo = e.target.value; ED.sujo = true; desenharEditor() })
+$('[data-ed-artigo]').addEventListener('change', e => { ED.artigo = e.target.checked ? { url: $('[data-art-url]').value, titulo: $('[data-art-titulo]').value, descricao: $('[data-art-desc]').value } : null; edMudou(); if (e.target.checked) $('[data-art-url]').focus() })
+for (const [sel, k] of [['[data-art-url]', 'url'], ['[data-art-titulo]', 'titulo'], ['[data-art-desc]', 'descricao']]) $(sel).addEventListener('input', e => { if (ED.artigo) { ED.artigo[k] = e.target.value; edMudou() } })
+$('[data-ed-midias]').addEventListener('click', e => {
+  const b = e.target.closest('[data-em]'); if (!b) return
+  const k = +b.dataset.k, m = ED.midias
+  if (b.dataset.em === 'tirar') m.splice(k, 1)
+  if (b.dataset.em === 'esq' && k > 0) [m[k - 1], m[k]] = [m[k], m[k - 1]]
+  if (b.dataset.em === 'dir' && k < m.length - 1) [m[k + 1], m[k]] = [m[k], m[k + 1]]
+  Som.tique(); edMudou()
+})
+$('[data-ed-midias]').addEventListener('input', e => { if (e.target.matches('[data-em-alt]')) { ED.midias[+e.target.dataset.emAlt].alt = e.target.value; ED.sujo = true; $('[data-ed-salvo]').textContent = 'Mudanças não salvas' } })
+$('[data-ed-midias]').addEventListener('change', async e => { if (!e.target.matches('[data-ed-enviar]')) return; const f = await enviarArquivos(e.target.files); ED.midias.push(...f.map(m => ({ arquivo: m.arquivo, alt: m.alt || '', tipo: m.tipo, nome: m.nome }))); edMudou() })
+$('[data-ed-previa]').addEventListener('click', e => { if (e.target.closest('[data-q=mais]')) { edVerMais = !edVerMais; desenharEditor() } })
+
+// escolher mídias da biblioteca (para o editor)
+let PK = [], PK_F = 'todas', PK_SEL = []
+async function abrirPicker() {
+  try { PK = (await api('/api/midia')).itens } catch (e) { return falha(e) }
+  PK_SEL = []; desenharPicker(); $('#picker').showModal()
+}
+function desenharPicker() {
+  const v = PK.filter(m => PK_F === 'todas' || (PK_F === 'imagem' ? ['imagem', 'gif'].includes(m.tipo) : m.tipo === PK_F))
+  $$('[data-pk-filtro] button').forEach(b => b.classList.toggle('on', b.dataset.v === PK_F))
+  $('[data-pk-lista]').innerHTML = v.length ? v.map(m => { const i = PK_SEL.indexOf(m.arquivo); return `<button class="midia${i >= 0 ? ' focus' : ''}" data-pk="${esc(m.arquivo)}" aria-pressed="${i >= 0}"><div class="shot">${miniatura(m)}${i >= 0 ? `<span class="pk-n">${i + 1}</span>` : ''}</div><footer><b>${esc(m.nome)}</b><small>${TIPO_M[m.tipo]} · ${esc(ORIGEM[m.origem] || m.origem)}</small></footer></button>` }).join('') : '<p class="soft">Nada aqui ainda. Envie arquivos na Biblioteca ou arraste para o editor.</p>'
+  $('[data-pk-n]').textContent = PK_SEL.length ? `${PK_SEL.length} ${PK_SEL.length === 1 ? 'escolhida' : 'escolhidas'} (na ordem do clique)` : 'Nada escolhido'
+  $('[data-pk-ok]').disabled = !PK_SEL.length
+}
+$('[data-pk-lista]').addEventListener('click', e => { const b = e.target.closest('[data-pk]'); if (!b) return; const a = b.dataset.pk, i = PK_SEL.indexOf(a); i >= 0 ? PK_SEL.splice(i, 1) : PK_SEL.push(a); Som.tique(); desenharPicker() })
+$$('[data-pk-filtro] button').forEach(b => b.addEventListener('click', () => { PK_F = b.dataset.v; desenharPicker() }))
+$('[data-pk-ok]').addEventListener('click', () => { ED.midias.push(...PK_SEL.map(a => { const m = PK.find(x => x.arquivo === a); return { arquivo: m.arquivo, alt: m.alt || '', tipo: m.tipo, nome: m.nome } })); $('#picker').close(); Som.liga(); edMudou() })
 
 // ---------------------------------------------------------------- rotinas
 async function carregarRotinas() {
@@ -551,6 +794,18 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-run]')) return rodar(t.dataset.run)
   if (t.matches('[data-agent]')) return entrarCom(t.dataset.agent)
   if (t.matches('[data-fmt]')) return alternarFormato(+t.dataset.i)
+  if (t.matches('[data-novo-post]')) return abrirEditor({})
+  if (t.matches('[data-ed]')) {
+    const q = t.dataset.ed
+    if (q === 'salvar') return salvarEd()
+    if (q === 'enviar') return salvarEd({ enviar: true })
+    if (q === 'biblioteca') return abrirPicker()
+    if (q === 'descartar') {
+      if (ED?.sujo && !(await confirmar('Descartar as mudanças?', ED.id ? 'O post volta a ser como estava da última vez que foi salvo.' : 'O que você escreveu aqui não será salvo.', 'Descartar'))) return
+      ED = null; const v = voltarPara || 'fila'; voltarPara = null; return cena(v)
+    }
+    return
+  }
   if (t.matches('[data-usar]')) { try { await api('/api/linkedin/usar', { id: t.dataset.usar }); Som.liga(); await status(); pill('Conta em uso', `Os posts saem como ${ST.linkedin.name}`, 'var(--green)') } catch (err) { falha(err) } return }
   if (t.matches('[data-copy]')) { try { await navigator.clipboard.writeText(t.dataset.copy); Som.tique(); pill('Copiado') } catch { pill('Não consegui copiar', 'Selecione o texto e copie à mão.', 'var(--amber)') } return }
   if (t.matches('[data-close]')) return t.closest('dialog').close()
@@ -587,6 +842,8 @@ form('[data-form=config]', async f => { const r = await api('/api/config', { ass
 
 // ---------------------------------------------------------------- teclado (Enter avança; Esc volta; A, P, ← e → na fila)
 const lit = (k, on) => $$(`kbd[data-k="${k}"]`).forEach(x => x.classList.toggle('lit', on))
+// Ctrl+S salva o rascunho no editor (vale também com o cursor no texto)
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && atual?.dataset.scene === 'editor') { e.preventDefault(); salvarEd() } })
 addEventListener('keydown', e => {
   if (e.target.closest('input, textarea, select') || $('dialog[open]')) return
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key
