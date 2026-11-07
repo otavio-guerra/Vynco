@@ -1,7 +1,7 @@
 /* Farol · linguagem visual inspirada no onboarding do Mutto (Fluent, Windows 11):
    fundo marinho com brilho ambiente que muda com o estado, uma ideia por tela, vidro, keycaps e chips. */
 :root {
-  --bg: #0e1524; --bg-2: #0a101c; --bg-3: #131c2e; --text: #eef1f8; --soft: #a3aec4; --faint: #6f7b95;
+  --bg: #0e1524; --bg-2: #0a101c; --bg-3: #131c2e; --text: #eef1f8; --soft: #a3aec4; --faint: #8a96b0;
   --glass: rgba(255, 255, 255, .045); --glass-2: rgba(255, 255, 255, .08); --glass-3: rgba(255, 255, 255, .12); --edge: rgba(255, 255, 255, .09); --edge-2: rgba(255, 255, 255, .16);
   --accent: #4cc2ff; --accent-ink: #052033; --red: #ff6470; --green: #3ddc84; --amber: #ffb547; --violet: #8b7cff;
   --li: #0a66c2; --li-hi: #0b74dd;
@@ -13,7 +13,7 @@
   --r: 16px; --shadow: 0 12px 40px rgba(0, 0, 0, .22);
 }
 [data-theme=light] {
-  --bg: #eef2f8; --bg-2: #e2e8f2; --bg-3: #f7f9fc; --text: #13203a; --soft: #4b586f; --faint: #75829a;
+  --bg: #eef2f8; --bg-2: #e2e8f2; --bg-3: #f7f9fc; --text: #13203a; --soft: #4b586f; --faint: #5a667d;
   --glass: rgba(255, 255, 255, .62); --glass-2: rgba(255, 255, 255, .86); --glass-3: #fff; --edge: rgba(19, 32, 58, .1); --edge-2: rgba(19, 32, 58, .18);
   --accent: #0a7fd1; --accent-ink: #ffffff; --mood-2: #c9d6ef; --amber: #d98a14; --green: #1a9e57; --red: #d93a49;
   --wf-bg: #e6ecf5; --wf-a: rgba(19, 32, 58, .08); --wf-b: rgba(19, 32, 58, .15); --wf-c: rgba(19, 32, 58, .3);
@@ -158,10 +158,10 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .dd[data-open] .chev { transform: rotate(180deg) }
 .menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 6; list-style: none; margin: 0; padding: 6px; background: var(--bg-3); border: 1px solid var(--edge-2); border-radius: 14px; box-shadow: 0 20px 50px rgba(0, 0, 0, .4); text-align: left; animation: entra .25s var(--ease) both }
 .menu button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; min-height: 46px; background: none; border: 0; border-radius: 10px; color: var(--text); font: 600 14px var(--font); cursor: pointer; text-align: left }
-.menu button:hover, .menu button:focus-visible { background: var(--glass-2); outline: none }
+.menu button:hover, .menu button:focus-visible { background: var(--glass-2); outline: none } .menu button:focus-visible { box-shadow: inset 0 0 0 2px var(--accent) }
 .menu .sso-ic { flex-basis: 30px; height: 30px; border-radius: 8px } .menu .sso-ic svg { width: 18px; height: 18px }
 .menu small { color: var(--faint); font-weight: 500; font-size: 12px; display: block }
-.beta { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--violet); background: color-mix(in srgb, var(--violet) 15%, transparent); padding: 2px 7px; border-radius: 99px; margin-left: auto }
+.beta { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--violet); background: color-mix(in srgb, var(--violet) 15%, transparent); padding: 2px 7px; border-radius: 99px; margin-left: auto }
 
 /* estados do login do LinkedIn */
 .auth { display: grid; justify-items: center; width: min(420px, 100%); margin-top: 6px }
@@ -298,7 +298,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 /* ----- fila: cartões + prévia no feed */
 .view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 18px }
 .fila-grid { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 22px; align-items: start }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 14px; outline: none; align-content: start }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 14px; outline: none; align-content: start; border-radius: 14px } .cards:focus-visible { box-shadow: 0 0 0 2px var(--accent) }
 .post { position: relative; border-radius: 14px; overflow: hidden; cursor: pointer; background: var(--glass); border: 1px solid var(--edge); transition: transform .3s var(--ease), border-color .25s, box-shadow .3s; text-align: left; padding: 0; color: var(--text) }
 .post:hover { transform: translateY(-2px); border-color: var(--edge-2) }
 .post.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 16px 40px rgba(0, 0, 0, .3) }
@@ -405,7 +405,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .es-form select, .fields select { font: 14px var(--font); color: var(--text); background: var(--glass); border: 1px solid var(--edge-2); border-radius: 10px; padding: 9px 10px; min-height: 42px; width: 100% }
 .es-form select option, .fields select option { background: var(--bg-3); color: var(--text) }
 .es-linha { display: grid; gap: 6px; font-size: 12.5px; color: var(--soft) }
-.es-linha .chips button { display: inline-grid; justify-items: center; line-height: 1.15 } .es-linha .chips button small { font-size: 10.5px; color: var(--faint); font-weight: 500 }
+.es-linha .chips button { display: inline-grid; justify-items: center; line-height: 1.15 } .es-linha .chips button small { font-size: 12px; color: var(--faint); font-weight: 500 }
 .chips button[disabled] { opacity: .35; pointer-events: none }
 .es-sl { display: grid; gap: 4px; font-size: 12.5px; color: var(--soft) } .es-sl span { display: flex; justify-content: space-between } .es-sl b { color: var(--text) } .es-sl small { color: var(--faint) }
 .es-sl input[type=range] { width: 100%; accent-color: var(--accent) }
@@ -565,7 +565,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .conta-menu .cm-h { display: flex; gap: 10px; align-items: center; padding: 8px 8px 10px; border-bottom: 1px solid var(--edge); margin-bottom: 4px }
 .conta-menu .cm-h .avatar { flex-basis: 36px; height: 36px; font-size: 14px } .conta-menu .cm-h b { display: block; font-size: 14px } .conta-menu .cm-h small { display: block; color: var(--faint); font-size: 12px; line-height: 1.3 }
 .conta-menu button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; min-height: 48px; background: none; border: 0; border-radius: 10px; color: var(--text); font: 600 14px var(--font); cursor: pointer; text-align: left }
-.conta-menu button:hover, .conta-menu button:focus-visible { background: var(--glass-2); outline: none }
+.conta-menu button:hover, .conta-menu button:focus-visible { background: var(--glass-2); outline: none } .conta-menu button:focus-visible { box-shadow: inset 0 0 0 2px var(--accent) }
 .conta-menu button svg { flex: 0 0 18px; height: 18px; color: var(--soft) } .conta-menu button small { display: block; color: var(--faint); font-weight: 500; font-size: 12px }
 .nav-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 99px; font-size: 11px; font-weight: 700; color: var(--accent-ink); background: var(--amber) }
 
@@ -592,10 +592,10 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .cal-d.alvo { border-color: var(--violet); border-style: dashed; background: color-mix(in srgb, var(--violet) 14%, var(--glass)) }
 .cal-n { font-size: 13px; font-weight: 650; color: var(--soft); line-height: 1 }
 .cal-d.hoje .cal-n { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: -3px 0 0 -3px; border-radius: 50%; color: var(--accent-ink); background: var(--accent) }
-.cal-ev { display: block; font-size: 11.5px; line-height: 1.25; padding: 2px 6px; border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); --c: var(--accent); background: color-mix(in srgb, var(--c) 18%, transparent); border-left: 3px solid var(--c) }
+.cal-ev { display: block; font-size: 12px; line-height: 1.25; padding: 2px 6px; border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); --c: var(--accent); background: color-mix(in srgb, var(--c) 18%, transparent); border-left: 3px solid var(--c) }
 .cal-ev i { font-style: normal; color: var(--soft); margin-right: 4px; font-variant-numeric: tabular-nums }
 .cal-ev.ag { --c: var(--violet); cursor: grab } .cal-ev.rot { --c: var(--green); background: transparent; border: 1px dashed color-mix(in srgb, var(--green) 60%, transparent); border-left-width: 3px; border-left-style: solid; color: var(--soft) }
-.cal-mais { font-size: 11px; color: var(--faint); padding-left: 6px }
+.cal-mais { font-size: 12px; color: var(--faint); padding-left: 6px }
 .cal-lado { display: grid; gap: 14px }
 .cal-lado h3::first-letter { text-transform: uppercase }
 .cal-lista { display: grid; gap: 8px }
@@ -618,7 +618,7 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .more summary::-webkit-details-marker { display: none }
 .more summary::before { content: ''; width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(-45deg); transition: transform .2s } .more[open] summary::before { transform: rotate(45deg) }
 .more pre { margin: 6px 0 0 } .more .link { font-size: 13px; padding: 4px 0 }
-.tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--faint) }
+.tag { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--faint) }
 
 /* ----- ajustes */
 .settings { display: grid; gap: 16px; max-width: 860px }

@@ -1454,7 +1454,7 @@ $('#conta-menu').addEventListener('keydown', e => {
   if (e.key === 'Escape') { e.stopPropagation(); menuConta(false); $('#conns').focus() }
 })
 // número de posts esperando você, ao lado de "Fila"
-function contarFila() { const n = FILA.filter(CONTA.pendente).length, el = $('[data-nav-n=fila]'); el.hidden = !n; el.textContent = n }
+function contarFila() { const n = FILA.filter(CONTA.pendente).length, el = $('[data-nav-n=fila]'); el.hidden = !n; el.textContent = n; el.setAttribute('aria-label', `${n} ${n === 1 ? 'post esperando' : 'posts esperando'} você`) }
 
 // ---------------------------------------------------------------- ajustes
 function desenharAjustes() {
