@@ -1,6 +1,6 @@
 [package]
 name = "farol"
-version = "0.2.0"
+version = "0.3.0"
 description = "Farol: seus posts no LinkedIn, feitos pela sua IA e aprovados por você"
 authors = ["Otavio Guerra"]
 license = "MIT"
