@@ -13,6 +13,7 @@ As peças são SVG gerados por código e exportados para PNG/PDF pelo Edge.
 - Imagens: só da pasta configurada em `assetsDir` (padrão `examples/assets`).
 
 ## Regras
+- Se o perfil em uso tiver "usar nas peças geradas" ligado, `lib.js` já troca as cores e fontes pelos da marca do perfil (veja `workspace/perfil.md`). Use sempre os tokens de `T` e `FONT`, nunca cores fixas no código.
 - Cores só dos tokens de `T`. Proporção de referência: 60% tinta, 30% primária, 10% secundária; cores extras só como acento.
 - Contraste AA no texto (use `contrast` de lib.js para conferir).
 - Pixel art sempre em escala inteira (`k.img(arquivo, { k: 2 })`), nunca esticada.

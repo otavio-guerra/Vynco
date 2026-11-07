@@ -5,6 +5,7 @@ description: Escrever a legenda de um post do LinkedIn no Farol (gancho, pontos 
 
 # Legendas do Farol
 
+- Leia `workspace/perfil.md` antes: escreva para o público e no tom que estão lá, e prefira os pilares de conteúdo do perfil.
 - Primeira linha é o gancho: diz o assunto em até 12 palavras. O LinkedIn corta o resto em "ver mais".
 - Depois, 3 a 5 pontos curtos, um por linha, cada um com uma ideia só.
 - Voz do autor: simpática, direta, primeira pessoa quando for opinião dele.

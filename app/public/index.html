@@ -19,7 +19,7 @@
   </div>
   <div class="pill-zone" aria-live="polite"><div class="pill" id="pill" hidden><span class="dot"></span><span><b id="pill-t"></b><small id="pill-s"></small></span></div></div>
   <nav class="seg" id="nav" aria-label="Seções" hidden>
-    <button data-view="fila" aria-current="page">Fila</button><button data-view="biblioteca">Biblioteca</button><button data-view="rotinas">Rotinas</button><button data-view="ajustes">Ajustes</button>
+    <button data-view="fila" aria-current="page">Fila</button><button data-view="biblioteca">Biblioteca</button><button data-view="perfil">Perfil</button><button data-view="rotinas">Rotinas</button><button data-view="ajustes">Ajustes</button>
   </nav>
 </header>
 
@@ -130,6 +130,7 @@
           <label class="ed-campo"><span>Título <small>só para você achar o post na fila</small></span><input data-ed-titulo maxlength="80" placeholder="Ex.: Antes e depois do app de agenda"></label>
           <label class="ed-campo"><span>Texto do post</span><textarea data-ed-texto rows="9" placeholder="Comece pelo gancho: só as primeiras linhas aparecem antes do “…ver mais”."></textarea></label>
           <div class="ed-meta"><span data-ed-conta>0 de 3.000</span><span data-ed-dica></span></div>
+          <p class="ed-perfil" data-ed-perfil hidden></p>
         </section>
         <section class="glass ed-box">
           <header class="ed-box-h"><h3>Mídias</h3><span class="tag" data-ed-fmt>Só texto</span></header>
@@ -152,6 +153,58 @@
         </div>
       </div>
       <aside class="feed glass" data-ed-previa aria-label="Prévia no feed"></aside>
+    </div>
+  </section>
+
+  <section class="scene view" data-scene="perfil" hidden>
+    <div class="view-head" data-in>
+      <div><h1>Perfil.</h1><p class="sub">Quem publica, para quem, com que tom e com que cara. A sua IA lê isso antes de escrever cada post.</p></div>
+      <div class="head-a"><span class="ed-salvo" data-pf-salvo></span><select class="sel" data-pf-sel aria-label="Perfil em edição"></select></div>
+    </div>
+    <div class="pf-grid" data-in>
+      <div class="ed-col">
+        <section class="glass ed-box">
+          <header class="ed-box-h"><h3>Quem é você no LinkedIn</h3><span class="tag" data-pf-conta></span></header>
+          <div class="fields two">
+            <label><span>Nome</span><input data-pf="nome" maxlength="80" placeholder="Como você assina"></label>
+            <label><span>Área de atuação</span><input data-pf="area" maxlength="200" placeholder="Ex.: designer de produto para fintechs"></label>
+            <label class="full"><span>Para quem você escreve</span><input data-pf="publico" maxlength="300" placeholder="Ex.: líderes de produto, recrutadores de design e outros designers"></label>
+          </div>
+          <div class="es-linha"><span>Objetivo no LinkedIn</span><div class="chips" data-pf-chips="objetivo"></div></div>
+          <div class="es-linha"><span>Tom de voz</span><div class="chips" data-pf-chips="tom"></div></div>
+          <div class="fields two">
+            <label><span>Temas <small>separados por vírgula</small></span><input data-pf="temas" placeholder="ux, acessibilidade, bastidores"></label>
+            <label><span>Evitar <small>assuntos ou palavras</small></span><input data-pf="evitar" placeholder="política, jargão"></label>
+            <label><span>Site</span><input data-pf="links.site" type="url" placeholder="https://"></label>
+            <label><span>Portfólio</span><input data-pf="links.portfolio" type="url" placeholder="https://"></label>
+            <label class="full"><span>Texto "Sobre" do seu LinkedIn <small>cole aqui: ajuda a IA a entender você</small></span><textarea data-pf="sobre" rows="4" maxlength="3000"></textarea></label>
+          </div>
+        </section>
+        <section class="glass ed-box">
+          <header class="ed-box-h"><h3>Identidade visual</h3></header>
+          <div class="pf-cores" data-pf-cores></div>
+          <div class="fields two">
+            <label><span>Fonte dos títulos</span><input data-pf="marca.fontes.titulo" list="pf-fontes" maxlength="60" placeholder="Ex.: Space Grotesk"></label>
+            <label><span>Fonte do texto</span><input data-pf="marca.fontes.texto" list="pf-fontes" maxlength="60" placeholder="Ex.: IBM Plex Sans"></label>
+            <label class="full"><span>Estilo visual <small>como as imagens devem parecer</small></span><input data-pf="marca.estilo" maxlength="600" placeholder="Ex.: pixel art, fundo escuro, roxo e menta, luz de entardecer"></label>
+          </div>
+          <div class="es-linha"><span>Imagens de referência <small>até 3, da biblioteca</small></span><div class="es-mini pf-refs" data-pf-refs></div></div>
+          <label class="ed-switch"><input type="checkbox" data-pf-chk="usarNoEstudio"><span><b>Usar no Estúdio de imagens</b><small>as cores, o estilo e a primeira referência entram em cada imagem gerada (dá para desligar na hora)</small></span></label>
+          <label class="ed-switch"><input type="checkbox" data-pf-chk="aplicarNoMotor"><span><b>Usar nas peças das rotinas</b><small>Daily UI, série e carrosséis passam a usar as suas cores e fontes</small></span></label>
+          <datalist id="pf-fontes"><option>Space Grotesk</option><option>IBM Plex Sans</option><option>Inter</option><option>Poppins</option><option>Montserrat</option><option>Roboto</option><option>Lato</option><option>DM Sans</option><option>DM Serif Display</option><option>Playfair Display</option><option>Merriweather</option><option>Sora</option><option>Manrope</option></datalist>
+        </section>
+        <section class="glass ed-box">
+          <header class="ed-box-h"><h3>Análise com a IA</h3><button class="btn sm accent" data-pf-analisar><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg>Analisar meu perfil</button></header>
+          <p class="fine" data-pf-an-nota>A sua IA lê o que você preencheu e os seus links (só leitura, sem mexer em nada) e sugere área, público, tom, pilares de conteúdo e cores. Nada muda sem você aplicar.</p>
+          <div class="pf-analise" data-pf-analise></div>
+        </section>
+        <section class="glass ed-box">
+          <header class="ed-box-h"><h3>Pilares de conteúdo <small class="soft">os assuntos em que você quer ser lembrado</small></h3><button class="link" type="button" data-pf-pilar-add>+ Pilar</button></header>
+          <div class="pf-pilares" data-pf-pilares></div>
+        </section>
+        <div class="ed-acoes"><button class="btn accent" data-pf-salvar>Salvar perfil <kbd>Ctrl S</kbd></button></div>
+      </div>
+      <aside class="feed glass pf-prev" data-pf-prev aria-label="Prévia da marca"></aside>
     </div>
   </section>
 

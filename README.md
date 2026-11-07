@@ -50,6 +50,11 @@ Depois disso, a **Fila** mostra cada peça ao lado de uma prévia de como ela fi
   - **Refinar:** nitidez, granulação e ultra detalhe (Upscaler Precision).
   - Antes de gastar, o Farol mostra o número de operações e o custo estimado, quando a documentação publica o preço (o do upscale vem pelo tamanho final; o do Mystic não é publicado), e pede confirmação.
   - O resultado é baixado na hora para a biblioteca, porque os links do Magnific vencem em 30 minutos. Vai com o prompt, a imagem de origem e o custo, e de lá segue para o post com um clique.
+- **Perfil:** quem publica, para quem, com que objetivo e tom, os temas, o que evitar, os links e o texto "Sobre". Há um perfil por conta do LinkedIn, e o perfil em uso acompanha a conta em uso.
+  - **Identidade visual:** 5 cores, com conferência de contraste (AA), fontes, estilo visual e até 3 imagens de referência da biblioteca. Uma prévia ao vivo mostra uma peça com a sua cara.
+  - **Análise com a IA:** a sua IA lê o que você preencheu e os seus links, só leitura e pesquisa na web, sem mexer em arquivo nenhum. Ela sugere área, público, tom, temas, pilares de conteúdo e as cores do site. Cada sugestão tem "Aplicar", e nada muda sem você.
+  - **Pilares de conteúdo:** os assuntos em que você quer ser lembrado, com ideias de post. Clicar numa ideia abre o editor com ela, e o editor lembra para quem e em que tom escrever.
+  - **Como o perfil é usado:** a IA lê `workspace/perfil.md` antes de escrever cada post. O Estúdio usa as cores, o estilo e a primeira referência, e dá para desligar na hora. Com "Usar nas peças das rotinas" ligado, o Daily UI, a série e os carrosséis saem com as suas cores e fontes; desligado, nada muda.
 - **Rascunhos:** salvar (`Ctrl S`) guarda um rascunho, que fica na fila em "Rascunhos" até você mandar para aprovação. Sair do editor com algo escrito salva sozinho. Editar um post que já estava aprovado pede a aprovação de novo.
 
 - **Teclado:** `A` aprova, `P` publica, `←` e `→` navegam, `Enter` avança e `Esc` volta na entrada.
@@ -156,13 +161,15 @@ engine/
   midia.js      biblioteca de mídia (envio, medidas, limites, texto alternativo, origem)
   posts.js      posts do editor (rascunhos em workspace/avulsos/<id>/)
   imagem/       geração e melhoria de imagens: index.js (tarefas, custos, limites) e provedores/ (magnific.js)
+  perfis.js     perfis (quem publica, público, tom, pilares, marca), resumo para a IA e análise com a IA
   caixa.js      caixa de permissões para o código escrito pela IA
 agent/          regras e skills que o Farol entrega à sua IA (fonte única)
 api/linkedin/   ponte do login de um clique (Vercel)
 prompts/        instruções das rotinas (viram comandos /farol-* na IA)
 examples/assets imagens de exemplo (pixel art do meu portfólio)
 workspace/      tudo o que é gerado (fora do Git). midia/ é a biblioteca (index.json guarda texto alternativo e origem);
-                lixeira/ recebe o que você exclui. Em avulsos/, cada post é:
+                lixeira/ recebe o que você exclui; perfis/ guarda os perfis e perfil.md é o resumo que a IA lê.
+                Em avulsos/, cada post é:
                   nome.png|gif|jpg|mp4|pdf + nome.txt      um arquivo com legenda
                   nome.txt                                 só texto
                   pasta/ imagens + legenda.txt             várias imagens (2 a 20; <imagem>.alt.txt = texto alternativo)

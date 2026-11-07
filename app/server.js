@@ -15,6 +15,9 @@ const PUB_LI = require('../engine/linkedin/publicar.js')
 const BIBLIOTECA = require('../engine/midia.js')
 const POSTS = require('../engine/posts.js')
 const IMAGEM = require('../engine/imagem/index.js')
+const PERFIS = require('../engine/perfis.js')
+// o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
+const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
 const ROOT = C.ROOT, PUB = path.join(__dirname, 'public')
 const TOKEN = crypto.randomBytes(24).toString('hex')
@@ -48,6 +51,7 @@ async function salvarToken(access_token, expires_in, via) {
   const me = await fetch('https://api.linkedin.com/v2/userinfo', { headers: { Authorization: `Bearer ${access_token}` } }).then(r => r.ok ? r.json() : null).catch(() => null)
   if (!me || !me.sub) throw new Error('O LinkedIn não confirmou o acesso. Tente de novo.')
   CONTAS.salvar({ access_token, expires_at: Date.now() + (+expires_in || 5184000) * 1000, author: `urn:li:person:${me.sub}`, nome: me.name, foto: me.picture || null, via })
+  perfilAtivo()
   return me.name
 }
 const PAGINA_VOLTA = () => `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Farol · LinkedIn</title>
@@ -220,6 +224,11 @@ const server = http.createServer(async (req, res) => {
         case '/api/post': { try { return send(res, 200, POSTS.carregar(u.searchParams.get('id'))) } catch (e) { return send(res, 404, { erro: e.message }) } }
         case '/api/imagem': return send(res, 200, { provedores: IMAGEM.provedores(), uso: IMAGEM.uso(), tarefas: IMAGEM.lista() })
         case '/api/imagem/tarefas': return send(res, 200, { tarefas: IMAGEM.lista(), uso: IMAGEM.uso() })
+        case '/api/perfil': {
+          const ativo = perfilAtivo(), id = u.searchParams.get('id') || ativo
+          try { return send(res, 200, { perfil: PERFIS.carregar(id), ativo, perfis: PERFIS.lista(CONTAS.lista()), analise: PERFIS.estadoAnalise(), agente: agenteId() && AG.AGENTES[agenteId()].nome }) } catch (e) { return send(res, 400, { erro: e.message }) }
+        }
+        case '/api/perfil/analise': return send(res, 200, PERFIS.estadoAnalise() || {})
         case '/api/runs': {
           const ag = agenteId()
           return send(res, 200, {
@@ -272,7 +281,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ok: true })
       }
       case '/api/linkedin/disconnect': CONTAS.remover(typeof b.id === 'string' ? b.id : undefined); return send(res, 200, { ok: true })
-      case '/api/linkedin/usar': { try { CONTAS.usar(String(b.id || '')); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/linkedin/usar': { try { CONTAS.usar(String(b.id || '')); perfilAtivo(); return send(res, 200, { ok: true }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       // ---- Desigma
       case '/api/desigma/config': {
         const patch = {}
@@ -296,6 +305,12 @@ const server = http.createServer(async (req, res) => {
       }
       case '/api/imagem/estimar': { try { return send(res, 200, IMAGEM.estimar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/imagem/pedir': { try { return send(res, 200, await IMAGEM.pedir(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      // ---- perfil (quem publica, público, tom, pilares, marca)
+      case '/api/perfil/salvar': { try { return send(res, 200, PERFIS.salvar(String(b.id || perfilAtivo()), b.perfil || {})) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/perfil/analisar': {
+        const ag = agenteId(); if (!ag) return send(res, 400, { erro: 'Conecte uma IA em Ajustes antes.' })
+        try { return send(res, 200, PERFIS.analisar(String(b.id || perfilAtivo()), ag, AG.perguntar, b.sobre)) } catch (e) { return send(res, 400, { erro: e.message }) }
+      }
       // ---- fila
       case '/api/approve': case '/api/unapprove': {
         const it = findItem(b.kind, b.id); if (!it || it.kind === 'series') return send(res, 400, { erro: 'Item não encontrado.' })

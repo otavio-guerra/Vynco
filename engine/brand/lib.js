@@ -33,6 +33,24 @@ const hex2rgb = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => parseIn
 const lum = h => { const [r, g, b] = hex2rgb(h).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r + 0.7152 * g + 0.0722 * b }
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
 const mix = (a, b, t) => '#' + hex2rgb(a).map((v, i) => Math.round(v + (hex2rgb(b)[i] - v) * t).toString(16).padStart(2, '0')).join('')
+
+// Marca do perfil (tela Perfil): se o perfil em uso pedir ("usar nas peças geradas"), as cores e fontes dele
+// substituem os tokens acima. Sem isso, nada muda. Lê só o workspace (funciona dentro da caixa de permissões).
+;(function marcaDoPerfil() {
+  try {
+    const WS = require('../config.js').WS, hex = v => /^#[0-9a-f]{6}$/i.test(v || '')
+    const id = JSON.parse(fs.readFileSync(path.join(WS, 'perfis', 'ativo.json'), 'utf8')).id
+    const m = JSON.parse(fs.readFileSync(path.join(WS, 'perfis', id, 'perfil.json'), 'utf8')).marca || {}
+    if (!m.aplicarNoMotor) return
+    const c = m.cores || {}
+    if (hex(c.fundo)) Object.assign(T, { ink: c.fundo, deep: mix(c.fundo, '#000000', 0.35), panel: mix(c.fundo, '#ffffff', 0.08), panel2: mix(c.fundo, '#ffffff', 0.14), line: mix(c.fundo, '#ffffff', 0.3) })
+    if (hex(c.texto)) Object.assign(T, { text: c.texto, soft: mix(c.texto, T.ink, 0.2), muted: mix(c.texto, T.ink, 0.3) })
+    if (hex(c.principal)) Object.assign(T, { primary: c.principal, primaryHi: mix(c.principal, '#ffffff', 0.2), primaryLo: mix(c.principal, '#000000', 0.15), primaryInk: mix(c.principal, '#000000', 0.6) })
+    if (hex(c.secundaria)) Object.assign(T, { secondary: c.secundaria, secondaryHi: mix(c.secundaria, '#ffffff', 0.2), secondaryLo: mix(c.secundaria, '#000000', 0.15), secondaryInk: mix(c.secundaria, '#000000', 0.6) })
+    if (m.fontes && m.fontes.titulo) FONT.display = m.fontes.titulo
+    if (m.fontes && m.fontes.texto) FONT.copy = m.fontes.texto
+  } catch { /* sem perfil ou sem marca: tokens padrão */ }
+})()
 const onColor = bg => (contrast(bg, '#ffffff') >= contrast(bg, T.ink) ? '#ffffff' : T.ink)
 
 // ---------------------------------------------------------------- SVG

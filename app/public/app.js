@@ -51,7 +51,8 @@ const D = DEMO && (() => {
     agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
     escolhido: ja ? 'claude' : null, sincronizado: ja,
     lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
-    jobs: {}, sync: null, posts: {}, tarefas: [], ops: 0, gasto: 0,
+    jobs: {}, sync: null, posts: {}, tarefas: [], ops: 0, gasto: 0, analise: null,
+    perfil: { id: 'principal', nome: 'Seu Nome', area: '', publico: '', objetivo: '', tom: '', temas: [], evitar: [], links: { site: '', portfolio: '' }, sobre: '', pilares: [], marca: { cores: { principal: '', secundaria: '', acento: '', fundo: '', texto: '' }, fontes: { titulo: '', texto: '' }, estilo: '', referencias: [], aplicarNoMotor: false, usarNoEstudio: true }, analise: null, atualizado: null },
     // biblioteca de exemplo: imagens desenhadas aqui mesmo (wireframes), nenhuma peça real
     midia: [['#4cc2ff', 'tela-de-login.png', 'envio', 'Tela de login com campos de e-mail e senha.'], ['#8b7cff', 'antes.png', 'envio', ''], ['#3ddc84', 'depois.png', 'envio', ''], ['#ffb547', 'daily-ui-003.png', 'dailyui', '']].map(([cor, nome, origem, alt], k) => ({
       arquivo: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><rect width="400" height="500" fill="#16203a"/><rect x="40" y="40" width="320" height="260" rx="18" fill="${cor}" opacity=".22"/><circle cx="112" cy="112" r="30" fill="${cor}"/><path d="M40 280 150 175l70 60 50-40 90 80v5H40z" fill="${cor}" opacity=".6"/><rect x="40" y="340" width="230" height="22" rx="11" fill="#fff" opacity=".35"/><rect x="40" y="380" width="300" height="16" rx="8" fill="#fff" opacity=".18"/><rect x="40" y="410" width="200" height="16" rx="8" fill="#fff" opacity=".18"/></svg>`),
@@ -142,6 +143,18 @@ async function apiDemo(path, data) {
       return job
     }
     case '/api/imagem/chave': case '/api/imagem/config': return { ok: true }
+    // perfil simulado (a análise devolve um exemplo genérico, sem chamar IA nenhuma)
+    case '/api/perfil': return { perfil: D.perfil, ativo: 'principal', perfis: [{ id: 'principal', nome: D.perfil.nome || 'Perfil principal', conta: D.linkedin.connected ? D.linkedin.name : null }], analise: D.analise, agente: 'Claude' }
+    case '/api/perfil/salvar': D.perfil = { ...JSON.parse(JSON.stringify(data.perfil)), atualizado: new Date().toISOString() }; return D.perfil
+    case '/api/perfil/analise': return D.analise || {}
+    case '/api/perfil/analisar': {
+      D.analise = { id: 'principal', estado: 'rodando', agente: 'claude' }
+      setTimeout(() => {
+        const resultado = { resumo: 'Exemplo de análise: designer de produto que traduz problemas complexos em telas simples, com foco em acessibilidade.', area: 'Design de produto e UX', publico: 'Líderes de produto, recrutadores e outros designers', objetivo: 'Ser referência na área', tom: 'Direto, Simpático', temas: ['acessibilidade', 'processo de design', 'bastidores de projeto'], pilares: [{ tema: 'Processo de design', por_que: 'mostra como você pensa', ideias: ['Do rascunho à tela final em 4 passos', 'O que eu corto primeiro num redesenho'] }, { tema: 'Acessibilidade na prática', por_que: 'diferencial raro e útil', ideias: ['3 testes de contraste que levam 1 minuto'] }, { tema: 'Bastidores', por_que: 'aproxima o público', ideias: ['Minha mesa e minhas ferramentas'] }], cores: { principal: '#7c5cff', secundaria: '#2ee6a6', fundo: '#14102a', texto: '#f4f1ff' }, estilo_visual: 'ilustração limpa, fundo escuro e acentos neon', observacoes: ['Demonstração: nada foi lido de verdade.'] }
+        Object.assign(D.analise, { estado: 'pronto', resultado }); D.perfil.analise = { ...resultado, agente: 'claude', quando: new Date().toISOString() }
+      }, 2600)
+      return { estado: 'rodando' }
+    }
     case '/api/post/excluir': D.fila = D.fila.filter(x => x.id !== id); delete D.posts[id]; return { ok: true }
     default: return { ok: true, msg: 'Demonstração: nada foi alterado de verdade.' }
   }
@@ -208,6 +221,7 @@ let atual = null, voltarPara = null
 function cena(nome, { som = true } = {}) {
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
   if (atual?.dataset.scene === 'editor') guardarAoSair()
+  if (atual?.dataset.scene === 'perfil' && pfSujo) salvarPerfil({ quieto: true }).then(() => pill('Perfil salvo', '', 'var(--green)'))
   const ant = atual; atual = prox
   const mostrar = () => {
     if (ant) { ant.hidden = true; ant.classList.remove('on', 'leaving') }
@@ -239,7 +253,7 @@ function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
   fila: () => carregarFila(), rotinas: () => carregarRotinas(), ajustes: () => { status(); carregarImgAjustes() },
-  biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(),
+  biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(),
 }
 
 // ---------------------------------------------------------------- estado geral
@@ -438,7 +452,7 @@ async function carregarFila() {
   desenharFila(); atualizarHumor()
 }
 function atualizarHumor() {
-  if (!['fila', 'rotinas', 'ajustes', 'biblioteca', 'editor'].includes(atual?.dataset.scene)) return
+  if (!['fila', 'rotinas', 'ajustes', 'biblioteca', 'editor', 'perfil'].includes(atual?.dataset.scene)) return
   humor(FILA.some(CONTA.pendente) ? 'waiting' : FILA.some(CONTA.pronto) ? 'live' : 'neutral')
 }
 const capa = i => i.formato === 'texto' ? wire('texto', { texto: (i.caption || '').slice(0, 160) })
@@ -631,12 +645,25 @@ for (const alvo of $$('.solta-alvo')) {
 let ED = null, ED_PEDIDO = null, edVerMais = false
 const edNovo = () => ({ id: null, titulo: '', legenda: '', midias: [], artigo: null, sujo: false, salvoEm: null, aprovado: false, rascunho: true })
 // abre o editor: { id } edita um post salvo; { midias } começa um post novo com essas mídias
-function abrirEditor(pedido = {}) { ED_PEDIDO = pedido; voltarPara = ['fila', 'biblioteca', 'rotinas', 'ajustes'].includes(atual?.dataset.scene) ? atual.dataset.scene : 'fila'; if (atual?.dataset.scene === 'editor') entrarEditor(); else cena('editor') }
+function abrirEditor(pedido = {}) { ED_PEDIDO = pedido; voltarPara = ['fila', 'biblioteca', 'perfil', 'rotinas', 'ajustes'].includes(atual?.dataset.scene) ? atual.dataset.scene : 'fila'; if (atual?.dataset.scene === 'editor') entrarEditor(); else cena('editor') }
+let ED_PERFIL = null
+// lembrete do perfil acima do texto: para quem, em que tom (e a ideia do pilar, quando o post nasce de uma)
+function desenharLembrete() {
+  const el = $('[data-ed-perfil]'), p = ED_PERFIL, partes = []
+  if (p?.publico) partes.push(`<b>Para:</b> ${esc(p.publico)}`)
+  if (p?.tom) partes.push(`<b>Tom:</b> ${esc(p.tom)}`)
+  if (ED?.dica) partes.push(esc(ED.dica))
+  el.hidden = !partes.length; el.innerHTML = partes.join(' · ')
+}
 async function entrarEditor() {
   const p = ED_PEDIDO || {}; ED_PEDIDO = null
-  if (!p.id && !p.midias && ED && ED.sujo) { desenharEditor(); return }   // voltou para o editor com algo por salvar
+  api('/api/perfil').then(r => { ED_PERFIL = r.perfil; desenharLembrete() }).catch(() => {})
+  if (!p.id && !p.midias && !p.titulo && ED && ED.sujo) { desenharEditor(); return }   // voltou para o editor com algo por salvar
   ED = edNovo()
   if (p.midias) ED.midias = p.midias
+  if (p.titulo) ED.titulo = p.titulo
+  if (p.legenda) ED.legenda = p.legenda
+  if (p.dica) ED.dica = p.dica
   if (p.id) {
     try { const r = await api('/api/post?id=' + encodeURIComponent(p.id)); Object.assign(ED, { id: r.id, titulo: r.titulo === r.id ? '' : r.titulo, legenda: r.legenda, midias: r.midias, artigo: r.artigo, aprovado: r.aprovado, rascunho: r.rascunho, salvoEm: r.atualizado }) } catch (e) { falha(e) }
   }
@@ -644,7 +671,7 @@ async function entrarEditor() {
   $('[data-ed-titulo]').value = ED.titulo; $('[data-ed-texto]').value = ED.legenda
   $('[data-ed-artigo]').checked = !!ED.artigo
   $('[data-art-url]').value = ED.artigo?.url || ''; $('[data-art-titulo]').value = ED.artigo?.titulo || ''; $('[data-art-desc]').value = ED.artigo?.descricao || ''
-  desenharEditor()
+  desenharEditor(); desenharLembrete()
   setTimeout(() => (ED.legenda ? null : $('[data-ed-texto]').focus()), 350)
 }
 const tipoM = m => m.tipo || (/\.gif$/i.test(m.arquivo) ? 'gif' : /\.(png|jpe?g)$/i.test(m.arquivo) ? 'imagem' : /\.mp4$/i.test(m.arquivo) ? 'video' : 'documento')
@@ -748,12 +775,17 @@ $('[data-pk-ok]').addEventListener('click', () => { ED.midias.push(...PK_SEL.map
 // ---------------------------------------------------------------- estúdio de imagens (provedores em engine/imagem; hoje, Magnific)
 let IMG = null, ES = null, esTimer = null, esEstimarT = null
 const OP_TXT = { gerar: 'Gerar', melhorar: 'Melhorar', refinar: 'Refinar' }
+// identidade do perfil no estúdio: cores e estilo entram no texto; a primeira referência vira a referência de estilo do Mystic
+const coresMarca = m => Object.values(m?.cores || {}).filter(v => /^#[0-9a-f]{6}$/i.test(v || ''))
+const refMarca = m => (m?.referencias || []).find(r => BIB.some(b => b.arquivo === r))
+const temMarca = m => !!(coresMarca(m).length || m?.estilo || refMarca(m))
 const prov = () => IMG?.provedores?.[0]
 async function abrirEstudio(o = {}) {
   try { IMG = await api('/api/imagem') } catch (e) { return falha(e) }
   if (!BIB.length) { try { BIB = (await api('/api/midia')).itens } catch { } }
-  ES = { op: o.op || 'gerar', origem: o.origem || null, contexto: o.contexto || (atual?.dataset.scene === 'editor' ? 'editor' : null), jobs: [], descartados: new Set(),
-    p: { prompt: o.prompt || '', aspect_ratio: 'social_post_4_5', resolution: '2k', model: 'realism', versoes: 2, scale_factor: '2x', optimized_for: 'standard', creativity: 0, resemblance: 0, hdr: 0, prompt_m: '', sharpen: 50, smart_grain: 7, ultra_detail: 30 } }
+  let marca = null; try { marca = (await api('/api/perfil')).perfil.marca } catch { }
+  ES = { op: o.op || 'gerar', origem: o.origem || null, contexto: o.contexto || (atual?.dataset.scene === 'editor' ? 'editor' : null), jobs: [], descartados: new Set(), marca,
+    p: { prompt: o.prompt || '', aspect_ratio: 'social_post_4_5', resolution: '2k', model: 'realism', versoes: 2, scale_factor: '2x', optimized_for: 'standard', creativity: 0, resemblance: 0, hdr: 0, prompt_m: '', sharpen: 50, smart_grain: 7, ultra_detail: 30, usarMarca: !!(marca && marca.usarNoEstudio && temMarca(marca)) } }
   desenharEstudio(); $('#estudio').showModal(); estimarEs()
 }
 const imagensBib = () => BIB.filter(m => ['imagem', 'gif'].includes(m.tipo))
@@ -770,7 +802,8 @@ function desenharEstudio() {
       <div class="es-linha"><span>Proporção</span><div class="chips">${r.gerar.proporcoes.slice(0, 4).map(([v, t]) => `<button type="button" data-es-chip="aspect_ratio" data-v="${v}" class="${ES.p.aspect_ratio === v ? 'on' : ''}">${t}</button>`).join('')}</div></div>
       <div class="fields two"><label><span>Resolução</span><select data-es="resolution">${r.gerar.resolucoes.map(([v, t]) => `<option value="${v}"${ES.p.resolution === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
       <label><span>Estilo do modelo</span><select data-es="model">${r.gerar.modelos.map(([v, t]) => `<option value="${v}"${ES.p.model === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>
-      <div class="es-linha"><span>Versões para escolher</span><div class="chips">${[1, 2, 3, 4].slice(0, r.gerar.maxVersoes).map(n => `<button type="button" data-es-chip="versoes" data-v="${n}" class="${ES.p.versoes === n ? 'on' : ''}">${n}</button>`).join('')}</div></div>`
+      <div class="es-linha"><span>Versões para escolher</span><div class="chips">${[1, 2, 3, 4].slice(0, r.gerar.maxVersoes).map(n => `<button type="button" data-es-chip="versoes" data-v="${n}" class="${ES.p.versoes === n ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+      ${temMarca(ES.marca) ? `<label class="ed-switch es-marca"><input type="checkbox" data-es-marca${ES.p.usarMarca ? ' checked' : ''}><span><b>Usar a identidade do perfil</b><small><span class="pf-sw">${coresMarca(ES.marca).map(c => `<i style="background:${c}"></i>`).join('')}</span>${ES.marca.estilo ? esc(ES.marca.estilo.slice(0, 90)) : ''}${refMarca(ES.marca) ? ` · referência: ${esc(refMarca(ES.marca).split('/').pop())}` : ''}</small></span></label>` : '<p class="fine">Dica: defina cores, estilo e imagens de referência na tela Perfil para as imagens saírem com a sua cara.</p>'}`
   } else if (op === 'melhorar') {
     const o = ES.origem, max = r.melhorar.maxPixels
     f = escolher + `<div class="es-linha"><span>Aumentar</span><div class="chips">${r.melhorar.fatores.map(v => { const k = parseInt(v), px = o?.largura ? o.largura * k * o.altura * k : 0, passa = px > max; return `<button type="button" data-es-chip="scale_factor" data-v="${v}" class="${ES.p.scale_factor === v ? 'on' : ''}" ${passa ? 'disabled title="passaria do máximo de 25,3 milhões de pixels"' : ''}>${v}${o?.largura ? `<small>${o.largura * k} × ${o.altura * k}</small>` : ''}</button>` }).join('')}</div></div>
@@ -788,7 +821,11 @@ function desenharEstudio() {
 }
 function paramsEs() {
   const p = ES.p
-  if (ES.op === 'gerar') return { prompt: p.prompt, aspect_ratio: p.aspect_ratio, resolution: p.resolution, model: p.model }
+  if (ES.op === 'gerar') {
+    const m = p.usarMarca && temMarca(ES.marca) ? ES.marca : null, cores = coresMarca(m), ref = refMarca(m)
+    const prompt = [p.prompt.trim(), cores.length ? `Paleta de cores: ${cores.join(', ')}` : '', m?.estilo ? `Estilo: ${m.estilo}` : ''].filter(Boolean).join('. ')
+    return { prompt, aspect_ratio: p.aspect_ratio, resolution: p.resolution, model: p.model, ...(ref ? { estiloArquivo: ref } : {}) }
+  }
   if (ES.op === 'melhorar') return { scale_factor: p.scale_factor, optimized_for: p.optimized_for, creativity: +p.creativity, resemblance: +p.resemblance, hdr: +p.hdr, ...(p.prompt_m ? { prompt: p.prompt_m } : {}) }
   return { sharpen: +p.sharpen, smart_grain: +p.smart_grain, ultra_detail: +p.ultra_detail }
 }
@@ -853,7 +890,7 @@ $('[data-es-form]').addEventListener('input', e => {
   if (k === 'prompt') { const ir = $('[data-es-ir]'); ir.disabled = !(prov().temChave && ES.p.prompt.trim().length > 2) }
   estimarEs()
 })
-$('[data-es-form]').addEventListener('change', e => { if (e.target.matches('select')) { ES.p[e.target.dataset.es] = e.target.value; estimarEs() } })
+$('[data-es-form]').addEventListener('change', e => { if (e.target.matches('select')) { ES.p[e.target.dataset.es] = e.target.value; estimarEs() } if (e.target.matches('[data-es-marca]')) { ES.p.usarMarca = e.target.checked; Som.tique() } })
 $('[data-es-ir]').addEventListener('click', irEs)
 $('[data-es-res]').addEventListener('click', async e => {
   const usar = e.target.closest('[data-es-usar]'), mais = e.target.closest('[data-es-mais]'), fora = e.target.closest('[data-es-fora]')
@@ -883,6 +920,142 @@ $('[data-img-ajustes]').addEventListener('click', async e => {
   if (!e.target.closest('[data-img-remover]')) return
   if (!(await confirmar('Remover a chave do Magnific?', 'O Farol para de conseguir gerar e melhorar imagens até você salvar outra.', 'Remover'))) return
   try { await api('/api/imagem/chave', { provedor: prov().id, chave: '' }); Som.desliga(); pill('Chave removida', '', 'var(--amber)'); carregarImgAjustes() } catch (err) { falha(err) }
+})
+
+// ---------------------------------------------------------------- perfil (quem publica, público, tom, pilares, marca)
+let PF = null, PF_INFO = null, pfSujo = false, pfAnT = null
+const OBJETIVOS = ['Conseguir clientes', 'Conseguir uma vaga', 'Ser referência na área', 'Fazer rede', 'Divulgar um produto']
+const TONS = ['Simpático', 'Direto', 'Técnico', 'Inspirador', 'Bem-humorado']
+const COR_ROT = { principal: 'Principal', secundaria: 'Secundária', acento: 'Acento', fundo: 'Fundo', texto: 'Texto' }
+const COR_PADRAO = { principal: '#9246f9', secundaria: '#26eda0', acento: '#ffb547', fundo: '#1a1230', texto: '#f6f2ff' }
+const caminhoPf = (o, k) => k.split('.').reduce((a, x) => a?.[x], o)
+const definePf = (o, k, v) => { const ps = k.split('.'), u = ps.pop(); ps.reduce((a, x) => (a[x] ??= {}), o)[u] = v }
+// contraste (WCAG): 4,5 para texto comum, 3 para títulos grandes e elementos gráficos
+const lumH = h => { const n = parseInt(h.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] }
+const contraste = (a, b) => { const [x, y] = [lumH(a), lumH(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
+const corOk = h => /^#[0-9a-f]{6}$/i.test(h || '')
+async function carregarPerfil(id) {
+  try { PF_INFO = await api('/api/perfil' + (id ? '?id=' + encodeURIComponent(id) : '')) } catch (e) { return falha(e) }
+  PF = JSON.parse(JSON.stringify(PF_INFO.perfil)); pfSujo = false
+  if (!BIB.length) { try { BIB = (await api('/api/midia')).itens } catch { } }
+  desenharPerfil()
+  if (PF_INFO.analise?.estado === 'rodando' && PF_INFO.analise.id === PF.id) acompanharAnalise()
+}
+function desenharPerfil() {
+  if (!PF) return
+  $('[data-pf-sel]').innerHTML = PF_INFO.perfis.map(p => `<option value="${esc(p.id)}"${p.id === PF.id ? ' selected' : ''}>${esc(p.nome)}${p.id === PF_INFO.ativo ? ' (em uso)' : ''}</option>`).join('')
+  $('[data-pf-sel]').hidden = PF_INFO.perfis.length < 2
+  const conta = PF_INFO.perfis.find(p => p.id === PF.id)?.conta
+  $('[data-pf-conta]').textContent = conta ? `LinkedIn: ${conta}` : PF.id === 'principal' ? 'sem conta ligada' : ''
+  for (const el of $$('[data-pf]')) { if (document.activeElement === el) continue; const v = caminhoPf(PF, el.dataset.pf); el.value = Array.isArray(v) ? v.join(', ') : v || '' }
+  for (const [k, ops] of [['objetivo', OBJETIVOS], ['tom', TONS]]) $(`[data-pf-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${esc(o)}" class="${(PF[k] || '').split(/,\s*/).includes(o) ? 'on' : ''}">${o}</button>`).join('')
+  const c = PF.marca.cores
+  $('[data-pf-cores]').innerHTML = Object.keys(COR_ROT).map(k => `<label class="pf-cor"><input type="color" data-pf-cor="${k}" value="${corOk(c[k]) ? c[k] : COR_PADRAO[k]}"${corOk(c[k]) ? '' : ' class="vazia"'}><span><b>${COR_ROT[k]}</b><input data-pf-hex="${k}" value="${esc(c[k] || '')}" maxlength="7" placeholder="—" spellcheck="false"></span></label>`).join('')
+  const imgs = BIB.filter(m => ['imagem', 'gif'].includes(m.tipo)).slice(0, 24)
+  $('[data-pf-refs]').innerHTML = imgs.length ? imgs.map(m => { const i = PF.marca.referencias.indexOf(m.arquivo); return `<button type="button" data-pf-ref="${esc(m.arquivo)}" class="${i >= 0 ? 'on' : ''}" title="${esc(m.nome)}"><img src="${arquivo(m.arquivo)}" alt="">${i >= 0 ? `<span class="pk-n">${i + 1}</span>` : ''}</button>` }).join('') : '<span class="soft">Envie imagens na Biblioteca para usar como referência.</span>'
+  for (const el of $$('[data-pf-chk]')) el.checked = !!PF.marca[el.dataset.pfChk]
+  desenharPilares(); desenharAnalise(); desenharPrevia()
+  $('[data-pf-salvo]').textContent = pfSujo ? 'Mudanças não salvas' : PF.atualizado ? `Salvo ${new Date(PF.atualizado).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : ''
+}
+function pfMudou() { pfSujo = true; $('[data-pf-salvo]').textContent = 'Mudanças não salvas'; desenharPrevia() }
+function desenharPrevia() {
+  const c = { ...COR_PADRAO, ...Object.fromEntries(Object.entries(PF.marca.cores).filter(([, v]) => corOk(v))) }, f = PF.marca.fontes
+  const checks = [['Texto sobre o fundo', contraste(c.texto, c.fundo), 4.5], ['Principal sobre o fundo', contraste(c.principal, c.fundo), 3], ['Secundária sobre o fundo', contraste(c.secundaria, c.fundo), 3]]
+  const definidas = Object.values(PF.marca.cores).filter(corOk).length
+  $('[data-pf-prev]').innerHTML = `<div class="fp-label"><span>Prévia da marca</span><span>${definidas ? `${definidas} de 5 cores` : 'cores padrão'}</span></div>
+    <div class="pf-peca" style="--f:${c.fundo};--t:${c.texto};--p:${c.principal};--s:${c.secundaria};--a:${c.acento};--ft:'${esc(f.titulo || 'Space Grotesk')}';--fx:'${esc(f.texto || 'IBM Plex Sans')}'">
+      <small>${esc((PF.area || 'sua área').toUpperCase().slice(0, 40))}</small>
+      <b>${esc(PF.pilares[0]?.tema || 'Um título de post com a sua cara')}</b>
+      <p>${esc(PF.publico ? `Para ${PF.publico}` : 'Texto de apoio no tom que você escolheu.').slice(0, 110)}</p>
+      <span class="pf-chips"><i>${esc(PF.temas[0] || 'tema')}</i><i>${esc(PF.temas[1] || 'outro tema')}</i></span>
+      <span class="pf-btn">Saiba mais</span>
+    </div>
+    <ul class="pf-checks">${checks.map(([t, r, min]) => `<li class="${r >= min ? 'ok' : 'warn'}"><span class="ic"></span>${t}: ${r.toFixed(1).replace('.', ',')}:1 ${r >= min ? '' : `<small>(o mínimo é ${String(min).replace('.', ',')}:1)</small>`}</li>`).join('')}</ul>
+    <div class="pf-usa"><b>Como o Farol usa isto</b><ul>
+      <li>A sua IA lê o perfil antes de escrever cada post (tom, público, temas e pilares).</li>
+      <li>${PF.marca.usarNoEstudio ? 'O Estúdio de imagens usa as cores, o estilo e a primeira referência.' : 'O Estúdio de imagens não usa a marca (desligado).'}</li>
+      <li>${PF.marca.aplicarNoMotor ? 'As peças das rotinas saem com as suas cores e fontes.' : 'As peças das rotinas continuam com o design system atual.'}</li></ul></div>`
+}
+function desenharPilares() {
+  $('[data-pf-pilares]').innerHTML = PF.pilares.length ? PF.pilares.map((p, k) => `<div class="pf-pilar" data-k="${k}">
+      <div class="fields two"><label><span>Tema</span><input data-pl="tema" value="${esc(p.tema)}" maxlength="80"></label><label><span>Por que importa</span><input data-pl="por_que" value="${esc(p.por_que || '')}" maxlength="300"></label>
+      <label class="full"><span>Ideias de post <small>uma por linha</small></span><textarea data-pl="ideias" rows="3">${esc((p.ideias || []).join('\n'))}</textarea></label></div>
+      <div class="pf-ideias">${(p.ideias || []).map((i, n) => `<button class="pf-ideia" type="button" data-ideia="${k}:${n}" aria-label="Abrir no editor: ${esc(i)}">${esc(i)} <span aria-hidden="true">→</span></button>`).join('')}</div>
+      <button class="link soft" type="button" data-pl-tirar="${k}">Tirar este pilar</button></div>`).join('')
+    : '<p class="soft">Ainda sem pilares. Peça a análise com a IA ou adicione um à mão: 3 a 5 assuntos em que você quer ser lembrado.</p>'
+}
+function desenharAnalise() {
+  const a = PF_INFO.analise?.id === PF.id && PF_INFO.analise.estado === 'rodando' ? null : PF.analise, rodando = PF_INFO.analise?.estado === 'rodando' && PF_INFO.analise.id === PF.id
+  $('[data-pf-analisar]').disabled = rodando
+  $('[data-pf-an-nota]').hidden = !!a || rodando
+  if (rodando) { $('[data-pf-analise]').innerHTML = `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>A ${esc(PF_INFO.agente || 'sua IA')} está lendo o seu perfil e os seus links</b><small>Leva de 30 segundos a alguns minutos.</small></span></li></div>`; return }
+  if (PF_INFO.analise?.estado === 'falhou' && PF_INFO.analise.id === PF.id) { $('[data-pf-analise]').innerHTML = `<p class="ed-erro">${esc(PF_INFO.analise.erro || 'A análise não deu certo.')}</p>`; return }
+  if (!a) { $('[data-pf-analise]').innerHTML = ''; return }
+  const linha = (k, rot, v) => v && (!Array.isArray(v) || v.length) ? `<div class="pf-sug"><span><small>${rot}</small><b>${esc(Array.isArray(v) ? v.join(', ') : v)}</b></span><button class="link" type="button" data-aplicar="${k}">Aplicar</button></div>` : ''
+  const cores = Object.entries(a.cores || {}).filter(([, v]) => corOk(v))
+  $('[data-pf-analise]').innerHTML = `${a.resumo ? `<p class="pf-resumo">${esc(a.resumo)}</p>` : ''}
+    ${linha('area', 'Área de atuação', a.area)}${linha('publico', 'Público', a.publico)}${linha('objetivo', 'Objetivo', a.objetivo)}${linha('tom', 'Tom de voz', a.tom)}${linha('temas', 'Temas', a.temas)}${linha('estilo', 'Estilo visual', a.estilo_visual)}
+    ${cores.length ? `<div class="pf-sug"><span><small>Cores do site</small><b class="pf-sw">${cores.map(([k, v]) => `<i style="background:${v}" title="${COR_ROT[k] || k} ${v}"></i>`).join('')}</b></span><button class="link" type="button" data-aplicar="cores">Aplicar</button></div>` : ''}
+    ${(a.pilares || []).length ? `<div class="pf-sug"><span><small>Pilares sugeridos</small><b>${a.pilares.map(p => esc(p.tema)).join(' · ')}</b></span><button class="link" type="button" data-aplicar="pilares">Adicionar</button></div>` : ''}
+    ${(a.observacoes || []).filter(Boolean).length ? `<ul class="pf-obs">${a.observacoes.filter(Boolean).map(o => `<li>${esc(o)}</li>`).join('')}</ul>` : ''}
+    <div class="cta small"><button class="btn sm" type="button" data-aplicar="tudo">Aplicar tudo</button><small class="soft">análise do ${esc(a.agente ? (({ claude: 'Claude', codex: 'ChatGPT', gemini: 'Gemini' })[a.agente] || a.agente) : 'agente')} em ${a.quando ? new Date(a.quando).toLocaleDateString('pt-BR') : ''}</small></div>`
+}
+function aplicarSugestao(k) {
+  const a = PF.analise; if (!a) return
+  const um = k => {
+    if (['area', 'publico', 'objetivo', 'tom'].includes(k) && a[k]) PF[k] = a[k]
+    if (k === 'temas' && a.temas?.length) PF.temas = a.temas.filter(Boolean)
+    if (k === 'estilo' && a.estilo_visual) PF.marca.estilo = a.estilo_visual
+    if (k === 'cores') for (const [c, v] of Object.entries(a.cores || {})) if (corOk(v) && c in PF.marca.cores) PF.marca.cores[c] = v
+    if (k === 'cores' && a.fontes) { if (a.fontes.titulo) PF.marca.fontes.titulo = a.fontes.titulo; if (a.fontes.texto) PF.marca.fontes.texto = a.fontes.texto }
+    if (k === 'pilares') for (const p of a.pilares || []) if (p.tema && !PF.pilares.some(x => x.tema.toLowerCase() === p.tema.toLowerCase())) PF.pilares.push({ tema: p.tema, por_que: p.por_que || '', ideias: (p.ideias || []).filter(Boolean) })
+  }
+  k === 'tudo' ? ['area', 'publico', 'objetivo', 'tom', 'temas', 'estilo', 'cores', 'pilares'].forEach(um) : um(k)
+  pfSujo = true; Som.tique(); desenharPerfil(); pill('Aplicado', 'Confira e salve o perfil.', 'var(--green)')
+}
+async function salvarPerfil({ quieto = false } = {}) {
+  if (!PF) return
+  try { const r = await api('/api/perfil/salvar', { id: PF.id, perfil: PF }); PF = r; PF_INFO.perfil = r; pfSujo = false; if (!quieto) { Som.liga(); pill('Perfil salvo', 'A sua IA já usa no próximo post.', 'var(--green)') } desenharPerfil() } catch (e) { falha(e) }
+}
+async function analisarPerfil() {
+  if (pfSujo) await salvarPerfil({ quieto: true })
+  try { await api('/api/perfil/analisar', { id: PF.id, sobre: PF.sobre }); PF_INFO.analise = { id: PF.id, estado: 'rodando' }; humor('work'); Som.tique(); desenharAnalise(); acompanharAnalise() } catch (e) { falha(e) }
+}
+function acompanharAnalise() {
+  clearTimeout(pfAnT)
+  pfAnT = setTimeout(async () => {
+    let a; try { a = await api('/api/perfil/analise') } catch { return acompanharAnalise() }
+    PF_INFO.analise = a
+    if (a.estado === 'rodando') { if (atual?.dataset.scene === 'perfil') desenharAnalise(); return acompanharAnalise() }
+    if (a.estado === 'pronto') { Som.liga(); pill('Análise pronta', 'Veja as sugestões e aplique o que fizer sentido.', 'var(--green)'); if (PF && a.id === PF.id) { PF.analise = { ...a.resultado, agente: a.agente, quando: new Date().toISOString() } } }
+    else { Som.erro(); pill('A análise não deu certo', a.erro || '', 'var(--red)') }
+    atualizarHumor(); if (atual?.dataset.scene === 'perfil') desenharPerfil()
+  }, DEMO ? 800 : 3000)
+}
+// eventos da tela
+$('[data-scene=perfil]').addEventListener('input', e => {
+  const t = e.target
+  if (t.dataset.pf) { const k = t.dataset.pf; definePf(PF, k, ['temas', 'evitar'].includes(k) ? t.value.split(',').map(s => s.trim()).filter(Boolean) : t.value); return pfMudou() }
+  if (t.dataset.pfCor) { PF.marca.cores[t.dataset.pfCor] = t.value; const h = $(`[data-pf-hex="${t.dataset.pfCor}"]`); h.value = t.value; t.classList.remove('vazia'); return pfMudou() }
+  if (t.dataset.pfHex) { const v = t.value.trim().toLowerCase(); if (corOk(v) || v === '') { PF.marca.cores[t.dataset.pfHex] = v; if (v) $(`[data-pf-cor="${t.dataset.pfHex}"]`).value = v; pfMudou() } return }
+  const pl = t.closest('.pf-pilar'); if (pl && t.dataset.pl) { const p = PF.pilares[+pl.dataset.k]; p[t.dataset.pl] = t.dataset.pl === 'ideias' ? t.value.split('\n').map(s => s.trim()).filter(Boolean) : t.value; pfMudou() }
+})
+$('[data-scene=perfil]').addEventListener('change', e => {
+  const t = e.target
+  if (t.dataset.pfChk) { PF.marca[t.dataset.pfChk] = t.checked; pfMudou() }
+  if (t.matches('[data-pf-sel]')) { (pfSujo ? salvarPerfil({ quieto: true }) : Promise.resolve()).then(() => carregarPerfil(t.value)) }
+  if (t.closest('.pf-pilar') && t.dataset.pl === 'ideias') desenharPilares()
+})
+$('[data-scene=perfil]').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return
+  if (t.closest('[data-pf-chips]')) { const k = t.closest('[data-pf-chips]').dataset.pfChips, v = t.dataset.v, atual_ = (PF[k] || '').split(/,\s*/).filter(Boolean); PF[k] = (atual_.includes(v) ? atual_.filter(x => x !== v) : [...atual_, v]).join(', '); Som.tique(); pfMudou(); return desenharPerfil() }
+  if (t.dataset.pfRef) { const r = PF.marca.referencias, i = r.indexOf(t.dataset.pfRef); i >= 0 ? r.splice(i, 1) : r.length < 3 ? r.push(t.dataset.pfRef) : pill('Até 3 referências', 'Tire uma antes de escolher outra.', 'var(--amber)'); Som.tique(); pfMudou(); return desenharPerfil() }
+  if (t.matches('[data-pf-pilar-add]')) { PF.pilares.push({ tema: '', por_que: '', ideias: [] }); pfMudou(); desenharPilares(); return $$('.pf-pilar [data-pl=tema]').pop()?.focus() }
+  if (t.dataset.plTirar != null) { PF.pilares.splice(+t.dataset.plTirar, 1); pfMudou(); return desenharPilares() }
+  if (t.dataset.ideia) { const [k, n] = t.dataset.ideia.split(':').map(Number), ideia = PF.pilares[k].ideias[n]; return abrirEditor({ titulo: ideia.slice(0, 80), legenda: '' , dica: `Ideia do pilar "${PF.pilares[k].tema}": ${ideia}` }) }
+  if (t.dataset.aplicar) return aplicarSugestao(t.dataset.aplicar)
+  if (t.matches('[data-pf-analisar]')) return analisarPerfil()
+  if (t.matches('[data-pf-salvar]')) return salvarPerfil()
 })
 
 // ---------------------------------------------------------------- rotinas
@@ -1015,7 +1188,7 @@ form('[data-form=img-config]', async f => { await api('/api/imagem/config', { li
 // ---------------------------------------------------------------- teclado (Enter avança; Esc volta; A, P, ← e → na fila)
 const lit = (k, on) => $$(`kbd[data-k="${k}"]`).forEach(x => x.classList.toggle('lit', on))
 // Ctrl+S salva o rascunho no editor (vale também com o cursor no texto)
-addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && atual?.dataset.scene === 'editor') { e.preventDefault(); salvarEd() } })
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && ['editor', 'perfil'].includes(atual?.dataset.scene)) { e.preventDefault(); atual.dataset.scene === 'editor' ? salvarEd() : salvarPerfil() } })
 addEventListener('keydown', e => {
   if (e.target.closest('input, textarea, select') || $('dialog[open]')) return
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key

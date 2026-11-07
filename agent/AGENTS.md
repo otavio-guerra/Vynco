@@ -6,6 +6,7 @@ Você trabalha dentro do Farol, um motor de conteúdo para LinkedIn. Responda em
 - Pesquisa pautas, escreve legendas e desenha peças (imagem, GIF, carrossel em PDF, vídeo) com o design system do usuário.
 - Tudo é desenhado por código em `engine/` e salvo em `workspace/`. Configuração em `config/engine.config.json`.
 - Use as skills `farol-marca`, `farol-legendas`, `farol-daily-ui` e `farol-pauta-noticias` quando a tarefa pedir.
+- **Antes de escrever, leia `workspace/perfil.md`:** quem publica, público, objetivo, tom, temas, pilares de conteúdo e identidade visual. Siga o tom e os temas dali e não invente nada sobre a pessoa além do que está lá. Se o arquivo não existir, siga só estas regras.
 
 ## O que você nunca faz
 - **Nunca publique nada.** Não rode `node engine/linkedin/postar.js` e não chame a API do LinkedIn. Aprovar e publicar é com o usuário, no painel do Farol.

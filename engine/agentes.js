@@ -293,4 +293,23 @@ function agendamento(id, rid) {
   return `schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Farol - ${r.titulo}" /TR "cmd /c cd /d ${ROOT} && ${linha.replace(/"/g, '\\"')}"`
 }
 
-module.exports = { AGENTES, ROTINAS, lista, status, login, job, cancelar, sincronizar, estadoSync, rotina, agendamento, achar, abrirUrl }
+// ---------------------------------------------------------------- pergunta avulsa (ex.: análise do perfil)
+// Só leitura e busca na web: a IA não escreve arquivos nem roda comandos. Roda numa pasta vazia, longe do motor e do cofre.
+// O texto vai pela entrada padrão (nada de textos longos na linha de comando).
+const LEITURA = {
+  claude: ['-p', '--allowedTools', 'WebFetch,WebSearch', '--disallowedTools', 'Bash,Edit,Write'],
+  codex: ['exec', '--sandbox', 'read-only', '--skip-git-repo-check', '-c', 'tools.web_search=true', '-'],
+  gemini: ['-p', 'Siga as instruções recebidas acima.'],
+  qwen: ['-p', 'Siga as instruções recebidas acima.'],
+}
+async function perguntar(id, texto, { timeout = 240000 } = {}) {
+  const a = AGENTES[id], args = LEITURA[id]
+  if (!a || !args) throw new Error('Esta função usa o Claude, o ChatGPT ou o Gemini. Troque de IA em Ajustes.')
+  const bin = achar(a.bin); if (!bin) throw new Error(`O ${a.via} não está instalado.`)
+  const pasta = C.ws('perfis', '.ia'); fs.mkdirSync(pasta, { recursive: true })
+  const r = await rodar(bin, args, { stdin: texto, timeout, cwd: pasta })
+  if (r.code !== 0 && !r.out.trim()) throw new Error(`O ${a.nome} não respondeu${r.err ? ': ' + r.err.trim().split('\n').pop().slice(0, 200) : '.'}`)
+  return r.out
+}
+
+module.exports = { AGENTES, ROTINAS, lista, status, login, job, cancelar, sincronizar, estadoSync, rotina, agendamento, achar, abrirUrl, perguntar }
