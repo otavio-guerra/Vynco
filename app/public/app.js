@@ -445,7 +445,7 @@ const VC_TONS = [['Direto', 'Três erros que vejo toda semana, e como evitar.'],
 const VC_FREQ = [['1 vez por semana', 'leve, para começar', 'leve'], ['2 a 3 vezes por semana', 'o ritmo que mais cresce', 'medio'], ['Todo dia útil', 'para quem quer acelerar', 'intenso']]
 const VC_PASSOS = [
   { k: 'area', t: n => `Prazer${n ? ', ' + n : ''}! Em que área você trabalha?`, s: 'Escolha a mais próxima. Na próxima pergunta você detalha.' },
-  { k: 'esp', t: () => 'E o que você faz, exatamente?', s: 'Escolha uma opção ou escreva o seu cargo do seu jeito.' },
+  { k: 'esp', t: () => 'E o que você faz, exatamente?', s: 'Escolha até 3 e, se quiser, escreva o seu cargo do seu jeito.', multi: 3 },
   { k: 'nivel', t: () => 'Em que momento da carreira você está?', s: 'Isso muda o tom dos posts e as vagas que a gente sugere.' },
   { k: 'objetivo', t: () => 'O que você quer conseguir com o LinkedIn?', s: 'Escolha até 3. É isso que guia os assuntos dos posts.', multi: 3 },
   { k: 'publico', t: () => 'Quem você quer que leia os seus posts?', s: 'Escolha até 3. A IA escreve pensando nessas pessoas.', multi: 3 },
@@ -463,17 +463,19 @@ async function entrarVoce() {
   // o que já estiver salvo volta marcado (perfil salvo como "Especialidade · Área")
   const [esp0, area0] = String(p?.area || '').includes(' · ') ? p.area.split(' · ') : ['', p?.area || '']
   const areaOk = VC_AREAS.some(a => a[0] === area0)
-  VC = { perfil: p, nome, passo: 0, area: areaOk ? area0 : area0 ? 'Outra área' : '', outra: areaOk ? '' : area0, esp: esp0, nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
+  const espSalvas = esp0 ? esp0.split(/,\s*/) : [], opsArea = VC_ESPEC[area0] || []
+  VC = { perfil: p, nome, passo: 0, area: areaOk ? area0 : area0 ? 'Outra área' : '', outra: areaOk ? '' : area0, esps: espSalvas.filter(e => opsArea.includes(e)), cargo: espSalvas.filter(e => !opsArea.includes(e)).join(', '), nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
   const av = $('[data-vc-av]'); av.textContent = l.foto ? '' : inicial(nome || '?'); av.style.backgroundImage = l.foto ? `url("${l.foto}")` : ''
   $('[data-vc-li]').hidden = !l.connected
   desenharVoce()
 }
 const vcValor = k => VC[k]
-const vcRespondido = k => k === 'area' ? !!(VC.area && (VC.area !== 'Outra área' || VC.outra.trim())) : k === 'esp' ? !!VC.esp.trim() : k === 'fim' ? true : Array.isArray(VC[k]) ? VC[k].length > 0 : !!VC[k]
+const vcEspTxt = () => [...VC.esps, VC.cargo.trim()].filter(Boolean).join(', ')
+const vcRespondido = k => k === 'area' ? !!(VC.area && (VC.area !== 'Outra área' || VC.outra.trim())) : k === 'esp' ? !!(VC.esps.length || VC.cargo.trim()) : k === 'fim' ? true : Array.isArray(VC[k]) ? VC[k].length > 0 : !!VC[k]
 function vcTiles(k, ops, multi) {
   const sel = v => multi ? VC[k].includes(v) : VC[k] === v
-  return `<div class="vc-tiles${ops.length <= 3 ? ' tres' : ''}" role="${multi ? 'group' : 'radiogroup'}">${ops.map(([v, d, i], n) => `<button type="button" class="vc-tile${sel(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${sel(v)}">
-    <span class="vc-tic">${ico(i)}</span><b>${esc(v)}</b><small>${esc(d)}</small>${n < 9 ? `<kbd class="vc-k">${n + 1}</kbd>` : ''}<span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
+  return `<div class="vc-tiles${ops.length <= 3 ? ' tres' : ''}" role="${multi ? 'group' : 'radiogroup'}">${ops.map(([v, d, i]) => `<button type="button" class="vc-tile${sel(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${sel(v)}">
+    <span class="vc-tic">${ico(i)}</span><b>${esc(v)}</b><small>${esc(d)}</small><span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
 }
 function desenharVoce() {
   const P = VC_PASSOS[VC.passo], total = VC_PASSOS.length - 1
@@ -485,20 +487,20 @@ function desenharVoce() {
   if (P.k === 'area') h = vcTiles('area', VC_AREAS) + (VC.area === 'Outra área' ? `<label class="vc-campo"><span>Qual é a sua área?</span><input class="vc-in" data-vc="outra" maxlength="80" placeholder="Ex.: Arquitetura, Agronegócio, Turismo" value="${esc(VC.outra)}"></label>` : '')
   if (P.k === 'esp') {
     const ops = VC_ESPEC[VC.area] || []
-    h = (ops.length ? `<div class="vc-chips">${ops.map(o => `<button type="button" class="${VC.esp === o ? 'on' : ''}" data-vc-esp="${esc(o)}" aria-pressed="${VC.esp === o}">${esc(o)}</button>`).join('')}</div><div class="or vc-or">ou escreva</div>` : '')
-      + `<label class="vc-campo"><span>Seu cargo ou o que você faz</span><input class="vc-in" data-vc="esp" maxlength="120" placeholder="${esc(ops.length ? 'Ex.: ' + ops[0] + ' em fintech' : 'Ex.: Arquiteto de interiores residenciais')}" value="${esc(VC.esp)}"></label>`
+    h = (ops.length ? `<div class="vc-chips" role="group">${ops.map(o => `<button type="button" class="${VC.esps.includes(o) ? 'on' : ''}" data-vc-esp="${esc(o)}" aria-pressed="${VC.esps.includes(o)}">${esc(o)}</button>`).join('')}</div><div class="or vc-or">e, se quiser, escreva</div>` : '')
+      + `<label class="vc-campo"><span>Seu cargo ou o que você faz</span><input class="vc-in" data-vc="cargo" maxlength="120" placeholder="${esc(ops.length ? 'Ex.: ' + ops[0] + ' em fintech' : 'Ex.: Arquiteto de interiores residenciais')}" value="${esc(VC.cargo)}"></label>`
   }
   if (P.k === 'nivel') h = vcTiles('nivel', VC_NIVEIS)
   if (P.k === 'objetivo') h = vcTiles('objetivo', VC_OBJ, true)
   if (P.k === 'publico') h = vcTiles('publico', VC_PUB, true)
-  if (P.k === 'tom') h = `<div class="vc-tons" role="group">${VC_TONS.map(([v, ex], n) => `<button type="button" class="vc-tom${VC.tom.includes(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="checkbox" aria-checked="${VC.tom.includes(v)}"><b>${esc(v)}</b><q>${esc(ex)}</q><kbd class="vc-k">${n + 1}</kbd><span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
+  if (P.k === 'tom') h = `<div class="vc-tons" role="group">${VC_TONS.map(([v, ex]) => `<button type="button" class="vc-tom${VC.tom.includes(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="checkbox" aria-checked="${VC.tom.includes(v)}"><b>${esc(v)}</b><q>${esc(ex)}</q><span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
   if (P.k === 'frequencia') h = vcTiles('frequencia', VC_FREQ) + `<label class="vc-campo"><span>Tem site ou portfólio? <small class="soft">opcional</small></span><input class="vc-in" data-vc="site" type="url" placeholder="https://" spellcheck="false" value="${esc(VC.site)}"><small class="fine">A sua IA lê o link (só leitura) e sugere temas e as cores da sua marca.</small></label>`
   if (P.k === 'fim') {
     const parte = (passo, txt, vazio) => `<button type="button" class="vc-parte${txt ? '' : ' vazio'}" data-vc-ir="${passo}">${esc(txt || vazio)}</button>`
     const areaTxt = VC.area === 'Outra área' ? VC.outra : VC.area, lista = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || ''
     h = `<div class="vc-resumo glass">
-      <div class="vc-r-h"><span class="avatar" style="${$('[data-vc-av]').style.backgroundImage ? `background-image:${$('[data-vc-av]').style.backgroundImage};color:transparent` : ''}">${inicial(VC.nome || '?')}</span><span><b>${esc(VC.nome || 'Você')}</b><small>${esc([VC.esp, areaTxt].filter(Boolean).join(' · ') || 'área a definir')}</small></span></div>
-      <p>${parte(1, VC.esp, 'o que você faz')} em ${parte(0, areaTxt, 'sua área')}, ${parte(2, VC.nivel && VC.nivel.toLowerCase(), 'momento da carreira')}. Quer ${parte(3, lista(VC.objetivo.map(o => o.toLowerCase())), 'um objetivo')}, falando com ${parte(4, lista(VC.publico.map(o => o.toLowerCase())), 'o seu público')}, num tom ${parte(5, lista(VC.tom.map(o => o.toLowerCase())), 'do seu jeito')}, ${parte(6, VC.frequencia && VC.frequencia.toLowerCase(), 'na frequência que quiser')}.</p>
+      <div class="vc-r-h"><span class="avatar" style="${$('[data-vc-av]').style.backgroundImage ? `background-image:${$('[data-vc-av]').style.backgroundImage};color:transparent` : ''}">${inicial(VC.nome || '?')}</span><span><b>${esc(VC.nome || 'Você')}</b><small>${esc([vcEspTxt(), areaTxt].filter(Boolean).join(' · ') || 'área a definir')}</small></span></div>
+      <p>${parte(1, lista([...VC.esps, VC.cargo.trim()].filter(Boolean)), 'o que você faz')} em ${parte(0, areaTxt, 'sua área')}, ${parte(2, VC.nivel && VC.nivel.toLowerCase(), 'momento da carreira')}. Quer ${parte(3, lista(VC.objetivo.map(o => o.toLowerCase())), 'um objetivo')}, falando com ${parte(4, lista(VC.publico.map(o => o.toLowerCase())), 'o seu público')}, num tom ${parte(5, lista(VC.tom.map(o => o.toLowerCase())), 'do seu jeito')}, ${parte(6, VC.frequencia && VC.frequencia.toLowerCase(), 'na frequência que quiser')}.</p>
       ${VC.site ? `<small class="fine">A sua IA também vai ler ${esc(dominio(VC.site) || VC.site)} para sugerir temas e cores.</small>` : ''}</div>
       <p class="fine vc-nota">${ST?.linkedin?.connected ? 'Do LinkedIn vieram o seu nome e a sua foto. O LinkedIn não compartilha cargo nem experiência com outros apps, por isso as perguntas.' : 'O LinkedIn ainda não está conectado: tudo bem, dá para conectar depois em Ajustes.'}</p>`
   }
@@ -512,9 +514,8 @@ function desenharVoce() {
   $('[data-vc-voltar]').hidden = VC.passo === 0
 }
 function vcIr(n) { VC.passo = Math.max(0, Math.min(VC_PASSOS.length - 1, n)); Som.tique(); desenharVoce(); $('[data-vc-corpo] input, [data-vc-corpo] button')?.focus({ preventScroll: true }) }
-let vcAuto = null
-function vcEscolher(v) {
-  const P = VC_PASSOS[VC.passo], k = P.k
+function vcEscolher(v, campo) {
+  const P = VC_PASSOS[VC.passo], k = campo || P.k
   if (P.multi) {
     if (VC[k].includes(v)) VC[k] = VC[k].filter(x => x !== v)
     else if (VC[k].length >= P.multi) return pill(`Escolha até ${P.multi}`, 'Tire uma opção para marcar outra.', 'var(--amber)')
@@ -523,18 +524,16 @@ function vcEscolher(v) {
   }
   const era = VC[k] === v
   VC[k] = era ? '' : v
-  if (k === 'area' && !era && VC.esp && !(VC_ESPEC[v] || []).includes(VC.esp)) VC.esp = ''   // trocou de área: a especialidade antiga não vale mais
+  if (k === 'area' && !era) VC.esps = VC.esps.filter(e => (VC_ESPEC[v] || []).includes(e))   // trocou de área: as especialidades antigas não valem mais
   Som.liga(); desenharVoce()
-  // escolha única avança sozinha (menos "Outra área", que pede o nome)
-  clearTimeout(vcAuto)
-  if (!era && !(k === 'area' && v === 'Outra área') && k !== 'frequencia') vcAuto = setTimeout(() => VC_PASSOS[VC.passo].k === k && vcIr(VC.passo + 1), 380)
+  if (!era) $('[data-vc-ok]')?.focus({ preventScroll: true })
   if (k === 'area' && v === 'Outra área') setTimeout(() => $('[data-vc=outra]')?.focus(), 50)
 }
 function vcAvancar() { if (VC_PASSOS[VC.passo].k === 'fim') return salvarVoce(); vcIr(VC.passo + 1) }
 function vcVoltar() { if (VC.passo > 0) vcIr(VC.passo - 1) }
 $('[data-scene=voce]').addEventListener('click', e => {
   const op = e.target.closest('[data-vc-op]'); if (op) return vcEscolher(op.dataset.vcOp)
-  const es = e.target.closest('[data-vc-esp]'); if (es) { VC.esp = VC.esp === es.dataset.vcEsp ? '' : es.dataset.vcEsp; Som.liga(); desenharVoce(); clearTimeout(vcAuto); if (VC.esp) vcAuto = setTimeout(() => VC_PASSOS[VC.passo].k === 'esp' && vcIr(VC.passo + 1), 380); return }
+  const es = e.target.closest('[data-vc-esp]'); if (es) return vcEscolher(es.dataset.vcEsp, 'esps')
   const ir = e.target.closest('[data-vc-ir]'); if (ir) return vcIr(+ir.dataset.vcIr)
   if (e.target.closest('[data-vc-ok]')) return vcAvancar()
   if (e.target.closest('[data-vc-voltar]')) return vcVoltar()
@@ -543,7 +542,6 @@ $('[data-scene=voce]').addEventListener('input', e => {
   const k = e.target.dataset.vc; if (!k) return
   VC[k] = e.target.value
   const ok = $('[data-vc-ok]'), resp = vcRespondido(VC_PASSOS[VC.passo].k); ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp)
-  if (k === 'esp') $$('[data-vc-esp]').forEach(b => { b.classList.toggle('on', b.dataset.vcEsp === VC.esp); b.setAttribute('aria-pressed', b.dataset.vcEsp === VC.esp) })
 })
 // teclado na triagem: 1 a 9 escolhem, Enter continua, Esc volta uma pergunta
 function teclaVoce(e, k) {
@@ -560,7 +558,7 @@ function teclaVoce(e, k) {
 async function salvarVoce() {
   if (!VC) return proximaCena()
   const areaNome = VC.area === 'Outra área' ? VC.outra.trim() : VC.area
-  const area = [VC.esp.trim(), areaNome].filter(Boolean).join(' · ')
+  const area = [vcEspTxt(), areaNome].filter(Boolean).join(' · ')
   const site = /^https?:\/\/\S+\.\S+/i.test(VC.site.trim()) ? VC.site.trim() : ''
   if (VC.site.trim() && !site) { vcIr(VC_PASSOS.findIndex(p => p.k === 'frequencia')); return pill('Confira o link', 'Ele precisa começar com http:// ou https://', 'var(--amber)') }
   const p = VC.perfil || {}
