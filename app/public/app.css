@@ -811,3 +811,33 @@ dialog p { color: var(--soft); margin: 0 }
 .vc-tiles.tres > .vc-tile { flex-basis: 210px }
 .vc-tons { display: flex; flex-wrap: wrap; justify-content: center } .vc-tons > .vc-tom { flex: 0 1 280px; min-width: 220px }
 @media (max-width: 700px) { .vc-tiles > .vc-tile, .vc-tiles.tres > .vc-tile { flex: 0 1 calc(50% - 5px); min-width: 0 } .vc-tons > .vc-tom { flex-basis: 100% } .rot-grid > .rot { flex-basis: 100%; min-width: 0 } }
+
+/* a sua IA trabalhando: sempre visível na barra do topo */
+.ativ { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 9px; min-height: 34px; border-radius: 99px; font: 600 13px var(--font); color: var(--text); background: color-mix(in srgb, var(--violet) 16%, var(--glass)); border: 1px solid color-mix(in srgb, var(--violet) 45%, var(--edge)); cursor: pointer; white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis }
+.ativ .spin { width: 14px; height: 14px; border-width: 2px; border-top-color: var(--violet) }
+.ativ:hover { background: color-mix(in srgb, var(--violet) 24%, var(--glass)) }
+/* avisos que ficam até você fechar */
+.avisos { position: fixed; top: calc(64px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 40; display: grid; gap: 8px; width: min(400px, calc(100vw - 32px)) }
+.aviso-fixo { display: flex; align-items: center; gap: 10px; padding: 12px 10px 12px 14px; border-radius: 14px; background: var(--bg-3); border: 1px solid var(--edge-2); box-shadow: 0 16px 40px rgba(0, 0, 0, .35); animation: entra .3s var(--ease) both; --c: var(--accent) }
+.aviso-fixo.ok { --c: var(--green) } .aviso-fixo.erro { --c: var(--red) }
+.af-ic { flex: 0 0 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c) }
+.af-t { flex: 1; min-width: 0; display: grid; gap: 2px } .af-t b { font-size: 14px } .af-t small { color: var(--soft); font-size: 13px; line-height: 1.35 }
+.af-x { flex: 0 0 30px; height: 30px; border-radius: 8px; border: 0; background: none; color: var(--soft); font-size: 20px; line-height: 1; cursor: pointer } .af-x:hover { background: var(--glass-2); color: var(--text) }
+/* a Fila: aviso no próprio post */
+.fp-alerta { display: grid; gap: 4px; margin: 12px 12px 0; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--amber) 10%, var(--glass)); border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--edge)) }
+.fp-alerta b { font-size: 14px } .fp-alerta small { color: var(--soft); font-size: 12.5px }
+.cal-avisos:empty { display: none } .cal-avisos { display: grid; gap: 8px; max-width: 860px; margin: 0 auto 14px }
+/* fim da entrada: a sua estratégia */
+.est { width: min(860px, 100%); display: grid; gap: 12px }
+.est-resumo { padding: 16px 18px; font-size: 16px; line-height: 1.55; color: var(--text); text-align: left }
+.est-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px }
+.est-c { position: relative; display: grid; gap: 4px; padding: 14px 16px 14px 46px; border-radius: 14px; text-align: left; background: var(--glass); border: 1.5px solid var(--edge); cursor: pointer; transition: border-color .2s, background .2s }
+.est-c.fixo { padding-left: 16px; cursor: default }
+.est-c.on { border-color: color-mix(in srgb, var(--accent) 60%, var(--edge)); background: color-mix(in srgb, var(--accent) 8%, var(--glass)) }
+.est-c input { position: absolute; left: 16px; top: 16px; width: 18px; height: 18px; accent-color: var(--btn) }
+.est-h small { font: 700 12px var(--font); letter-spacing: .05em; text-transform: uppercase; color: var(--faint) }
+.est-v { font-size: 15px; color: var(--text); line-height: 1.45 } .est-v small { display: block; color: var(--soft); font-size: 13px; margin-top: 4px }
+.est-cores { display: flex; gap: 6px } .est-cores i { width: 24px; height: 24px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18) }
+.est-pilares ul { margin: 0; padding-left: 18px; display: grid; gap: 6px } .est-pilares li small { display: block; color: var(--soft); font-size: 13px }
+.est-espera { width: min(560px, 100%); margin: 0 auto; text-align: left }
+@media (max-width: 700px) { .ativ { max-width: 60vw } }

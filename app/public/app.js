@@ -1,5 +1,5 @@
 'use strict'
-// Vynco: entrada em cenas (LinkedIn → IA → sincronização → formatos) + fila, rotinas e ajustes.
+// Vynco: entrada em cenas (LinkedIn → você → IA → sincronização → estratégia) + fila, rotinas e ajustes.
 // Fala com app/server.js (toda chamada leva o token desta sessão). Sem o servidor, roda em demonstração.
 const TOKEN = document.querySelector('meta[name=engine-token]').content
 const $ = (s, el = document) => el.querySelector(s)
@@ -22,7 +22,7 @@ let gid = 0
 const gemini = () => { const g = 'gg' + (++gid); return `<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8ef7"/><stop offset=".55" stop-color="#9b72f2"/><stop offset="1" stop-color="#d96570"/></linearGradient></defs><path fill="url(#${g})" d="M12 2c.6 5.3 4.7 9.4 10 10-5.3.6-9.4 4.7-10 10-.6-5.3-4.7-9.4-10-10 5.3-.6 9.4-4.7 10-10Z"/></svg>` }
 const glifo = (id, cor) => id === 'gemini' ? gemini() : GLIFO[id] ||`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="${cor || 'var(--violet)'}" opacity=".22"/><text x="12" y="16.2" text-anchor="middle" font-size="11" font-weight="700" fill="${cor || 'var(--violet)'}" font-family="Segoe UI, sans-serif">${esc((id || '?')[0].toUpperCase())}</text></svg>`
 
-// ---------------------------------------------------------------- wireframes dos formatos (nenhum post real nos exemplos)
+// ---------------------------------------------------------------- wireframes dos formatos de post (nenhum post real nos exemplos)
 const BADGE = { imagem: 'PNG', gif: 'GIF', carrossel: 'PDF', documento: 'PDF', video: 'MP4', multi: 'IMAGENS', texto: 'TEXTO', artigo: 'LINK' }
 function wire(f, o = {}) {
   if (f === 'documento') f = 'carrossel'
@@ -227,7 +227,7 @@ function pill(titulo, sub = '', cor = 'var(--accent)') {
   clearTimeout(pillT); pillT = setTimeout(() => { p.classList.add('out'); setTimeout(() => (p.hidden = true), 300) }, modo === 'detalhado' ? 4200 : 2800)
 }
 const humor = m => (document.documentElement.dataset.mood = m)
-function falha(e) { Som.erro(); humor('error'); pill('Algo deu errado', e.message, 'var(--red)'); setTimeout(atualizarHumor, 2800) }
+function falha(e) { Som.erro(); humor('error'); avisoFixo({ tipo: 'erro', titulo: 'Algo deu errado', texto: e.message }); setTimeout(atualizarHumor, 2800) }
 function confirmar(t, p, ok = 'Confirmar') { const d = $('#dlg'); $('#dlg-t').textContent = t; $('#dlg-p').textContent = p; $('#dlg-ok').textContent = ok; d.showModal(); return new Promise(r => d.addEventListener('close', () => r(d.returnValue === 'sim'), { once: true })) }
 const ring = el => { if (reduced || !el) return; const r = document.createElement('span'); r.className = 'ring'; el.appendChild(r); setTimeout(() => r.remove(), 750) }
 const quando = ms => ms ? new Date(ms).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : ''
@@ -239,7 +239,7 @@ matchMedia('(prefers-color-scheme: light)').addEventListener('change', aplicarTe
 aplicarTema()
 
 // ---------------------------------------------------------------- cenas
-const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'formatos']
+const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'estrategia']
 let atual = null, voltarPara = null
 function cena(nome, { som = true } = {}) {
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
@@ -275,7 +275,7 @@ function voltar() {
 }
 function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila') }
 const ENTRAR = {
-  linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), formatos: () => desenharFormatos(),
+  linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), estrategia: () => entrarEstrategia(),
   fila: () => carregarFila(), rotinas: () => carregarRotinas(), calendario: () => carregarCalendario(), ajustes: () => { status(); carregarImgAjustes() },
   biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(), rede: () => carregarRede(),
 }
@@ -756,23 +756,6 @@ function desenharSync(s, a) {
   $('[data-steps]').innerHTML = s.passos.map(p => `<li class="${EST[p.estado]}"><span class="ic"></span><span><b>${esc(p.rotulo)}</b>${p.detalhe ? `<small>${esc(p.detalhe)}</small>` : ''}</span></li>`).join('')
 }
 
-// ---------------------------------------------------------------- 4. formatos (wireframes, demonstração da aprovação)
-const FORMATOS = [['imagem', 'Imagem', 'PNG ou JPG, 1080 × 1350'], ['gif', 'GIF animado', 'loop curto, sem som'], ['carrossel', 'Carrossel', 'PDF, um slide por página'], ['video', 'Vídeo', 'MP4, com ou sem som']]
-let fmtOn = new Set(), fmtFoco = 0
-function desenharFormatos() {
-  $('[data-formats]').innerHTML = FORMATOS.map(([f, t, s], i) => `<button class="fmt${fmtOn.has(f) ? ' on' : ''}${i === fmtFoco ? ' focus' : ''}" data-fmt="${f}" data-i="${i}" aria-pressed="${fmtOn.has(f)}">${wire(f)}<footer><span class="state${fmtOn.has(f) ? ' ok' : ''}"></span><span><b>${t}</b><small>${fmtOn.has(f) ? 'aprovado' : s}</small></span></footer></button>`).join('')
-  humor(fmtOn.size === FORMATOS.length ? 'live' : 'waiting')
-}
-function alternarFormato(i) {
-  const f = FORMATOS[i][0]; fmtFoco = i
-  fmtOn.has(f) ? fmtOn.delete(f) : fmtOn.add(f)
-  const on = fmtOn.has(f); on ? Som.liga() : Som.desliga()
-  desenharFormatos(); ring($(`[data-fmt="${f}"] .state`))
-  const t = $('[data-ft]'), s = $('[data-fs]'), todos = fmtOn.size === FORMATOS.length
-  if (todos) { t.innerHTML = 'Aprovados. <span class="soft">Agora é só publicar.</span>'; s.innerHTML = 'Na fila de verdade, <kbd class="sm">P</kbd> publica o que você aprovou. Aperte <kbd class="sm">A</kbd> de novo para desfazer.'; t.classList.remove('swap'); void t.offsetWidth; t.classList.add('swap') }
-  pill(on ? 'Aprovado' : 'Aprovação desfeita', `${FORMATOS[i][1]} · demonstração`, on ? 'var(--green)' : 'var(--amber)')
-}
-
 // ---------------------------------------------------------------- fila
 let FILA = [], FILTRO = 'pendente', foco = 0, verMais = false, AG_AB = false, APROVOU = null
 const localISO = d => `${ymd(d)}T${hhmm(d)}`
@@ -783,7 +766,7 @@ const LIMITE = 3000   // caracteres do texto de um post no LinkedIn
 const dominio = u => { try { return new URL(u).hostname.replace(/^www\./, '') } catch { return '' } }
 const estado = i => i.published ? 'pub' : i.rascunho ? 'draft' : i.agendado && i.approved ? 'sched' : i.approved ? 'ok' : ''
 const quandoCurto = q => new Date(q).toLocaleString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-const estadoTxt = i => i.published ? 'no ar' : i.rascunho ? 'rascunho' : i.agendado ? (i.approved ? 'sai ' : 'agendado, falta aprovar · ') + quandoCurto(i.agendado) : i.approved ? 'aprovado' : 'esperando você'
+const estadoTxt = i => i.published ? 'no ar' : i.rascunho ? 'rascunho' : i.aprovacaoAviso ? 'aprove de novo' : i.agendado ? (i.approved ? 'sai ' : 'agendado, falta aprovar · ') + quandoCurto(i.agendado) : i.approved ? 'aprovado' : 'esperando você'
 const CONTA = { pendente: i => !i.published && !i.approved && !i.rascunho, pronto: i => !i.published && i.approved && !i.rascunho, publicado: i => !!i.published, rascunho: i => !i.published && !!i.rascunho, todos: () => true }
 const visiveis = () => FILA.filter(CONTA[FILTRO])
 async function carregarFila() {
@@ -848,7 +831,9 @@ function detalhe() {
        `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>`,
        i.approved && i.hasFile ? `<button class="btn good" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : '',
        !i.published ? `<button class="btn" data-q="agendar" aria-expanded="${AG_AB}">${i.agendado ? 'Mudar horário' : 'Agendar'}</button>` : ''].join('')
-  d.innerHTML = `${APROVOU === chaveIt(i) && i.approved && !i.published && !i.agendado ? (() => { const q = proximoLivre(); return `<div class="fp-depois"><b>Aprovado. E agora?</b><div class="fp-depois-a"><button class="btn accent" data-q="ag-sugestao" data-quando="${q.toISOString()}">Agendar para ${esc(quandoCurto(q))}</button><button class="btn good" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora</button><button class="link" data-q="agendar">Outro horário</button></div><small>Sugestão: o próximo dia útil livre, no horário que você costuma usar.</small></div>` })() : ''}<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
+  const avisoAg = ATIV.avisos.find(a => a.chave === chaveIt(i) && !a.ok)
+  const alerta = !i.published && i.aprovacaoAviso ? `<div class="fp-alerta"><b>${i.aprovacaoAviso === 'antiga' ? 'Aprove de novo, com um clique' : 'Este post mudou depois que você aprovou'}</b><small>${i.aprovacaoAviso === 'antiga' ? 'A aprovação é de antes da atualização de segurança, que agora confere o texto e os arquivos de cada post.' : 'O texto ou um arquivo é diferente do que você aprovou. Olhe a prévia de novo antes de aprovar.'}</small></div>` : avisoAg && !i.published ? `<div class="fp-alerta"><b>${esc(avisoAg.texto)}</b><small>${new Date(avisoAg.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</small></div>` : ''
+  d.innerHTML = `${alerta}${APROVOU === chaveIt(i) && i.approved && !i.published && !i.agendado ? (() => { const q = proximoLivre(); return `<div class="fp-depois"><b>Aprovado. E agora?</b><div class="fp-depois-a"><button class="btn accent" data-q="ag-sugestao" data-quando="${q.toISOString()}">Agendar para ${esc(quandoCurto(q))}</button><button class="btn good" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora</button><button class="link" data-q="agendar">Outro horário</button></div><small>Sugestão: o próximo dia útil livre, no horário que você costuma usar.</small></div>` })() : ''}<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
     ${cartaoFeed(i, { aberto: verMais, quandoTxt: i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora' })}
     ${i.agendado && !i.published ? `<div class="fp-ag${i.approved ? '' : ' warn'}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${i.approved ? 'Sai sozinho' : 'Agendado, mas só sai se você aprovar'} · <b>${quandoCurto(i.agendado)}</b></span></div>` : ''}
     <div class="fp-actions">${acoes}${i.file && (!i.pasta || ST?.desktop) ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">${i.pasta ? 'Abrir a pasta' : 'Abrir o arquivo'}</a>` : ''}</div>
@@ -1495,7 +1480,7 @@ function desenharRotinas() {
   const f = $('[data-rot-filtro]')
   if (temDesign && !$('[data-v=design]', f)) f.insertAdjacentHTML('beforeend', '<button data-v="design">Design</button>')
   $$('button', f).forEach(b => b.classList.toggle('on', b.dataset.v === ROT_F))
-  $('[data-rot-avisos]').innerHTML = (d.avisos || []).slice(0, 3).map(a => `<div class="cr-aviso ${a.ok ? 'ok' : 'bad'}"><span class="dot"></span><span><b>${esc(a.titulo)}</b> · ${esc(a.texto)}</span>${a.link ? `<a class="link" href="${esc(urlOk(a.link))}" target="_blank" rel="noopener">Ver no LinkedIn ↗</a>` : ''}</div>`).join('')
+  $('[data-rot-avisos]').innerHTML = ''
   const lista = d.rotinas.filter(r => ROT_F === 'todos' || (ROT_F === 'design' ? r.design : r.formato === ROT_F && !r.design))
   $('[data-rotinas]').innerHTML = lista.map(r => {
     const u = d.runs.find(x => x.id === r.id), rodando = u && u.status === 'rodando', ag = agendaTxt(r.agenda)
@@ -1583,7 +1568,7 @@ function desenharCalendario() {
       ${ev.length > 3 ? `<span class="cal-mais">+${ev.length - 3}</span>` : ''}</div>`
   }
   $('[data-cal-mes]').innerHTML = h
-  desenharDia()
+  desenharDia(); desenharCalAvisos()
   const sem = semData()
   $('[data-cal-nsem]').textContent = sem.length || ''
   $('[data-cal-sem]').innerHTML = sem.length ? sem.map(i => `<div class="cal-it" draggable="true" data-arrasta="${esc(chaveIt(i))}"><span class="state ${estado(i)}"></span><span><b>${esc(i.title)}</b><small>${FMT_TXT[i.formato] || ''} · ${estadoTxt(i)}</small></span></div>`).join('') : '<p class="fine">Nada esperando data. Peça um post novo em Criar.</p>'
@@ -1778,10 +1763,9 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-finish]')) return terminar()
   if (t.matches('[data-view]')) { voltarPara = null; return cena(t.dataset.view) }
   if (t.matches('[data-goscene]')) { const de = atual.dataset.scene; voltarPara = ['fila', 'rotinas', 'ajustes', 'perfil', 'calendario', 'rede', 'biblioteca'].includes(de) ? de : voltarPara; return cena(t.dataset.goscene) }
-  if (t.matches('[data-restart]')) { voltarPara = null; fmtOn = new Set(); return cena('ola') }
+  if (t.matches('[data-restart]')) { voltarPara = null; return cena('ola') }
   if (t.matches('[data-run]')) return rodar(t.dataset.run)
   if (t.matches('[data-agent]')) return entrarCom(t.dataset.agent)
-  if (t.matches('[data-fmt]')) return alternarFormato(+t.dataset.i)
   if (t.matches('[data-novo-post]')) return abrirEditor({})
   if (t.matches('[data-gerar-img]')) return abrirEstudio({ op: 'gerar' })
   if (t.matches('[data-es-ajustes]')) { $('#estudio').close(); voltarPara = null; return cena('ajustes') }
@@ -1849,11 +1833,7 @@ addEventListener('keydown', e => {
     if (nome === 'ola') return proximaCena()
     if (nome === 'linkedin') return $('[data-li]').dataset.li === 'ok' ? proximaCena() : $('[data-li]').dataset.li === 'idle' ? conectarLinkedin() : null
     if (nome === 'sync') return !$('[data-sync-cta]').hidden && $('[data-sync-cta] [data-next]') ? proximaCena() : null
-    if (nome === 'formatos') return terminar()
-  }
-  if (nome === 'formatos') {
-    if (k === 'ArrowRight' || k === 'ArrowLeft') { fmtFoco = (fmtFoco + (k === 'ArrowRight' ? 1 : FORMATOS.length - 1)) % FORMATOS.length; Som.tique(); desenharFormatos() }
-    if (k === 'a') alternarFormato(fmtFoco)
+    if (nome === 'estrategia') return $('[data-est-cta] .btn.accent')?.click()
   }
   if (nome === 'fila') {
     if (k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); foco += k === 'ArrowRight' ? 1 : -1; verMais = false; Som.tique(); desenharFila(); $(`[data-strip] .post[data-n="${foco}"]`)?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' }) }
@@ -1862,6 +1842,151 @@ addEventListener('keydown', e => {
   }
 })
 addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; lit({ ArrowLeft: '←', ArrowRight: '→' }[k] || k, false) })
+
+// ---------------------------------------------------------------- avisos que ficam (erros e coisas que terminaram enquanto você fazia outra coisa)
+// a pílula do topo continua para confirmações rápidas; o que precisa de atenção fica aqui até você fechar ou clicar
+function avisoFixo({ tipo = 'info', titulo, texto = '', acao = null }) {
+  const box = $('#avisos'); if (!box) return
+  const el = document.createElement('div'); el.className = 'aviso-fixo ' + tipo; el.setAttribute('role', tipo === 'erro' ? 'alert' : 'status')
+  el.innerHTML = `<span class="af-ic" aria-hidden="true"></span><span class="af-t"><b>${esc(titulo)}</b>${texto ? `<small>${esc(texto)}</small>` : ''}</span>${acao ? `<button class="btn sm${tipo === 'erro' ? '' : ' accent'}" type="button" data-af-acao>${esc(acao.rotulo)}</button>` : ''}<button class="af-x" type="button" aria-label="Fechar aviso">×</button>`
+  el.querySelector('.af-x').onclick = () => el.remove()
+  if (acao) el.querySelector('[data-af-acao]').onclick = () => { el.remove(); acao.fn() }
+  box.prepend(el)
+  while (box.children.length > 4) box.lastElementChild.remove()
+  if (tipo === 'info') setTimeout(() => el.remove(), 10000)
+}
+
+// ---------------------------------------------------------------- o que a sua IA está fazendo (de qualquer tela)
+let ATIV = { rotinas: [], analise: null, rede: null, avisos: [] }, ativT = null, ativPrimeira = true
+const ATIV_VISTO = { runs: {}, analise: null, rede: null, aviso: +store.get('aviso-visto', 0) || 0 }
+const listaE = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || ''
+async function vigiar() {
+  clearTimeout(ativT)
+  if (DEMO) return
+  let a; try { a = await api('/api/atividade') } catch { ativT = setTimeout(vigiar, 15000); return }
+  const aqui = atual?.dataset.scene
+  // criações que terminaram
+  for (const r of a.rotinas) {
+    const k = r.id + ':' + r.inicio, antes = ATIV_VISTO.runs[k]
+    if (!ativPrimeira && antes === 'rodando' && r.status !== 'rodando') {
+      if (r.status === 'concluída') { Som.liga(); avisoFixo({ tipo: 'ok', titulo: `Pronto: ${r.titulo}`, texto: 'O post está na Fila esperando você revisar.', acao: { rotulo: 'Revisar agora', fn: () => { FILTRO = 'pendente'; foco = 0; voltarPara = null; cena('fila') } } }) }
+      else { Som.erro(); avisoFixo({ tipo: 'erro', titulo: `${r.titulo} não deu certo`, texto: 'Veja o que a IA fez e tente de novo.', acao: { rotulo: 'Ver em Criar', fn: () => { voltarPara = null; cena('rotinas') } } }) }
+      if (aqui === 'fila') carregarFila(); if (aqui === 'rotinas') carregarRotinas()
+    }
+    ATIV_VISTO.runs[k] = r.status
+  }
+  // análise do perfil (a tela Perfil e o fim da entrada já acompanham a deles)
+  const an = a.analise?.estado
+  if (!ativPrimeira && ATIV_VISTO.analise === 'rodando' && an && an !== 'rodando' && !['perfil', 'estrategia'].includes(aqui)) {
+    an === 'pronto' ? avisoFixo({ tipo: 'ok', titulo: 'A sua IA terminou de ler o seu perfil', texto: 'Veja as sugestões e aplique o que fizer sentido.', acao: { rotulo: 'Ver sugestões', fn: () => { voltarPara = null; cena('perfil') } } })
+      : avisoFixo({ tipo: 'erro', titulo: 'A análise do perfil não deu certo', texto: a.analise.erro || 'Tente de novo em Perfil.', acao: { rotulo: 'Abrir Perfil', fn: () => { voltarPara = null; cena('perfil') } } })
+  }
+  ATIV_VISTO.analise = an || null
+  // busca da Rede
+  const rd = a.rede?.estado
+  if (!ativPrimeira && ATIV_VISTO.rede === 'rodando' && rd && rd !== 'rodando' && aqui !== 'rede') {
+    rd === 'pronto' ? avisoFixo({ tipo: 'ok', titulo: 'Sugestões da Rede prontas', texto: 'Conexões e vagas para a sua área.', acao: { rotulo: 'Ver', fn: () => { voltarPara = null; cena('rede') } } })
+      : avisoFixo({ tipo: 'erro', titulo: 'A busca da Rede não deu certo', texto: a.rede.erro || 'Tente de novo.', acao: { rotulo: 'Abrir Rede', fn: () => { voltarPara = null; cena('rede') } } })
+  }
+  ATIV_VISTO.rede = rd || null
+  // avisos da agenda e das repetições (o app pode ter reaberto: a numeração recomeça)
+  const maior = Math.max(0, ...a.avisos.map(x => x.n))
+  if (maior < ATIV_VISTO.aviso) ATIV_VISTO.aviso = 0
+  for (const x of a.avisos.filter(x => x.n > ATIV_VISTO.aviso).reverse()) {
+    avisoFixo({ tipo: x.ok ? 'ok' : 'erro', titulo: x.titulo, texto: x.texto, acao: x.chave && !x.ok ? { rotulo: 'Ver o post', fn: () => abrirNaFila(x.chave) } : x.link ? { rotulo: 'Ver no LinkedIn', fn: () => abrirFora(x.link) } : null })
+  }
+  ATIV_VISTO.aviso = Math.max(ATIV_VISTO.aviso, maior); store.set('aviso-visto', ATIV_VISTO.aviso)
+  ATIV = a; ativPrimeira = false; desenharAtiv()
+  if (aqui === 'fila') detalhe(); if (aqui === 'calendario') desenharCalAvisos()
+  const algo = a.rotinas.some(r => r.status === 'rodando') || an === 'rodando' || rd === 'rodando'
+  ativT = setTimeout(vigiar, algo ? 4000 : 15000)
+}
+function desenharAtiv() {
+  const el = $('#ativ'); if (!el) return
+  const n = ATIV.rotinas.filter(r => r.status === 'rodando').length, partes = []
+  if (n) partes.push(n === 1 ? 'criando 1 post' : `criando ${n} posts`)
+  if (ATIV.analise?.estado === 'rodando') partes.push('lendo o seu perfil')
+  if (ATIV.rede?.estado === 'rodando') partes.push(ATIV.rede.tipo === 'vagas' ? 'buscando vagas' : ATIV.rede.tipo === 'conexoes' ? 'buscando conexões' : 'buscando conexões e vagas')
+  el.hidden = !partes.length
+  el.dataset.ir = n ? 'rotinas' : ATIV.analise?.estado === 'rodando' ? 'perfil' : 'rede'
+  $('[data-ativ-t]', el).textContent = `A sua IA está ${listaE(partes)}`
+  el.title = 'Ver o andamento'
+}
+$('#ativ')?.addEventListener('click', e => { const ir = e.currentTarget.dataset.ir; if (ONB.includes(atual?.dataset.scene)) return; voltarPara = null; cena(ir) })
+// avisos da agenda na Calendário
+function desenharCalAvisos() {
+  const box = $('[data-cal-avisos]'); if (!box) return
+  box.innerHTML = ATIV.avisos.slice(0, 3).map(a => `<div class="cr-aviso ${a.ok ? 'ok' : 'bad'}"><span class="dot"></span><span><b>${esc(a.titulo)}</b> · ${esc(a.texto)}</span>${a.chave && !a.ok ? `<button class="link" type="button" data-cal-fila="${esc(a.chave)}">Ver o post</button>` : a.link ? `<a class="link" href="${esc(urlOk(a.link))}" target="_blank" rel="noopener">Ver no LinkedIn ↗</a>` : ''}</div>`).join('')
+}
+
+// ---------------------------------------------------------------- fim da entrada: a sua estratégia
+// a análise começa quando a IA termina de sincronizar; aqui a pessoa vê o resultado e escolhe o que usar
+let ESTR = null, estT = null
+const EST_CAMPOS = [['area', 'Área de atuação'], ['publico', 'Para quem você escreve'], ['objetivo', 'Objetivo no LinkedIn'], ['tom', 'Tom de voz']]
+async function entrarEstrategia() {
+  clearTimeout(estT)
+  let d; try { d = await api('/api/perfil') } catch (e) { return falha(e) }
+  const marcados = ESTR?.marcados
+  ESTR = { perfil: d.perfil, estado: d.analise, agente: d.agente, marcados: marcados || null, usada: ESTR?.usada || false }
+  desenharEstrategia()
+  if (d.analise?.estado === 'rodando') estT = setTimeout(() => atual?.dataset.scene === 'estrategia' && entrarEstrategia(), 3000)
+}
+function aplicarAnalise(P, a, chaves) {   // as mesmas regras do botão "Aplicar" em Perfil
+  for (const k of chaves) {
+    if (['area', 'publico', 'objetivo', 'tom'].includes(k) && a[k]) P[k] = a[k]
+    if (k === 'temas' && a.temas?.length) P.temas = a.temas.filter(Boolean)
+    if (k === 'cores') { for (const [c, v] of Object.entries(a.cores || {})) if (corOk(v) && c in P.marca.cores) P.marca.cores[c] = v; if (a.estilo_visual) P.marca.estilo = a.estilo_visual }
+    if (k === 'pilares') for (const p of a.pilares || []) if (p.tema && !P.pilares.some(x => x.tema.toLowerCase() === p.tema.toLowerCase())) P.pilares.push({ tema: p.tema, por_que: p.por_que || '', ideias: (p.ideias || []).filter(Boolean) })
+  }
+  return P
+}
+function desenharEstrategia() {
+  const p = ESTR.perfil, st = ESTR.estado, a = (st?.estado === 'pronto' && st.resultado) || p.analise, rodando = st?.estado === 'rodando'
+  const t = $('[data-est-t]'), s = $('[data-est-s]'), corpo = $('[data-est]'), cta = $('[data-est-cta]')
+  const fim = `<button class="btn accent lg" type="button" data-est-criar>Criar meu primeiro post</button><button class="btn lg" type="button" data-finish>Ir para a fila</button>`
+  if (rodando) {
+    t.innerHTML = 'Lendo o seu perfil…'
+    s.textContent = `A sua IA${ESTR.agente ? ` (${ESTR.agente})` : ''} está lendo as suas respostas e os seus links para sugerir a sua estratégia. Leva de 30 segundos a alguns minutos.`
+    corpo.innerHTML = `<ol class="steps glass est-espera"><li class="run"><span class="ic"></span><span><b>Entendendo a sua área e o seu público</b><small>a partir das perguntas e das plataformas que você colou</small></span></li><li><span class="ic"></span><span><b>Sugerindo tom, temas e pilares de conteúdo</b><small>nada muda no seu perfil sem você escolher</small></span></li></ol>`
+    cta.innerHTML = `<button class="link soft" type="button" data-finish>Continuar sem esperar (as sugestões ficam em Perfil)</button>`
+    return
+  }
+  if (a && (a.area || a.resumo || (a.pilares || []).length)) {
+    if (!ESTR.marcados) ESTR.marcados = Object.fromEntries([...EST_CAMPOS.map(c => c[0]), 'temas', 'pilares', 'cores'].map(k => [k, true]))
+    const m = ESTR.marcados, caixa = (k, rot, conteudo) => conteudo ? `<label class="est-c${m[k] ? ' on' : ''}"><input type="checkbox" data-est-k="${k}"${m[k] ? ' checked' : ''}${ESTR.usada ? ' disabled' : ''}><span class="est-h"><small>${rot}</small></span><span class="est-v">${conteudo}</span></label>` : ''
+    t.innerHTML = ESTR.usada ? 'Pronto. <span class="soft">A sua IA já escreve com isso.</span>' : 'Sua estratégia.'
+    s.textContent = ESTR.usada ? 'Agora é criar. A sua IA faz o primeiro post a partir de um dos seus pilares, e ele chega na Fila para você revisar.' : 'A sua IA juntou as suas respostas e os seus links. Marque o que quer usar; dá para mudar tudo depois em Perfil.'
+    corpo.innerHTML = `${a.resumo ? `<p class="est-resumo glass">${esc(a.resumo)}</p>` : ''}<div class="est-grade">
+      ${EST_CAMPOS.map(([k, rot]) => caixa(k, rot, a[k] ? esc(Array.isArray(a[k]) ? a[k].join(', ') : a[k]) : '')).join('')}
+      ${caixa('temas', 'Temas', (a.temas || []).length ? esc(a.temas.join(', ')) : '')}
+      ${caixa('cores', 'Cores da sua marca', Object.values(a.cores || {}).filter(corOk).length ? `<span class="est-cores">${Object.values(a.cores).filter(corOk).map(c => `<i style="background:${c}" title="${c}"></i>`).join('')}</span>${a.estilo_visual ? `<small>${esc(a.estilo_visual)}</small>` : ''}` : '')}
+    </div>
+    ${(a.pilares || []).length ? `<div class="est-pilares">${caixa('pilares', 'Pilares de conteúdo', `<ul>${a.pilares.map(x => `<li><b>${esc(x.tema)}</b>${x.por_que ? ` · ${esc(x.por_que)}` : ''}${(x.ideias || [])[0] ? `<small>ideia: ${esc(x.ideias[0])}</small>` : ''}</li>`).join('')}</ul>`)}</div>` : ''}`
+    cta.innerHTML = ESTR.usada ? fim : `<button class="btn accent lg" type="button" data-est-usar>Usar esta estratégia</button><button class="link soft" type="button" data-finish>Pular, ver depois em Perfil</button>`
+    return
+  }
+  // sem análise (sem IA, ou deu errado): mostra o ponto de partida que a pessoa respondeu
+  t.innerHTML = 'Seu ponto de partida.'
+  s.textContent = st?.estado === 'falhou' ? `A análise não deu certo agora (${st.erro || 'erro'}). Dá para pedir de novo em Perfil; a sua IA já usa o que você respondeu.` : 'Isto é o que você contou. Quando quiser, peça à sua IA para completar a estratégia em Perfil.'
+  const linhas = [...EST_CAMPOS, ['nivel', 'Momento da carreira'], ['frequencia', 'Frequência']].filter(([k]) => p[k]).map(([k, rot]) => `<div class="est-c on fixo"><span class="est-h"><small>${rot}</small></span><span class="est-v">${esc(p[k])}</span></div>`).join('')
+  corpo.innerHTML = linhas ? `<div class="est-grade">${linhas}</div>` : '<p class="fine">Você pulou as perguntas. Tudo bem: dá para preencher em Perfil.</p>'
+  cta.innerHTML = fim
+}
+$('[data-scene=estrategia]')?.addEventListener('change', e => { const c = e.target.closest('[data-est-k]'); if (!c) return; ESTR.marcados[c.dataset.estK] = c.checked; Som.tique(); desenharEstrategia() })
+$('[data-scene=estrategia]')?.addEventListener('click', async e => {
+  if (e.target.closest('[data-est-usar]')) {
+    const st = ESTR.estado, a = (st?.estado === 'pronto' && st.resultado) || ESTR.perfil.analise
+    const chaves = Object.entries(ESTR.marcados || {}).filter(([, v]) => v).map(([k]) => k)
+    if (!chaves.length) return pill('Marque pelo menos um item', 'Ou pule e veja depois em Perfil.', 'var(--amber)')
+    try {
+      const P = aplicarAnalise(JSON.parse(JSON.stringify(ESTR.perfil)), a, chaves)
+      ESTR.perfil = await api('/api/perfil/salvar', { id: P.id, perfil: P }); ESTR.usada = true
+      Som.publica(); pill('Estratégia salva', 'A sua IA já escreve com ela.', 'var(--green)'); desenharEstrategia()
+    } catch (err) { falha(err) }
+    return
+  }
+  if (e.target.closest('[data-est-criar]')) { store.set('onboarded', '1'); voltarPara = null; cena('rotinas') }
+})
 
 // ---------------------------------------------------------------- início
 if (DEMO) setTimeout(() => pill('Demonstração', 'Logins simulados: nada é conectado nem publicado de verdade.', 'var(--violet)'), 1200)
@@ -1874,3 +1999,4 @@ else {
   if (store.get('onboarded') === '1') abrirApp()
   else status().then(s => { if (!DEMO && s && (s.linkedin?.contas || []).length && s.agente?.sincronizado) { store.set('onboarded', '1'); abrirApp() } else cena('ola', { som: false }) })
 }
+vigiar()

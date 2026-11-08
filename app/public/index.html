@@ -19,12 +19,14 @@
       <button class="conns" id="conns" hidden aria-label="Sua conta: perfil, conexões e ajustes" aria-haspopup="menu" aria-expanded="false"></button>
       <div class="conta-menu" id="conta-menu" role="menu" hidden></div>
     </div>
+    <button class="ativ" id="ativ" type="button" hidden aria-live="polite"><span class="spin" aria-hidden="true"></span><span data-ativ-t>A sua IA está trabalhando</span></button>
   </div>
   <div class="pill-zone" aria-live="polite"><div class="pill" id="pill" hidden><span class="dot"></span><span><b id="pill-t"></b><small id="pill-s"></small></span></div></div>
   <nav class="seg" id="nav" aria-label="Seções" hidden>
     <button data-view="fila" aria-current="page">Fila<span class="nav-n" data-nav-n="fila" hidden></span></button><button data-view="calendario">Calendário</button><button data-view="rotinas">Criar</button><button data-view="biblioteca">Biblioteca</button><button data-view="rede">Rede</button>
   </nav>
 </header>
+<div class="avisos" id="avisos" aria-live="polite"></div>
 
 <main id="stage">
   <!-- ===================================== ENTRADA (uma ideia por tela) -->
@@ -113,12 +115,11 @@
     <div class="cta" data-sync-cta hidden></div>
   </section>
 
-  <section class="scene" data-scene="formatos" hidden>
-    <h1 data-in data-ft>Quatro formatos. <span class="soft">Uma fila.</span></h1>
-    <p class="sub" data-in data-fs>Cada peça chega aqui antes de ir ao ar. Clique numa ou aperte <kbd class="sm">A</kbd> para aprovar.</p>
-    <div class="formats" data-in data-formats></div>
-    <div class="keys" data-in><kbd data-k="a">A</kbd><span>aprova</span><kbd data-k="p">P</kbd><span>publica</span><kbd data-k="←">←</kbd><kbd data-k="→">→</kbd><span>navega</span></div>
-    <div class="cta" data-in><button class="btn accent lg" data-finish>Abrir a fila</button><span class="hint"><kbd class="sm">Enter</kbd></span></div>
+  <section class="scene" data-scene="estrategia" hidden>
+    <h1 data-in data-est-t>Sua estratégia.</h1>
+    <p class="sub" data-in data-est-s></p>
+    <div class="est" data-in data-est></div>
+    <div class="cta" data-in data-est-cta></div>
   </section>
 
   <!-- ===================================== APP -->
@@ -288,6 +289,7 @@
     </div>
     <nav class="fluxo" data-in data-fluxo="agendar" aria-label="Etapas do post"></nav>
     <div class="cal-legenda" data-in><span class="cl pub">No ar</span><span class="cl ag">Agendado</span><span class="cl rot">Rotina vai criar</span><span class="fine">Arraste um post para um dia para agendar.</span></div>
+    <div class="cal-avisos" data-in data-cal-avisos></div>
     <div class="cal-grid" data-in>
       <div class="cal glass" data-cal-mes role="grid" aria-label="Mês"></div>
       <aside class="cal-lado">
@@ -352,7 +354,7 @@
 </main>
 
 <footer class="stepper" id="stepper" hidden aria-label="Progresso"><ol>
-  <li data-s="linkedin"><i></i><span>LinkedIn</span></li><li data-s="voce"><i></i><span>Você</span></li><li data-s="agente"><i></i><span>IA</span></li><li data-s="sync"><i></i><span>Sincronizar</span></li><li data-s="formatos"><i></i><span>Formatos</span></li>
+  <li data-s="linkedin"><i></i><span>LinkedIn</span></li><li data-s="voce"><i></i><span>Você</span></li><li data-s="agente"><i></i><span>IA</span></li><li data-s="sync"><i></i><span>Sincronizar</span></li><li data-s="estrategia"><i></i><span>Estratégia</span></li>
 </ol></footer>
 
 <dialog id="dlg"><form method="dialog" class="glass"><h3 id="dlg-t"></h3><p id="dlg-p"></p><div class="cta"><button class="btn" value="nao">Cancelar</button><button class="btn accent" value="sim" id="dlg-ok">Confirmar</button></div></form></dialog>

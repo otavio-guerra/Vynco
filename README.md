@@ -3,7 +3,7 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.7.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.8.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
@@ -51,14 +51,18 @@ Nasceu para o meu próprio perfil ([portfolio-otavio-guerra.vercel.app](https://
 - **Você aprova, ele publica.** A publicação usa a API oficial do LinkedIn. Nenhuma rotina publica sozinha: sem aprovação, nada vai ao ar. Um post aprovado pode ser agendado e sai sozinho no horário.
 
 ## O app
-Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum comando fora do app:
+Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum comando fora do app (a tela de boas-vindas vem antes):
 1. **LinkedIn:** um botão, "Continuar com LinkedIn", como em qualquer site. Você entra e clica em Permitir; o Vynco nunca vê a sua senha.
 2. **Você:** uma apresentação logo depois do LinkedIn, uma pergunta por tela, com cartões grandes e barra de progresso: a área (até 3, entre 14 opções ou "Outra"), o que você faz (quantas opções quiser da sua área e, se quiser, o seu cargo escrito), o momento da carreira, o objetivo no LinkedIn e quem você quer alcançar (até 3 de cada), o tom de voz (até 2, cada um com um exemplo de começo de post), a frequência, **onde você já mostra o seu trabalho** (campos sugeridos pela sua área: Behance e Dribbble para design, GitHub para tecnologia, Lattes para saúde, direito e educação, e assim por diante; basta o usuário, o link completo é montado sozinho) e, por fim, a sugestão de **conectar o Magnific** para imagens com IA (opcional, com o aviso de que a API é cobrada à parte). Nada avança sozinho: você marca e confirma em "Continuar" (ou Enter); Esc volta uma pergunta. No fim, um resumo em uma frase mostra como a IA vai te ver, e tocar em qualquer parte dele volta àquela pergunta. O momento da carreira também vira o nível padrão das vagas na aba Rede. O nome e a foto vêm da sua conta do LinkedIn. O LinkedIn não compartilha cargo nem experiência com outros apps, então o resto vem desses toques. Tudo vira o seu perfil, e quando a IA termina de sincronizar ela lê a triagem e todos os links e sugere o resto na aba Perfil, sem aplicar nada sozinha.
 3. **Sua IA:** "Continuar com Claude", "com ChatGPT" (Codex) ou "com Gemini" (Gemini CLI), e um menu com outras (GitHub Copilot, Qwen Code, OpenCode, em beta). Se a ferramenta não estiver instalada, o Vynco instala e abre o login no navegador. Para quem não tem assinatura, a mesma tela explica o [OmniRoute](https://github.com/diegosouzapw/OmniRoute), um projeto gratuito e de código aberto (de outra equipe) que liga o Claude Code, o Codex ou o Gemini CLI a modelos gratuitos, com o aviso de que esses modelos não são os oficiais e cada provedor tem os seus termos.
 4. **Sincronização:** uma tela de carregamento mostra cada passo enquanto o Vynco entrega à IA as regras (`agent/AGENTS.md`), as skills (`agent/skills`), os prompts das rotinas, o plugin do Desigma (MCP, se estiver instalado) e a trava que impede a IA de publicar. No fim, um teste rápido confere se ela responde.
-5. **Formatos:** os quatro formatos em wireframe (imagem, GIF, carrossel e vídeo) e como aprovar com `A`.
+5. **Estratégia:** enquanto a IA lê as suas respostas e os seus links, a tela mostra o andamento. Quando ela termina, aparece a estratégia sugerida (resumo, área, público, objetivo, tom, temas, cores e pilares de conteúdo). Você marca o que quer usar e clica em "Usar esta estratégia", e então escolhe entre criar o primeiro post ou ir para a Fila. Sem IA, ou se a análise falhar, a tela mostra o ponto de partida que você respondeu.
 
 Depois disso, o app tem cinco abas: **Fila**, **Calendário**, **Criar**, **Biblioteca** e **Rede**. **Perfil** e **Ajustes** ficam no menu da sua conta, no canto de cima (Ajustes troca de IA, reconecta o LinkedIn e liga o Desigma). Ao lado de "Fila", um número mostra quantos posts esperam você.
+
+- **O que a sua IA está fazendo:** enquanto ela cria um post, lê o seu perfil ou busca conexões e vagas, a barra do topo mostra "A sua IA está…", em qualquer tela. Quando termina, aparece um aviso com o próximo passo (por exemplo, "Pronto: Dicas práticas · Revisar agora").
+- **Avisos que ficam:** erros e avisos importantes ficam no canto da tela até você fechar ou clicar na ação. Os avisos da agenda (publicado no horário, ou não publicado porque o post não estava aprovado) aparecem também na Calendário e no próprio post, na Fila.
+- **Aprovação que expirou:** se um post mudou depois de aprovado, ou foi aprovado antes da aprovação assinada, ele volta para "esperando você" com a explicação no próprio post.
 
 - **Fluxo do post:** uma faixa em Criar, Fila e Calendário mostra as etapas **Criar → Revisar → Agendar → No ar**, com quantos posts há em cada uma; clicar leva para onde aquilo se resolve. A Fila também mostra os **próximos 7 dias**, e aprovar um post já oferece "Agendar para" o próximo dia útil livre, "Publicar agora" ou outro horário.
 - **Fila:** cada peça ao lado de uma prévia de como ela fica no feed. Aprovar (`A`), publicar agora (`P`) ou **Agendar** para um dia e hora. Agendar um post que ainda não foi aprovado pede a aprovação junto.

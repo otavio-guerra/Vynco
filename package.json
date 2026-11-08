@@ -1,6 +1,6 @@
 {
   "name": "vynco",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Vynco: motor de conteÃºdo para LinkedIn. o Claude Code gera posts, Daily UI e carrossÃ©is no seu design system, o Desigma monta o projeto e um painel local cuida da aprovaÃ§Ã£o e da publicaÃ§Ã£o.",
   "private": true,
   "license": "MIT",

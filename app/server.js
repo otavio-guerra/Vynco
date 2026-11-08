@@ -98,6 +98,8 @@ function queue() {
     // o que a aprovação assina: a legenda e os arquivos que vão ao ar (um arquivo, ou as mídias da pasta)
     const lista = arquivos || (file && file !== legenda && exists(file) && fs.statSync(file).isFile() ? [file] : [])
     const it = { kind, id, title, formato: formato(file), file: file && path.relative(C.WS, file), cover: cover && path.relative(C.WS, cover), hasFile: exists(file), approved: !!okFile && exists(okFile) && APROV.valida(okFile, kind, id, legenda, lista), published: pubBy[base(file)] || null, caption: exists(legenda) ? fs.readFileSync(legenda, 'utf8') : '', ...extra }
+    // aprovação que não vale mais: de antes da assinatura ('antiga') ou o post mudou depois de aprovado ('mudou')
+    if (!it.approved && !it.published && okFile && exists(okFile)) { let t = ''; try { t = fs.readFileSync(okFile, 'utf8').trim() } catch { } it.aprovacaoAviso = t.startsWith('{') ? 'mudou' : 'antiga' }
     Object.defineProperties(it, { _ok: { value: okFile }, _legenda: { value: legenda }, _arquivos: { value: lista } })
     items.push(it)
   }
@@ -173,7 +175,9 @@ async function publicarItem(it) {
 // O Vynco publica no horário só o que já está aprovado e só enquanto o app estiver aberto (se estiver fechado, publica ao abrir).
 const AGENDA = () => C.ws('agenda.json')
 const agenda = () => readJSON(AGENDA(), {})
-const AVISOS = []   // o que a agenda fez ou não conseguiu fazer (aparece no app)
+const AVISOS = []   // o que a agenda e as rotinas fizeram ou não conseguiram fazer (aparece no app e no post)
+let AVISO_N = 0
+const avisar = a => { AVISOS.unshift({ n: ++AVISO_N, quando: new Date().toISOString(), ...a }); AVISOS.splice(20) }
 function agendar(kind, id, quando) {
   const a = agenda(), k = `${kind}:${id}`
   if (quando) { const d = new Date(quando); if (isNaN(d)) throw new Error('data inválida'); a[k] = d.toISOString() } else delete a[k]
@@ -191,13 +195,13 @@ async function rodarAgenda() {
     for (const [k] of vencidos) {
       const [kind, ...resto] = k.split(':'), id = resto.join(':'), it = findItem(kind, id)
       if (!it || it.published) { agendar(kind, id, null); continue }
-      if (!it.approved || it.rascunho) { AVISOS.unshift({ quando: new Date().toISOString(), ok: false, titulo: it.title, texto: 'Chegou o horário, mas o post não está aprovado. Aprove e escolha outro horário.' }); agendar(kind, id, null); continue }
+      if (!it.approved || it.rascunho) { avisar({ ok: false, titulo: it.title, chave: k, texto: 'Chegou o horário, mas o post não estava aprovado, então não foi publicado. Aprove e escolha outro horário.' }); agendar(kind, id, null); continue }
       const [code, r] = await publicarItem(it)
-      if (code === 200) { agendar(kind, id, null); AVISOS.unshift({ quando: new Date().toISOString(), ok: true, titulo: it.title, texto: 'Publicado no horário agendado.', link: r.link }) }
+      if (code === 200) { agendar(kind, id, null); avisar({ ok: true, titulo: it.title, chave: k, texto: 'Publicado no horário agendado.', link: r.link }) }
       else if (code === 409) agendar(kind, id, null)
-      else { agendar(kind, id, null); AVISOS.unshift({ quando: new Date().toISOString(), ok: false, titulo: it.title, texto: `Não consegui publicar no horário: ${r.erro || 'erro'}` }) }
+      else { agendar(kind, id, null); avisar({ ok: false, titulo: it.title, chave: k, texto: `Não consegui publicar no horário: ${r.erro || 'erro'}. Ele saiu da agenda: confira e agende de novo.` }) }
     }
-  } finally { publicandoAgenda = false; AVISOS.splice(20) }
+  } finally { publicandoAgenda = false }
 }
 
 // ---------------------------------------------------------------- rotinas: os modelos de post, rodados pela IA escolhida
@@ -210,7 +214,7 @@ function rodarRotinasDoDia() {
     if (!r || !r.ativo || !(r.dias || []).includes(agora.getDay()) || hhmm < (r.hora || '08:00') || r.ultima === hojeLocal()) continue
     if (!MODELOS.MODELOS.some(m => m.id === rid)) continue
     C.save({ rotinas: { [rid]: { ultima: hojeLocal() } } })
-    try { startRun(rid) } catch (e) { AVISOS.unshift({ quando: new Date().toISOString(), ok: false, titulo: rid, texto: e.message }) }
+    try { startRun(rid) } catch (e) { avisar({ ok: false, titulo: (MODELOS.MODELOS.find(m => m.id === rid) || {}).titulo || rid, texto: `A repetição não rodou: ${e.message}` }) }
   }
 }
 setInterval(() => { rodarAgenda().catch(() => {}); try { rodarRotinasDoDia() } catch {} }, 60000).unref()
@@ -305,6 +309,15 @@ const server = http.createServer(async (req, res) => {
         case '/api/rede': { const id = perfilAtivo(), p = PERFIS.carregar(id); return send(res, 200, { rede: REDE.carregar(id), estado: REDE.estado(), perfil: { area: p.area, objetivo: p.objetivo, temas: p.temas }, agente: agenteId() && AG.AGENTES[agenteId()].nome }) }
         case '/api/linkedin/ponte': return send(res, 200, { pronto: await ponteOk() })
         case '/api/perfil/analise': return send(res, 200, PERFIS.estadoAnalise() || {})
+        case '/api/atividade': {
+          const an = PERFIS.estadoAnalise(), rd = REDE.estado()
+          return send(res, 200, {
+            rotinas: RUNS.slice(0, 10).map(r => ({ id: r.id, titulo: r.titulo, status: r.status, inicio: r.inicio, fim: r.fim || null })),
+            analise: an ? { estado: an.estado, erro: an.erro || null, inicio: an.inicio || null } : null,
+            rede: rd ? { estado: rd.estado, tipo: rd.tipo || null, erro: rd.erro || null } : null,
+            avisos: AVISOS.slice(0, 10),
+          })
+        }
         case '/api/runs': {
           const ag = agenteId()
           return send(res, 200, {
