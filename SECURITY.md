@@ -7,13 +7,13 @@ O Vynco está em **beta test**. Ele roda no seu computador, guarda os seus segre
 | Versão | Recebe correções de segurança |
 |---|---|
 | 0.7.x (beta) | Sim |
-| Anteriores | Não. Atualize para a versão mais nova em [Releases](https://github.com/AbapaOnSwamp/Vynco/releases) |
+| Anteriores | Não. Atualize para a versão mais nova em [Releases](https://github.com/otavio-guerra/Vynco/releases) |
 
 ## Como avisar sobre um problema
 
 **Não abra uma issue pública** para problemas de segurança. Use o aviso privado do GitHub:
 
-1. Abra a aba [Security](https://github.com/AbapaOnSwamp/Vynco/security) do repositório.
+1. Abra a aba [Security](https://github.com/otavio-guerra/Vynco/security) do repositório.
 2. Clique em **Report a vulnerability** e conte:
    - o que acontece e o que pode dar errado (por exemplo: publicar sem aprovação, ler o cofre, vazar dados);
    - como reproduzir, passo a passo;

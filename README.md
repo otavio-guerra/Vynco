@@ -3,19 +3,19 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.7.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.7.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
 > [!WARNING]
-> **O Vynco está em beta test.** É uma versão de teste: pode ter erros, telas e funções podem mudar sem aviso, e nem tudo foi testado em todos os computadores. Use com calma, confira cada post antes de aprovar (nada é publicado sem você) e conte o que encontrar nas [issues](https://github.com/AbapaOnSwamp/Vynco/issues).
+> **O Vynco está em beta test.** É uma versão de teste: pode ter erros, telas e funções podem mudar sem aviso, e nem tudo foi testado em todos os computadores. Use com calma, confira cada post antes de aprovar (nada é publicado sem você) e conte o que encontrar nas [issues](https://github.com/otavio-guerra/Vynco/issues).
 
 O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 - a **sua IA** (Claude, ChatGPT, Gemini ou outra) pesquisa e desenha as peças no seu design system;
 - o **Desigma** monta tudo num projeto editável;
 - o **app local do Vynco** cuida da parte que é sua: olhar, aprovar e publicar.
 
-**[Baixar o beta para testar](https://github.com/AbapaOnSwamp/Vynco/releases)** (Windows, instalador `.exe`)
+**[Baixar o beta para testar](https://github.com/otavio-guerra/Vynco/releases)** (Windows, instalador `.exe`)
 
 ![Boas-vindas do Vynco](docs/img/vynco-boas-vindas.png)
 
@@ -53,7 +53,7 @@ Nasceu para o meu próprio perfil ([portfolio-otavio-guerra.vercel.app](https://
 ## O app
 Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum comando fora do app:
 1. **LinkedIn:** um botão, "Continuar com LinkedIn", como em qualquer site. Você entra e clica em Permitir; o Vynco nunca vê a sua senha.
-2. **Você:** uma apresentação logo depois do LinkedIn, uma pergunta por tela, com cartões grandes e barra de progresso: a área (até 3, entre 14 opções ou "Outra"), o que você faz (até 3 opções da sua área e, se quiser, o seu cargo escrito), o momento da carreira, o objetivo no LinkedIn e quem você quer alcançar (até 3 de cada), o tom de voz (até 2, cada um com um exemplo de começo de post), a frequência, **onde você já mostra o seu trabalho** (campos sugeridos pela sua área: Behance e Dribbble para design, GitHub para tecnologia, Lattes para saúde, direito e educação, e assim por diante; basta o usuário, o link completo é montado sozinho) e, por fim, a sugestão de **conectar o Magnific** para imagens com IA (opcional, com o aviso de que a API é cobrada à parte). Nada avança sozinho: você marca e confirma em "Continuar" (ou Enter); Esc volta uma pergunta. No fim, um resumo em uma frase mostra como a IA vai te ver, e tocar em qualquer parte dele volta àquela pergunta. O momento da carreira também vira o nível padrão das vagas na aba Rede. O nome e a foto vêm da sua conta do LinkedIn. O LinkedIn não compartilha cargo nem experiência com outros apps, então o resto vem desses toques. Tudo vira o seu perfil, e quando a IA termina de sincronizar ela lê a triagem e todos os links e sugere o resto na aba Perfil, sem aplicar nada sozinha.
+2. **Você:** uma apresentação logo depois do LinkedIn, uma pergunta por tela, com cartões grandes e barra de progresso: a área (até 3, entre 14 opções ou "Outra"), o que você faz (quantas opções quiser da sua área e, se quiser, o seu cargo escrito), o momento da carreira, o objetivo no LinkedIn e quem você quer alcançar (até 3 de cada), o tom de voz (até 2, cada um com um exemplo de começo de post), a frequência, **onde você já mostra o seu trabalho** (campos sugeridos pela sua área: Behance e Dribbble para design, GitHub para tecnologia, Lattes para saúde, direito e educação, e assim por diante; basta o usuário, o link completo é montado sozinho) e, por fim, a sugestão de **conectar o Magnific** para imagens com IA (opcional, com o aviso de que a API é cobrada à parte). Nada avança sozinho: você marca e confirma em "Continuar" (ou Enter); Esc volta uma pergunta. No fim, um resumo em uma frase mostra como a IA vai te ver, e tocar em qualquer parte dele volta àquela pergunta. O momento da carreira também vira o nível padrão das vagas na aba Rede. O nome e a foto vêm da sua conta do LinkedIn. O LinkedIn não compartilha cargo nem experiência com outros apps, então o resto vem desses toques. Tudo vira o seu perfil, e quando a IA termina de sincronizar ela lê a triagem e todos os links e sugere o resto na aba Perfil, sem aplicar nada sozinha.
 3. **Sua IA:** "Continuar com Claude", "com ChatGPT" (Codex) ou "com Gemini" (Gemini CLI), e um menu com outras (GitHub Copilot, Qwen Code, OpenCode, em beta). Se a ferramenta não estiver instalada, o Vynco instala e abre o login no navegador. Para quem não tem assinatura, a mesma tela explica o [OmniRoute](https://github.com/diegosouzapw/OmniRoute), um projeto gratuito e de código aberto (de outra equipe) que liga o Claude Code, o Codex ou o Gemini CLI a modelos gratuitos, com o aviso de que esses modelos não são os oficiais e cada provedor tem os seus termos.
 4. **Sincronização:** uma tela de carregamento mostra cada passo enquanto o Vynco entrega à IA as regras (`agent/AGENTS.md`), as skills (`agent/skills`), os prompts das rotinas, o plugin do Desigma (MCP, se estiver instalado) e a trava que impede a IA de publicar. No fim, um teste rápido confere se ela responde.
 5. **Formatos:** os quatro formatos em wireframe (imagem, GIF, carrossel e vídeo) e como aprovar com `A`.
@@ -131,7 +131,7 @@ Precisa de:
 As fontes do design system de exemplo (Space Grotesk, IBM Plex Sans, Press Start 2P, VT323 e DM Serif Display, todas do Google Fonts) precisam estar instaladas para as exportações saírem iguais.
 
 **Jeito fácil (Windows):**
-1. Baixe o `Vynco-windows.zip` na [página de releases](https://github.com/AbapaOnSwamp/Vynco/releases).
+1. Baixe o `Vynco-windows.zip` na [página de releases](https://github.com/otavio-guerra/Vynco/releases).
 2. Extraia a pasta inteira e dê dois cliques em `Vynco.exe`.
 3. O app abre na janela dele, sem barra de navegador. Fechar a janela encerra o Vynco.
 
@@ -141,7 +141,7 @@ Para gerar o exe você mesmo: `npm run exe` (precisa do Node 25.5+; o ícone sai
 
 **Pelo terminal:**
 ```bash
-git clone https://github.com/AbapaOnSwamp/Vynco
+git clone https://github.com/otavio-guerra/Vynco
 cd Vynco
 npm start
 ```

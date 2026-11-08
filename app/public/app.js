@@ -68,7 +68,7 @@ const D = DEMO && (() => {
       { kind: 'avulsos', id: 'antes-depois', title: 'Antes e depois · 4 telas', formato: 'multi', arquivos: [], hasFile: true, approved: false, published: null, caption: 'Quatro telas, antes e depois do redesenho.\n\nArraste para o lado e diga qual mudança você notou primeiro.\n\n#uxdesign #redesign' },
       { kind: 'avulsos', id: 'reflexao', title: 'Só texto · uma lição da semana', formato: 'texto', hasFile: true, approved: true, published: null, agendado: new Date(new Date().setHours(33, 0, 0, 0)).toISOString(), caption: 'Uma lição desta semana: mostrar o rascunho cedo economiza três rodadas de ajuste.\n\nO que você aprendeu esta semana?' },
       { kind: 'series', id: '04', title: 'Série 04 · ferramentas', formato: 'imagem', hasFile: true, approved: true, published: null, caption: 'As ferramentas que eu abro todo dia, e por quê.\n\n#design #ferramentas' },
-      { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', hasFile: true, approved: true, published: { link: 'https://github.com/AbapaOnSwamp/vynco', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
+      { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', hasFile: true, approved: true, published: { link: 'https://github.com/otavio-guerra/vynco', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
     ],
   }
 })()
@@ -122,7 +122,7 @@ async function apiDemo(path, data) {
     case '/api/runs-antigo': return { agente: D.escolhido ? ag(D.escolhido).nome : null, rotinas: [{ id: 'daily-ui', titulo: 'Gerar o Daily UI de hoje', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Vynco - Gerar o Daily UI de hoje" /TR "..."' }, { id: 'pauta-noticias', titulo: 'Montar os carrosséis de notícias', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Vynco - Montar os carrosséis de notícias" /TR "..."' }], runs: [] }
     case '/api/approve': it.approved = true; return { ok: true }
     case '/api/unapprove': it.approved = false; return { ok: true }
-    case '/api/publish': it.published = { link: 'https://github.com/AbapaOnSwamp/vynco', quando: new Date().toISOString() }; return { ok: true }
+    case '/api/publish': it.published = { link: 'https://github.com/otavio-guerra/vynco', quando: new Date().toISOString() }; return { ok: true }
     case '/api/run': throw new Error('Na demonstração as rotinas não rodam. Baixe o Vynco para usar de verdade.')
     case '/api/midia': return { itens: D.midia, limites: {} }
     case '/api/midia/alt': { const m = D.midia.find(x => x.arquivo === data.arquivo); if (m) m.alt = String(data.alt || '').trim(); return { ok: true } }
@@ -485,7 +485,7 @@ const urlValida = u => /^https?:\/\/[^\s"<>]+\.[^\s"<>]+$/i.test(u)
 const VC_FREQ = [['1 vez por semana', 'leve, para começar', 'leve'], ['2 a 3 vezes por semana', 'o ritmo que mais cresce', 'medio'], ['Todo dia útil', 'para quem quer acelerar', 'intenso']]
 const VC_PASSOS = [
   { k: 'area', t: n => `Prazer${n ? ', ' + n : ''}! Em que área você trabalha?`, s: 'Escolha até 3. Na próxima pergunta você detalha.', multi: 3 },
-  { k: 'esp', t: () => 'E o que você faz, exatamente?', s: 'Escolha até 3 e, se quiser, escreva o seu cargo do seu jeito.', multi: 3 },
+  { k: 'esp', t: () => 'E o que você faz, exatamente?', s: 'Escolha quantas quiser e, se quiser, escreva o seu cargo do seu jeito.', multi: Infinity },
   { k: 'nivel', t: () => 'Em que momento da carreira você está?', s: 'Isso muda o tom dos posts e as vagas que a gente sugere.' },
   { k: 'objetivo', t: () => 'O que você quer conseguir com o LinkedIn?', s: 'Escolha até 3. É isso que guia os assuntos dos posts.', multi: 3 },
   { k: 'publico', t: () => 'Quem você quer que leia os seus posts?', s: 'Escolha até 3. A IA escreve pensando nessas pessoas.', multi: 3 },
