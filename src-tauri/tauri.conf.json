@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Vynco",
   "version": "../package.json",
-  "identifier": "app.farol.desktop",
+  "identifier": "app.vynco.desktop",
   "build": {
     "frontendDist": "../app/desktop/janela",
     "devUrl": "http://127.0.0.1:4800",
@@ -20,17 +20,17 @@
     "category": "Productivity",
     "shortDescription": "Vynco: sua carreira em outro nível. Posts no LinkedIn feitos pela sua IA e aprovados por você",
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico", "icons/icon.png"],
-    "externalBin": ["binaries/farol-node"],
+    "externalBin": ["binaries/vynco-node"],
     "resources": {
-      "../app/server.js": "farol/app/server.js",
-      "../app/public/": "farol/app/public/",
-      "../app/desktop/backend.js": "farol/app/desktop/backend.js",
-      "../engine/": "farol/engine/",
-      "../prompts/": "farol/prompts/",
-      "../agent/": "farol/agent/",
-      "../examples/": "farol/examples/",
-      "../package.json": "farol/package.json",
-      "../LICENSE": "farol/LICENSE"
+      "../app/server.js": "vynco/app/server.js",
+      "../app/public/": "vynco/app/public/",
+      "../app/desktop/backend.js": "vynco/app/desktop/backend.js",
+      "../engine/": "vynco/engine/",
+      "../prompts/": "vynco/prompts/",
+      "../agent/": "vynco/agent/",
+      "../examples/": "vynco/examples/",
+      "../package.json": "vynco/package.json",
+      "../LICENSE": "vynco/LICENSE"
     },
     "windows": {
       "webviewInstallMode": { "type": "downloadBootstrapper" },

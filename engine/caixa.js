@@ -11,7 +11,7 @@ const { spawnSync } = require('child_process')
 
 module.exports = function caixa(arquivo) {
   if (process.permission) return                       // já está dentro da caixa
-  if (process.env.FAROL_SEM_CAIXA === '1') return      // escape manual, só para depurar o motor
+  if (process.env.VYNCO_SEM_CAIXA === '1') return      // escape manual, só para depurar o motor
   const flags = process.allowedNodeEnvironmentFlags
   let sea = false; try { sea = require('node:sea').isSea() } catch {}
   if (sea || !flags.has('--permission')) { console.error('aviso: este Node não tem a caixa de permissões (precisa do Node 22.13 ou mais novo); rodando sem ela.'); return }

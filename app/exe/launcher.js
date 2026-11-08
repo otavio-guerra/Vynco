@@ -1,5 +1,5 @@
-// Farol.exe: inicia o painel local e abre numa janela própria (Edge em modo app).
-// Também serve de "node" para os scripts do motor: Farol.exe script.js args...
+// Vynco.exe: inicia o painel local e abre numa janela própria (Edge em modo app).
+// Também serve de "node" para os scripts do motor: Vynco.exe script.js args...
 const path = require('path'), fs = require('fs'), http = require('http')
 const { spawn } = require('child_process')
 const { createRequire } = require('module')
@@ -17,12 +17,12 @@ if (alvo && /\.c?js$/i.test(alvo)) {
 }
 
 // 2) modo app (sem console: o que o servidor escreve vai para um log)
-const DADOS = path.join(process.env.LOCALAPPDATA || ROOT, 'Farol'); fs.mkdirSync(DADOS, { recursive: true })
-const log = fs.createWriteStream(path.join(DADOS, 'farol.log'), { flags: 'a' })
+const DADOS = path.join(process.env.LOCALAPPDATA || ROOT, 'Vynco'); fs.mkdirSync(DADOS, { recursive: true })
+const log = fs.createWriteStream(path.join(DADOS, 'vynco.log'), { flags: 'a' })
 console.log = console.info = console.warn = console.error = (...a) => log.write(a.map(String).join(' ') + '\n')
 process.on('uncaughtException', e => { log.write(String(e && e.stack || e) + '\n') })
 const falha = msg => { spawn('mshta', [`javascript:alert(${JSON.stringify(msg)});close()`], { detached: true, stdio: 'ignore' }).unref(); process.exit(1) }
-if (!fs.existsSync(path.join(ROOT, 'app', 'server.js'))) falha('O Farol.exe precisa ficar dentro da pasta do Farol, junto das pastas app e engine. Extraia o zip inteiro e abra de novo.')
+if (!fs.existsSync(path.join(ROOT, 'app', 'server.js'))) falha('O Vynco.exe precisa ficar dentro da pasta do Vynco, junto das pastas app e engine. Extraia o zip inteiro e abra de novo.')
 
 const C = carregar(path.join(ROOT, 'engine', 'config.js'))
 const PORT = +process.env.PORT || C.cfg.app.port || 4800
@@ -53,7 +53,7 @@ function janela () {
     for (let i = 0; i < 50 && !(await vivo()); i++) await new Promise(r => setTimeout(r, 100))
   }
   const w = janela()
-  // fechar a janela encerra o Farol (se fomos nós que subimos o servidor)
+  // fechar a janela encerra o Vynco (se fomos nós que subimos o servidor)
   if (w) w.on('exit', () => process.exit(0))
   else if (!dono) process.exit(0)
 })()

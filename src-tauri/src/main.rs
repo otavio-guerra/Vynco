@@ -1,6 +1,6 @@
 // Vynco desktop: uma janela nativa (WebView2) para o painel local do Vynco.
-// O Tauri inicia o Node que vem com o app (sidecar "farol-node") rodando app/desktop/backend.js, espera a linha
-// "Farol: http://127.0.0.1:<porta>/" e leva a janela para lá. Fechar a janela encerra o backend.
+// O Tauri inicia o Node que vem com o app (sidecar "vynco-node") rodando app/desktop/backend.js, espera a linha
+// "Vynco: http://127.0.0.1:<porta>/" e leva a janela para lá. Fechar a janela encerra o backend.
 // Em desenvolvimento (npm run desktop:dev), a janela abre direto no servidor do "npm start" (devUrl), sem sidecar.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -34,16 +34,16 @@ fn main() {
                 return Ok(());
             }
 
-            // recursos do app (motor, painel, prompts) e a pasta de trabalho do usuário (Documentos\Farol)
-            let recursos = app.path().resource_dir()?.join("farol");
-            let casa = app.path().document_dir()?.join("Farol");
+            // recursos do app (motor, painel, prompts) e a pasta de trabalho do usuário (Documentos\Vynco)
+            let recursos = app.path().resource_dir()?.join("vynco");
+            let casa = app.path().document_dir()?.join("Vynco");
             let backend = recursos.join("app").join("desktop").join("backend.js");
             let (mut eventos, filho) = app
                 .shell()
-                .sidecar("farol-node")?
+                .sidecar("vynco-node")?
                 .args([backend.as_os_str()])
-                .env("FAROL_RECURSOS", recursos.as_os_str())
-                .env("FAROL_HOME", casa.as_os_str())
+                .env("VYNCO_RECURSOS", recursos.as_os_str())
+                .env("VYNCO_HOME", casa.as_os_str())
                 .spawn()?;
             app.state::<Backend>().0.lock().unwrap().replace(filho);
 
@@ -56,7 +56,7 @@ fn main() {
                             for linha in String::from_utf8_lossy(&bytes).lines() {
                                 let linha = linha.trim();
                                 if !aberto {
-                                    if let Some(endereco) = linha.strip_prefix("Farol: ") {
+                                    if let Some(endereco) = linha.strip_prefix("Vynco: ") {
                                         if let Ok(url) = Url::parse(endereco.trim()) {
                                             aberto = true;
                                             let _ = janela.navigate(url);

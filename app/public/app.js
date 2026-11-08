@@ -7,7 +7,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)]
 // link de fora (IA, web, LinkedIn): só http(s); qualquer outra coisa vira um link vazio
 const urlOk = u => /^https?:\/\/[^\s"<>]+$/i.test(String(u || '')) ? u : '#'
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
-const store = { get: (k, d) => { try { return localStorage.getItem('farol.' + k) ?? d } catch { return d } }, set: (k, v) => { try { localStorage.setItem('farol.' + k, v) } catch {} } }
+const store = { get: (k, d) => { try { return localStorage.getItem('vynco.' + k) ?? d } catch { return d } }, set: (k, v) => { try { localStorage.setItem('vynco.' + k, v) } catch {} } }
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
 const espera = ms => new Promise(r => setTimeout(r, ms))
 
@@ -49,7 +49,7 @@ const arquivo = p => DEMO ? p : `/files/${encodeURI(String(p).replace(/\\/g, '/'
 const D = DEMO && (() => {
   const ja = store.get('onboarded') === '1' || ['fila', 'rotinas', 'ajustes', 'calendario', 'rede', 'biblioteca', 'perfil'].includes(new URLSearchParams(location.search).get('tela'))
   return {
-    linkedin: { proprio: false, connected: ja, name: ja ? 'Seu Nome' : null, expiresAt: Date.now() + 59 * 864e5, via: 'farol', redirectUri: 'http://localhost:8765/callback' },
+    linkedin: { proprio: false, connected: ja, name: ja ? 'Seu Nome' : null, expiresAt: Date.now() + 59 * 864e5, via: 'vynco', redirectUri: 'http://localhost:8765/callback' },
     agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
     escolhido: ja ? 'claude' : null, sincronizado: ja,
     lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
@@ -68,7 +68,7 @@ const D = DEMO && (() => {
       { kind: 'avulsos', id: 'antes-depois', title: 'Antes e depois · 4 telas', formato: 'multi', arquivos: [], hasFile: true, approved: false, published: null, caption: 'Quatro telas, antes e depois do redesenho.\n\nArraste para o lado e diga qual mudança você notou primeiro.\n\n#uxdesign #redesign' },
       { kind: 'avulsos', id: 'reflexao', title: 'Só texto · uma lição da semana', formato: 'texto', hasFile: true, approved: true, published: null, agendado: new Date(new Date().setHours(33, 0, 0, 0)).toISOString(), caption: 'Uma lição desta semana: mostrar o rascunho cedo economiza três rodadas de ajuste.\n\nO que você aprendeu esta semana?' },
       { kind: 'series', id: '04', title: 'Série 04 · ferramentas', formato: 'imagem', hasFile: true, approved: true, published: null, caption: 'As ferramentas que eu abro todo dia, e por quê.\n\n#design #ferramentas' },
-      { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', hasFile: true, approved: true, published: { link: 'https://github.com/AbapaOnSwamp/farol', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
+      { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', hasFile: true, approved: true, published: { link: 'https://github.com/AbapaOnSwamp/vynco', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
     ],
   }
 })()
@@ -107,7 +107,7 @@ async function apiDemo(path, data) {
     case '/api/sync': {
       if (!data) return D.sync || {}
       const a = ag(id || D.escolhido); D.escolhido = a.id
-      const rot = [['conta', `Conferindo a sua conta do ${a.nome}`, 'voce@exemplo.com'], ['instrucoes', 'Ensinando as regras do Vynco', a.id === 'claude' ? 'CLAUDE.md' : a.id === 'gemini' ? 'GEMINI.md' : 'AGENTS.md'], ['skills', 'Instalando 4 skills', 'farol-daily-ui, farol-legendas, farol-marca, farol-pauta-noticias'], ['prompts', 'Copiando 2 prompts das rotinas', '/farol-daily-ui, /farol-pauta-noticias'], ['plugins', 'Ligando o Desigma (plugin MCP)', 'desigma'], ['trava', 'Travando a publicação para o agente', `O ${a.nome} não pode rodar o script de publicação.`], ['teste', `Testando uma resposta do ${a.nome}`, 'respondeu "ok"']]
+      const rot = [['conta', `Conferindo a sua conta do ${a.nome}`, 'voce@exemplo.com'], ['instrucoes', 'Ensinando as regras do Vynco', a.id === 'claude' ? 'CLAUDE.md' : a.id === 'gemini' ? 'GEMINI.md' : 'AGENTS.md'], ['skills', 'Instalando 4 skills', 'vynco-daily-ui, vynco-legendas, vynco-marca, vynco-pauta-noticias'], ['prompts', 'Copiando 2 prompts das rotinas', '/vynco-daily-ui, /vynco-pauta-noticias'], ['plugins', 'Ligando o Desigma (plugin MCP)', 'desigma'], ['trava', 'Travando a publicação para o agente', `O ${a.nome} não pode rodar o script de publicação.`], ['teste', `Testando uma resposta do ${a.nome}`, 'respondeu "ok"']]
       const S = D.sync = { agente: a.id, nome: a.nome, passos: rot.map(([pid, rotulo]) => ({ id: pid, rotulo, estado: 'espera', detalhe: '' })), fim: null, ok: false, resumo: { skills: 4, prompts: 2, plugins: 1 } }
       ;(async () => { for (let i = 0; i < rot.length; i++) { S.passos[i].estado = 'rodando'; await espera(i === 6 ? 1400 : 650); Object.assign(S.passos[i], { estado: 'ok', detalhe: rot[i][2] }) } S.ok = true; S.fim = Date.now(); D.sincronizado = true })()
       return S
@@ -122,7 +122,7 @@ async function apiDemo(path, data) {
     case '/api/runs-antigo': return { agente: D.escolhido ? ag(D.escolhido).nome : null, rotinas: [{ id: 'daily-ui', titulo: 'Gerar o Daily UI de hoje', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Vynco - Gerar o Daily UI de hoje" /TR "..."' }, { id: 'pauta-noticias', titulo: 'Montar os carrosséis de notícias', agendar: 'schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI /ST 08:00 /TN "Vynco - Montar os carrosséis de notícias" /TR "..."' }], runs: [] }
     case '/api/approve': it.approved = true; return { ok: true }
     case '/api/unapprove': it.approved = false; return { ok: true }
-    case '/api/publish': it.published = { link: 'https://github.com/AbapaOnSwamp/farol', quando: new Date().toISOString() }; return { ok: true }
+    case '/api/publish': it.published = { link: 'https://github.com/AbapaOnSwamp/vynco', quando: new Date().toISOString() }; return { ok: true }
     case '/api/run': throw new Error('Na demonstração as rotinas não rodam. Baixe o Vynco para usar de verdade.')
     case '/api/midia': return { itens: D.midia, limites: {} }
     case '/api/midia/alt': { const m = D.midia.find(x => x.arquivo === data.arquivo); if (m) m.alt = String(data.alt || '').trim(); return { ok: true } }
@@ -1147,7 +1147,7 @@ function desenharEstudio() {
     : `<p class="soft">Escolha a imagem que vai ser ${op === 'melhorar' ? 'melhorada' : 'refinada'}:</p><div class="es-mini">${imagensBib().slice(0, 18).map(m => `<button type="button" data-es-orig="${esc(m.arquivo)}" title="${esc(m.nome)}"><img src="${arquivo(m.arquivo)}" alt=""></button>`).join('') || '<span class="soft">Nenhuma imagem na biblioteca ainda.</span>'}</div>`}</div>`
   let f = ''
   if (op === 'gerar') {
-    f = `<label class="ed-campo"><span>O que você quer ver <small>descreva cena, estilo, luz e cores</small></span><textarea data-es="prompt" rows="4" maxlength="4000" placeholder="Ex.: um farol pixel art num arquipélago ao entardecer, tons de roxo e menta, céu estrelado">${esc(ES.p.prompt)}</textarea></label>
+    f = `<label class="ed-campo"><span>O que você quer ver <small>descreva cena, estilo, luz e cores</small></span><textarea data-es="prompt" rows="4" maxlength="4000" placeholder="Ex.: um vynco pixel art num arquipélago ao entardecer, tons de roxo e menta, céu estrelado">${esc(ES.p.prompt)}</textarea></label>
       <div class="es-linha"><span>Proporção</span><div class="chips">${r.gerar.proporcoes.slice(0, 4).map(([v, t]) => `<button type="button" data-es-chip="aspect_ratio" data-v="${v}" class="${ES.p.aspect_ratio === v ? 'on' : ''}">${t}</button>`).join('')}</div></div>
       <div class="fields two"><label><span>Resolução</span><select data-es="resolution">${r.gerar.resolucoes.map(([v, t]) => `<option value="${v}"${ES.p.resolution === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
       <label><span>Estilo do modelo</span><select data-es="model">${r.gerar.modelos.map(([v, t]) => `<option value="${v}"${ES.p.model === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>
@@ -1868,5 +1868,9 @@ if (DEMO) setTimeout(() => pill('Demonstração', 'Logins simulados: nada é con
 if (new URLSearchParams(location.search).has('captura')) document.documentElement.classList.add('static')
 const pedida = new URLSearchParams(location.search).get('tela')   // ?tela=fila abre direto numa cena (útil para capturas e atalhos)
 if (pedida && $(`.scene[data-scene="${pedida}"]`)) cena(pedida, { som: false })
-else if (store.get('onboarded') === '1') { cena('fila', { som: false }); setInterval(() => atual?.dataset.scene === 'fila' ? carregarFila() : atual?.dataset.scene === 'calendario' && carregarCalendario(), 60000) }
-else { cena('ola', { som: false }); status() }
+else {
+  // quem já tem o LinkedIn e a IA prontos não passa pela entrada de novo (mesmo se as preferências do navegador sumiram)
+  const abrirApp = () => { cena('fila', { som: false }); setInterval(() => atual?.dataset.scene === 'fila' ? carregarFila() : atual?.dataset.scene === 'calendario' && carregarCalendario(), 60000) }
+  if (store.get('onboarded') === '1') abrirApp()
+  else status().then(s => { if (!DEMO && s && (s.linkedin?.contas || []).length && s.agente?.sincronizado) { store.set('onboarded', '1'); abrirApp() } else cena('ola', { som: false }) })
+}

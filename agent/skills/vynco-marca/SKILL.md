@@ -1,5 +1,5 @@
 ---
-name: farol-marca
+name: vynco-marca
 description: Desenhar peças de LinkedIn com o design system do usuário no Vynco (tokens, fontes, molduras, pixel art). Use sempre que for criar ou corrigir uma imagem, GIF, slide de carrossel ou tela do Daily UI.
 ---
 

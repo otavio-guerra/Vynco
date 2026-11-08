@@ -1,11 +1,11 @@
 'use strict'
-// O LinkedIn volta aqui com ?code. Trocamos pelo token e devolvemos ao Farol do usuário, em 127.0.0.1.
+// O LinkedIn volta aqui com ?code. Trocamos pelo token e devolvemos ao Vynco do usuário, em 127.0.0.1.
 const { ID, SECRET, redirect, pagina, porta } = require('./_comum.js')
 module.exports = async (req, res) => {
-  const u = new URL(req.url, 'https://farol')
+  const u = new URL(req.url, 'https://vynco')
   const [state, pp] = String(u.searchParams.get('state') || '').split('.')
   const p = porta(pp)
-  if (!/^[a-f0-9]{24,64}$/.test(state || '') || !p) return pagina(res, 400, 'Link inválido', 'Volte ao Farol e tente de novo.')
+  if (!/^[a-f0-9]{24,64}$/.test(state || '') || !p) return pagina(res, 400, 'Link inválido', 'Volte ao Vynco e tente de novo.')
   const volta = frag => { res.statusCode = 302; res.setHeader('Location', `http://127.0.0.1:${p}/linkedin/done#` + new URLSearchParams({ state, ...frag })); res.setHeader('Cache-Control', 'no-store'); res.setHeader('Referrer-Policy', 'no-referrer'); res.end() }
   if (u.searchParams.get('error')) return volta({ error: u.searchParams.get('error_description') || u.searchParams.get('error') })
   try {

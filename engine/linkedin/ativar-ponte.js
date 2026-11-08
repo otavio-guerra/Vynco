@@ -7,7 +7,7 @@ const { execFileSync } = require('child_process')
 const C = require('../config.js')
 const S = require('../segredos.js')
 
-const PONTE = (C.cfg.linkedin && C.cfg.linkedin.ponte) || 'https://farol-otavio-guerra.vercel.app'
+const PONTE = (C.cfg.linkedin && C.cfg.linkedin.ponte) || 'https://vynco-otavio-guerra.vercel.app'
 const IS_WIN = process.platform === 'win32'
 const vercel = (args, input) => execFileSync(IS_WIN ? 'vercel.cmd' : 'vercel', args, { cwd: C.ROOT, input, encoding: 'utf8', stdio: [input == null ? 'inherit' : 'pipe', 'pipe', 'pipe'], shell: IS_WIN, timeout: 300000 })
 
@@ -16,7 +16,7 @@ const vercel = (args, input) => execFileSync(IS_WIN ? 'vercel.cmd' : 'vercel', a
   if (!app || !app.client_id || !app.client_secret) throw new Error('Não há chaves do seu app do LinkedIn no cofre. Salve-as no Vynco (Usar meu próprio app do LinkedIn).')
   try { console.log('Vercel: logado como', vercel(['whoami']).trim()) } catch { throw new Error('A Vercel CLI não está logada. Rode "vercel login" e depois este script de novo.') }
 
-  const vars = { LINKEDIN_CLIENT_ID: app.client_id, LINKEDIN_CLIENT_SECRET: app.client_secret, FAROL_URL: PONTE }
+  const vars = { LINKEDIN_CLIENT_ID: app.client_id, LINKEDIN_CLIENT_SECRET: app.client_secret, VYNCO_URL: PONTE }
   for (const [nome, valor] of Object.entries(vars)) {
     try { vercel(['env', 'rm', nome, 'production', '--yes'], '') } catch { /* ainda não existia */ }
     vercel(['env', 'add', nome, 'production'], valor)

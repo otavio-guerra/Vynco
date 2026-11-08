@@ -6,8 +6,8 @@ const path = require('path')
 
 const ROOT = path.resolve(__dirname, '..')
 // Pasta de dados (configuração, cofre e workspace). No desenvolvimento é a própria pasta do projeto, como sempre foi.
-// Na versão instalada, o app aponta FAROL_DATA para a pasta do usuário: atualizar o Vynco nunca apaga o conteúdo de ninguém.
-const DATA = path.resolve(process.env.FAROL_DATA || ROOT)
+// Na versão instalada, o app aponta VYNCO_DATA para a pasta do usuário: atualizar o Vynco nunca apaga o conteúdo de ninguém.
+const DATA = path.resolve(process.env.VYNCO_DATA || ROOT)
 const CONFIG_DIR = path.join(DATA, 'config')
 const FILE = path.join(CONFIG_DIR, 'engine.config.json')
 

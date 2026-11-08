@@ -1,7 +1,7 @@
 [package]
-name = "farol"
-version = "0.6.0"
-description = "Vynco: seus posts no LinkedIn, feitos pela sua IA e aprovados por você"
+name = "vynco"
+version = "0.6.1"
+description = "Vynco: seus posts no LinkedIn, feitos pela sua IA e aprovados por vocÃª"
 authors = ["Otavio Guerra"]
 license = "MIT"
 edition = "2021"
@@ -15,7 +15,7 @@ tauri-plugin-shell = "2"
 tauri-plugin-single-instance = "2"
 serde_json = "1"
 
-# executável menor: o trabalho pesado fica no backend Node
+# executÃ¡vel menor: o trabalho pesado fica no backend Node
 [profile.release]
 codegen-units = 1
 lto = true

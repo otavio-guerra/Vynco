@@ -22,7 +22,7 @@ dist/
 
 .vercel
 
-# gerado pela sincronização do Farol com a IA escolhida (a fonte é agent/)
+# gerado pela sincronização do Vynco com a IA escolhida (a fonte é agent/)
 /CLAUDE.md
 /AGENTS.md
 /GEMINI.md

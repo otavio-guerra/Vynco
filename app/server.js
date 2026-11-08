@@ -23,11 +23,11 @@ const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
 const ROOT = C.ROOT, PUB = path.join(__dirname, 'public')
 const TOKEN = crypto.randomBytes(24).toString('hex')
-// PORT=0 pede uma porta livre; sem PORT, a do config (4800). Na versão desktop (FAROL_PORTA_LIVRE), se a 4800 estiver ocupada, usa outra.
+// PORT=0 pede uma porta livre; sem PORT, a do config (4800). Na versão desktop (VYNCO_PORTA_LIVRE), se a 4800 estiver ocupada, usa outra.
 const PORT = process.env.PORT != null && process.env.PORT !== '' ? +process.env.PORT : C.cfg.app.port
 const porta = () => server.address().port
 const IS_WIN = process.platform === 'win32'
-const PONTE = (C.cfg.linkedin && C.cfg.linkedin.ponte) || 'https://farol-otavio-guerra.vercel.app'
+const PONTE = (C.cfg.linkedin && C.cfg.linkedin.ponte) || 'https://vynco-otavio-guerra.vercel.app'
 
 // ---------------------------------------------------------------- utilidades
 const run = (cmd, args, o = {}) => new Promise(ok => execFile(cmd, args, { cwd: ROOT, timeout: o.timeout || 30000, windowsHide: true, maxBuffer: 4e6 }, (err, stdout, stderr) => ok({ code: err ? (err.code ?? 1) : 0, out: String(stdout || ''), err: String(stderr || '') })))
@@ -230,7 +230,7 @@ function startRun(rid) {
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.gif': 'image/gif', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.mp4': 'video/mp4', '.svg': 'image/svg+xml', '.pdf': 'application/pdf', '.txt': 'text/plain; charset=utf-8', '.log': 'text/plain; charset=utf-8', '.woff2': 'font/woff2' }
 const DEMO_STATUS = () => ({
   agente: { id: 'claude', nome: 'Claude', via: 'Claude Code', instalado: true, conectado: true, conta: 'voce@exemplo.com', sincronizado: new Date().toISOString() },
-  linkedin: { proprio: false, connected: true, name: 'Seu Nome', expiresAt: Date.now() + 59 * 864e5, dias: 59, via: 'farol', contas: [{ id: 'demo', nome: 'Seu Nome', expiresAt: Date.now() + 59 * 864e5, dias: 59, valida: true, ativa: true }], redirectUri: C.cfg.linkedin.redirectUri },
+  linkedin: { proprio: false, connected: true, name: 'Seu Nome', expiresAt: Date.now() + 59 * 864e5, dias: 59, via: 'vynco', contas: [{ id: 'demo', nome: 'Seu Nome', expiresAt: Date.now() + 59 * 864e5, dias: 59, valida: true, ativa: true }], redirectUri: C.cfg.linkedin.redirectUri },
   desigma: { exe: 'C:\\Programas\\desigma\\desigma.exe', mcpExe: 'C:\\Programas\\desigma\\desigma-mcp.exe', workspace: 'C:\\Users\\voce\\Documents\\desigma', project: '', exeOk: true, mcpOk: true, workspaceOk: true, projectOk: false, registered: true },
   config: { assetsDir: 'examples/assets', workspaceDir: 'workspace', dailyUiStart: '2026-11-03' },
 })
@@ -277,7 +277,7 @@ const server = http.createServer(async (req, res) => {
           if (process.env.ENGINE_DEMO) return send(res, 200, DEMO_STATUS())
           const ag = agenteId(), cfg = C.load()
           const agente = ag ? { ...(await AG.status(ag)), nome: AG.AGENTES[ag].nome, via: AG.AGENTES[ag].via, sincronizado: cfg.agente.sincronizado } : null
-          return send(res, 200, { agente, linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() }, desktop: !!process.env.FAROL_DESKTOP })
+          return send(res, 200, { agente, linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() }, desktop: !!process.env.VYNCO_DESKTOP })
         }
         case '/api/agentes': {
           const principais = ['claude', 'codex', 'gemini']
@@ -343,7 +343,7 @@ const server = http.createServer(async (req, res) => {
         if (!LI || LI.expira < Date.now() || typeof b.state !== 'string' || !crypto.timingSafeEqual(Buffer.from(b.state.padEnd(32).slice(0, 32)), Buffer.from(LI.state))) return send(res, 400, { erro: 'Este login expirou ou não foi pedido por este Vynco.' })
         if (!b.access_token) return send(res, 400, { erro: 'O LinkedIn não mandou o acesso.' })
         LI = null
-        try { return send(res, 200, { ok: true, nome: await salvarToken(String(b.access_token), b.expires_in, 'farol') }) } catch (e) { return send(res, 400, { erro: e.message }) }
+        try { return send(res, 200, { ok: true, nome: await salvarToken(String(b.access_token), b.expires_in, 'vynco') }) } catch (e) { return send(res, 400, { erro: e.message }) }
       }
       case '/api/linkedin/cancelar': LI = null; return send(res, 200, { ok: true })
       case '/api/linkedin/keys': {
@@ -430,10 +430,10 @@ const server = http.createServer(async (req, res) => {
     return send(res, 404, { erro: 'rota não encontrada' })
   } catch (e) { return send(res, 500, { erro: e.message }) }
 })
-// a linha "Farol: http://..." é lida pela versão desktop para abrir a janela na porta certa
-server.on('listening', () => { console.log(`Farol: http://127.0.0.1:${porta()}/`); IMAGEM.retomar() })
+// a linha "Vynco: http://..." é lida pela versão desktop para abrir a janela na porta certa
+server.on('listening', () => { console.log(`Vynco: http://127.0.0.1:${porta()}/`); IMAGEM.retomar() })
 server.on('error', e => {
-  if (e.code === 'EADDRINUSE' && process.env.FAROL_PORTA_LIVRE && server.listening === false && !server._tentouLivre) { server._tentouLivre = true; return server.listen(0, '127.0.0.1') }
+  if (e.code === 'EADDRINUSE' && process.env.VYNCO_PORTA_LIVRE && server.listening === false && !server._tentouLivre) { server._tentouLivre = true; return server.listen(0, '127.0.0.1') }
   console.error('Vynco: não consegui abrir o painel:', e.message); process.exit(1)
 })
 server.listen(PORT, '127.0.0.1')

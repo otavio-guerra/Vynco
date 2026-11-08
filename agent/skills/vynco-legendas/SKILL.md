@@ -1,5 +1,5 @@
 ---
-name: farol-legendas
+name: vynco-legendas
 description: Escrever a legenda de um post do LinkedIn no Vynco (gancho, pontos curtos, hashtags) sem inventar nada. Use ao criar ou revisar qualquer arquivo em workspace/*/legendas/.
 ---
 

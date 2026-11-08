@@ -42,13 +42,13 @@ Não invente fatos, números, datas, falas, clientes ou resultados sobre a pesso
   if (m.formato === 'carrossel') return `${comum}
 
 Formato: carrossel (PDF). Escreva engine/noticias/pautas/${id}.js no mesmo formato de engine/noticias/pautas/2026-11-03-a.js: exporta { titulo, accent, tema, fontes, slides, caption }. De 5 a 8 slides; use só as peças k.kick, k.title, k.para, k.cards e k.bubble e os tokens T de engine/brand/lib.js (nunca cores fixas). O primeiro slide é o gancho; o último termina com uma pergunta.
-A legenda (caption) segue a skill farol-legendas.
+A legenda (caption) segue a skill vynco-legendas.
 Depois rode: node engine/noticias/carrossel.js engine/noticias/pautas/${id}.js e node engine/noticias/exportar.js ${id}. Abra os PNG em workspace/noticias/png/${id}/ e corrija textos cortados ou sobrepostos.
 Termine dizendo o título e "Pronto para aprovação no Vynco." Não publique nada.`
   return `${comum}
 
 Formato: post de texto. Crie a pasta workspace/avulsos/${id}/ com dois arquivos:
-- legenda.txt: o post completo (até 1.300 caracteres), seguindo a skill farol-legendas;
+- legenda.txt: o post completo (até 1.300 caracteres), seguindo a skill vynco-legendas;
 - post.json: {"titulo": "<um título curto para a pessoa achar o post>", "rascunho": false}.
 Termine dizendo o título e "Pronto para aprovação no Vynco." Não publique nada.`
 }

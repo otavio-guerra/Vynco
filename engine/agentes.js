@@ -252,11 +252,11 @@ function sincronizar(id, desigma) {
     })
     await passo('prompts', () => {
       for (const [rid, r] of rot) {
-        const { arq, fmt } = a.prompts('farol-' + rid), corpo = fs.readFileSync(path.join(ROOT, r.prompt), 'utf8')
+        const { arq, fmt } = a.prompts('vynco-' + rid), corpo = fs.readFileSync(path.join(ROOT, r.prompt), 'utf8')
         escrever(arq, fmt === 'toml' ? `description = ${JSON.stringify(r.titulo)}\nprompt = """\n${corpo.replace(/"""/g, '\\"\\"\\"')}\n"""\n` : `---\ndescription: ${r.titulo}\n---\n\n${corpo}`)
       }
       S.resumo.prompts = rot.length
-      return { detalhe: rot.map(([rid]) => '/farol-' + rid).join(', ') }
+      return { detalhe: rot.map(([rid]) => '/vynco-' + rid).join(', ') }
     })
     await passo('plugins', async () => {
       if (!desigma || !desigma.mcpOk) return { aviso: 'Desigma não encontrado neste computador. Dá para ligar depois em Ajustes.' }

@@ -8,14 +8,14 @@
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
 > [!WARNING]
-> **O Vynco está em beta test.** É uma versão de teste: pode ter erros, telas e funções podem mudar sem aviso, e nem tudo foi testado em todos os computadores. Use com calma, confira cada post antes de aprovar (nada é publicado sem você) e conte o que encontrar nas [issues](https://github.com/AbapaOnSwamp/farol/issues).
+> **O Vynco está em beta test.** É uma versão de teste: pode ter erros, telas e funções podem mudar sem aviso, e nem tudo foi testado em todos os computadores. Use com calma, confira cada post antes de aprovar (nada é publicado sem você) e conte o que encontrar nas [issues](https://github.com/AbapaOnSwamp/Vynco/issues).
 
-O Vynco (antes Farol) é um motor de conteúdo para LinkedIn, para qualquer profissão:
+O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 - a **sua IA** (Claude, ChatGPT, Gemini ou outra) pesquisa e desenha as peças no seu design system;
 - o **Desigma** monta tudo num projeto editável;
 - o **app local do Vynco** cuida da parte que é sua: olhar, aprovar e publicar.
 
-**[Ver a demonstração online](https://farol-otavio-guerra.vercel.app)** · **[Baixar o beta para testar](https://github.com/AbapaOnSwamp/farol/releases)** (Windows, instalador `.exe`)
+**[Baixar o beta para testar](https://github.com/AbapaOnSwamp/Vynco/releases)** (Windows, instalador `.exe`)
 
 ![Boas-vindas do Vynco](docs/img/vynco-boas-vindas.png)
 
@@ -115,11 +115,11 @@ Para ligar a ponte (uma vez, por quem publica o Vynco), com as chaves do seu app
 ```bash
 npm run ponte:ativar
 ```
-O script manda as chaves do cofre direto para a Vercel (sem mostrar na tela), publica e confere se a ponte respondeu. Depois, no app do LinkedIn (**Auth → Authorized redirect URLs**), adicione `https://farol-otavio-guerra.vercel.app/api/linkedin/callback`.
+O script manda as chaves do cofre direto para a Vercel (sem mostrar na tela), publica e confere se a ponte respondeu. Depois, no app do LinkedIn (**Auth → Authorized redirect URLs**), adicione `https://vynco-otavio-guerra.vercel.app/api/linkedin/callback`.
 
 Enquanto a ponte não estiver ligada, o botão avisa e oferece "Usar meu próprio app do LinkedIn", o jeito antigo, com as suas chaves.
 
-![Fila](docs/img/farol-fila.png)
+![Fila](docs/img/vynco-fila.png)
 
 ## Começar
 Precisa de:
@@ -131,7 +131,7 @@ Precisa de:
 As fontes do design system de exemplo (Space Grotesk, IBM Plex Sans, Press Start 2P, VT323 e DM Serif Display, todas do Google Fonts) precisam estar instaladas para as exportações saírem iguais.
 
 **Jeito fácil (Windows):**
-1. Baixe o `Vynco-windows.zip` na [página de releases](https://github.com/AbapaOnSwamp/farol/releases/latest).
+1. Baixe o `Vynco-windows.zip` na [página de releases](https://github.com/AbapaOnSwamp/Vynco/releases).
 2. Extraia a pasta inteira e dê dois cliques em `Vynco.exe`.
 3. O app abre na janela dele, sem barra de navegador. Fechar a janela encerra o Vynco.
 
@@ -141,8 +141,8 @@ Para gerar o exe você mesmo: `npm run exe` (precisa do Node 25.5+; o ícone sai
 
 **Pelo terminal:**
 ```bash
-git clone https://github.com/AbapaOnSwamp/farol
-cd farol
+git clone https://github.com/AbapaOnSwamp/Vynco
+cd Vynco
 npm start
 ```
 Depois é seguir a entrada. Para mudar caminhos à mão, copie `config/engine.config.example.json` para `config/engine.config.json`.
@@ -155,8 +155,8 @@ O app desktop é uma janela nativa do Windows (WebView2) em volta do mesmo paine
 - **Precisa, só para compilar:** Rust (rustup), Visual Studio Build Tools com C++ e Node 22.13 ou mais novo. Quem instala o Vynco não precisa de nada disso.
 
 Como o app funciona por dentro:
-1. O Tauri abre a tela "Abrindo o Vynco…" e inicia o Node que vem dentro do app (`farol-node`, copiado do seu Node por `app/desktop/preparar.js`).
-2. Esse Node roda `app/desktop/backend.js`, que copia o motor para a pasta de trabalho `DocumentosVynco`. Ali ficam também a configuração, o cofre e os posts. Uma atualização troca o motor, mas nunca apaga o seu conteúdo nem o que a IA escreveu em `dias/` e `pautas/`.
+1. O Tauri abre a tela "Abrindo o Vynco…" e inicia o Node que vem dentro do app (`vynco-node`, copiado do seu Node por `app/desktop/preparar.js`).
+2. Esse Node roda `app/desktop/backend.js`, que copia o motor para a pasta de trabalho `Documentos\Vynco`. Ali ficam também a configuração, o cofre e os posts. Uma atualização troca o motor, mas nunca apaga o seu conteúdo nem o que a IA escreveu em `dias/` e `pautas/`.
 3. O painel sobe em `127.0.0.1:4800` (ou outra porta livre, se a 4800 estiver ocupada) e a janela vai para lá.
 4. As rotinas encontram um `node` mesmo sem Node instalado no computador, e a caixa de permissões continua valendo.
 5. Links abrem no navegador padrão e arquivos no programa padrão. Abrir o app de novo traz a janela que já existe. Fechar a janela encerra o backend.
@@ -181,7 +181,6 @@ O `Vynco.exe` portátil (`npm run exe`) continua existindo, para quem prefere n�
 - **Nome:** Vynco. **Assinatura:** "Sua carreira em outro nível."
 - **Arquivos oficiais:** `app/public/marca/vynco-symbol.svg` (símbolo), `vynco-logo-lockup.svg` (símbolo + nome) e `vynco-app-icon.svg` (ícone do app). Os ícones em `src-tauri/icons` saem de `src-tauri/app-icon.svg` com `npx tauri icon src-tauri/app-icon.svg -o src-tauri/icons` (apague as pastas `android` e `ios` que ele cria).
 - **Cores:** Vynco Purple `#6C63FF`, Cloud `#F4F5FA`, Midnight `#0C1220` e Mint `#7FFFD4`. O roxo puro fica no símbolo, nos brilhos e nas superfícies grandes. Para texto e botões o app usa tons com contraste AA: botão `#625AF6` com texto branco e links `#8C85FF` no escuro, `#5A51F0` no claro.
-- **O que continua com o nome antigo, de propósito:** a pasta de trabalho (`Documentos\Farol`), o cofre, as variáveis `FAROL_*`, o identificador do app (`app.farol.desktop`), os nomes das skills (`farol-*`) e a ponte de login. Trocar isso faria quem já usa perder posts, tokens e ajustes.
 
 ## Estrutura
 ```
@@ -204,7 +203,7 @@ engine/
   caixa.js      caixa de permissões para o código escrito pela IA
 agent/          regras e skills que o Vynco entrega à sua IA (fonte única)
 api/linkedin/   ponte do login de um clique (Vercel)
-prompts/        instruções das rotinas (viram comandos /farol-* na IA)
+prompts/        instruções das rotinas (viram comandos /vynco-* na IA)
 examples/assets imagens de exemplo (pixel art do meu portfólio)
 workspace/      tudo o que é gerado (fora do Git). midia/ é a biblioteca (index.json guarda texto alternativo e origem);
                 lixeira/ recebe o que você exclui; perfis/ guarda os perfis e perfil.md é o resumo que a IA lê.
@@ -216,8 +215,8 @@ workspace/      tudo o que é gerado (fora do Git). midia/ é a biblioteca (inde
                   pasta/ do editor                         01-, 02-... na ordem, post.json (título, rascunho), um vídeo ou documento, ou só texto
 config/         configuração local e o cofre segredos.dat (fora do Git)
 
-FAROL_DATA      variável opcional: muda a pasta de config/ e workspace/
-FAROL_HOME      na versão desktop: a pasta de trabalho do usuário (DocumentosVynco)
+VYNCO_DATA      variável opcional: muda a pasta de config/ e workspace/
+VYNCO_HOME      na versão desktop: a pasta de trabalho do usuário (Documentos\Vynco)
 ```
 
 ## Agendar

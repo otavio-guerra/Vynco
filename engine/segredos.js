@@ -12,7 +12,7 @@ const C = require('./config.js')
 
 const IS_WIN = process.platform === 'win32'
 const ARQ = C.SEGREDOS
-const ENTROPIA = 'farol-segredos-v1'   // amarra a cifra a este app (outros programas que usam a DPAPI não abrem o arquivo por engano)
+const ENTROPIA = 'vynco-segredos-v1'   // amarra a cifra a este app (outros programas que usam a DPAPI não abrem o arquivo por engano)
 
 function dpapi(modo, b64) {
   const ps = `Add-Type -AssemblyName System.Security; $i=[Console]::In.ReadToEnd().Trim(); $e=[Text.Encoding]::UTF8.GetBytes('${ENTROPIA}'); `
