@@ -798,3 +798,16 @@ dialog p { color: var(--soft); margin: 0 }
 @media (max-width: 860px) { .as-passo.com-ilu { grid-template-columns: 1fr } }
 .lk .lk-body .lk-h { display: block; color: #1d2226; font-weight: 700 } .lk .lk-bt.prim.alvo { background: #0a66c2; color: #fff }
 .lk b, .lk .lk-card b { color: #1d2226 } .lk .lk-abas .alvo { border-radius: 6px }
+
+/* autolayout centralizado: sem coluna vazia reservada e sem última linha encostada à esquerda */
+/* Fila e Biblioteca: sem prévia (nada selecionado), a área de cartões ocupa a largura toda e o vazio fica no meio */
+.fila-grid:has(> .feed[hidden]), .bib-grid:has(> aside[hidden]) { grid-template-columns: minmax(0, 1fr) }
+.cards > .empty, .midias:not(.pk) > :not(.midia) { flex: 0 1 720px; width: 100%; max-width: 720px; margin-inline: auto }
+/* Criar: os modelos em linhas centralizadas, inclusive a última */
+.rot-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px }
+.rot-grid > .rot { flex: 0 1 380px; min-width: 300px } .rot-grid > :not(.rot) { flex: 1 1 100% }
+/* Apresentação: cartões de escolha em linhas centralizadas */
+.vc-tiles { display: flex; flex-wrap: wrap; justify-content: center } .vc-tiles > .vc-tile { flex: 0 1 178px; min-width: 150px }
+.vc-tiles.tres > .vc-tile { flex-basis: 210px }
+.vc-tons { display: flex; flex-wrap: wrap; justify-content: center } .vc-tons > .vc-tom { flex: 0 1 280px; min-width: 220px }
+@media (max-width: 700px) { .vc-tiles > .vc-tile, .vc-tiles.tres > .vc-tile { flex: 0 1 calc(50% - 5px); min-width: 0 } .vc-tons > .vc-tom { flex-basis: 100% } .rot-grid > .rot { flex-basis: 100%; min-width: 0 } }

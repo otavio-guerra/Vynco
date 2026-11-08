@@ -914,7 +914,7 @@ function desenharBiblioteca() {
   const v = BIB.filter(m => filtroBib(m, BIB_F))
   $$('[data-bib-filtro] button').forEach(b => { b.classList.toggle('on', b.dataset.v === BIB_F); const n = BIB.filter(m => filtroBib(m, b.dataset.v)).length; b.innerHTML = `${b.textContent.replace(/\d+$/, '').trim()}<span class="n">${n}</span>` })
   $('[data-bib-sub]').textContent = BIB.length ? `${BIB.length} ${BIB.length === 1 ? 'mídia' : 'mídias'}. Arraste arquivos para cá para enviar; clique numa para ver detalhes e escrever o texto alternativo.` : 'Tudo o que pode ir num post: o que você envia e o que a sua IA gera.'
-  if (!BIB.find(m => m.arquivo === BIB_SEL)) BIB_SEL = v[0]?.arquivo || null
+  if (!v.find(m => m.arquivo === BIB_SEL)) BIB_SEL = v[0]?.arquivo || null   // a prévia acompanha o filtro (filtro vazio: sem prévia, o vazio fica no meio)
   $('[data-midias]').innerHTML = v.length ? v.map(m => `<button class="midia${m.arquivo === BIB_SEL ? ' focus' : ''}" data-m="${esc(m.arquivo)}"><div class="shot">${miniatura(m)}<span class="wf-badge">${TIPO_M[m.tipo]}</span>${m.avisos?.length ? '<span class="m-aviso" title="Tem um aviso">!</span>' : ''}</div><footer><b>${esc(m.nome)}</b><small>${esc(origemTxt(m))}${m.alt ? ' · com texto alternativo' : ''}</small></footer></button>`).join('')
     : `<div class="empty"><div class="wf-row">${wire('imagem')}${wire('gif')}${wire('video')}</div><h3>${BIB.length ? 'Nada neste filtro.' : 'A biblioteca está vazia.'}</h3><p>Arraste fotos, GIFs, vídeos ou PDFs para cá, ou use "Enviar arquivos". O que as rotinas gerarem também aparece aqui.</p></div>`
   detalheMidia()
