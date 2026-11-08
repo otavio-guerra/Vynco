@@ -14,7 +14,7 @@ const HEX = /^#[0-9a-f]{6}$/i
 const CORES = ['principal', 'secundaria', 'acento', 'fundo', 'texto']
 
 const vazio = id => ({
-  id, nome: '', area: '', nivel: '', publico: '', objetivo: '', tom: '', frequencia: '', temas: [], evitar: [], links: { site: '', portfolio: '' }, sobre: '',
+  id, nome: '', area: '', nivel: '', publico: '', objetivo: '', tom: '', frequencia: '', temas: [], evitar: [], links: { site: '', portfolio: '', outras: [] }, sobre: '',
   pilares: [],
   marca: { cores: Object.fromEntries(CORES.map(c => [c, ''])), fontes: { titulo: '', texto: '' }, estilo: '', referencias: [], aplicarNoMotor: false, usarNoEstudio: true },
   analise: null, atualizado: null,
@@ -37,7 +37,9 @@ function limpar(p) {
   return {
     nome: txt(p.nome, 80), area: txt(p.area, 200), nivel: txt(p.nivel, 60), publico: txt(p.publico, 300), objetivo: txt(p.objetivo, 200), tom: txt(p.tom, 200), frequencia: txt(p.frequencia, 40),
     temas: lista_(p.temas), evitar: lista_(p.evitar),
-    links: { site: /^https?:\/\//i.test(p.links?.site || '') ? txt(p.links.site, 300) : '', portfolio: /^https?:\/\//i.test(p.links?.portfolio || '') ? txt(p.links.portfolio, 300) : '' },
+    links: { site: /^https?:\/\//i.test(p.links?.site || '') ? txt(p.links.site, 300) : '', portfolio: /^https?:\/\//i.test(p.links?.portfolio || '') ? txt(p.links.portfolio, 300) : '',
+      // outras plataformas onde a pessoa mostra o trabalho (Behance, GitHub, Lattes...): só http(s)
+      outras: (Array.isArray(p.links?.outras) ? p.links.outras : []).map(o => ({ rede: txt(o && o.rede, 40), url: txt(o && o.url, 300) })).filter(o => o.rede && /^https?:\/\/[^\s"<>]+\.[^\s"<>]+$/i.test(o.url)).slice(0, 8) },
     sobre: txt(p.sobre, 3000),
     pilares: (Array.isArray(p.pilares) ? p.pilares : []).slice(0, 8).map(x => ({ tema: txt(x.tema, 80), por_que: txt(x.por_que, 300), ideias: lista_(x.ideias, 6, 200) })).filter(x => x.tema),
     marca: {
@@ -78,7 +80,7 @@ function resumo(p) {
   return `<!-- gerado pelo Vynco a partir do perfil "${p.id}". Edite na tela Perfil. -->
 # Perfil de quem publica
 
-${l('Nome', p.nome)}${l('Área de atuação', p.area)}${l('Momento da carreira', p.nivel)}${l('Público', p.publico)}${l('Objetivo no LinkedIn', p.objetivo)}${l('Tom de voz', p.tom)}${l('Frequência de posts', p.frequencia)}${l('Temas', p.temas)}${l('Evitar', p.evitar)}${l('Site', p.links.site)}${l('Portfólio', p.links.portfolio)}
+${l('Nome', p.nome)}${l('Links', [p.links.site && `site ${p.links.site}`, p.links.portfolio && `portfólio ${p.links.portfolio}`, ...(p.links.outras || []).map(o => `${o.rede} ${o.url}`)].filter(Boolean).join(' · '))}${l('Área de atuação', p.area)}${l('Momento da carreira', p.nivel)}${l('Público', p.publico)}${l('Objetivo no LinkedIn', p.objetivo)}${l('Tom de voz', p.tom)}${l('Frequência de posts', p.frequencia)}${l('Temas', p.temas)}${l('Evitar', p.evitar)}${l('Site', p.links.site)}${l('Portfólio', p.links.portfolio)}
 ${p.pilares.length ? `## Pilares de conteúdo\n${p.pilares.map(x => `- **${x.tema}**${x.por_que ? `: ${x.por_que}` : ''}${x.ideias.length ? `\n${x.ideias.map(i => `  - ${i}`).join('\n')}` : ''}`).join('\n')}\n` : ''}
 ## Identidade visual
 ${l('Cores', cores)}${l('Fontes', [p.marca.fontes.titulo && `títulos em ${p.marca.fontes.titulo}`, p.marca.fontes.texto && `texto em ${p.marca.fontes.texto}`].filter(Boolean).join(', '))}${l('Estilo', p.marca.estilo)}
@@ -98,7 +100,7 @@ Texto "Sobre" que ela colou (pode estar vazio):
 ${String(sobre || p.sobre || '').slice(0, 3000)}
 """
 
-Se houver site ou portfólio nos links, abra (leitura na web) para entender a área, os serviços, o público e a identidade visual (cores principais e estilo).
+Abra (leitura na web) cada link que houver: site, portfólio e as outras plataformas (Behance, GitHub, Lattes, Dribbble, Medium, YouTube...). Use para entender a área, os projetos, as especialidades, o público e a identidade visual (cores principais e estilo). Não invente nada que não esteja nos links ou no que a pessoa escreveu.
 Regras: não invente fatos (clientes, números, cargos, prêmios). Se não tiver informação, deixe o campo vazio. Seja específico e curto. Cores em hexadecimal (#rrggbb), só se vierem do site ou do que ela informou.
 
 Responda SOMENTE com um bloco JSON, sem texto antes ou depois, neste formato:
@@ -114,7 +116,7 @@ let ANALISE = null
 function analisar(id, agente, perguntar, sobre) {
   if (ANALISE && ANALISE.estado === 'rodando') throw new Error('Já tem uma análise em andamento.')
   const p = carregar(id)
-  if (!p.area && !p.sobre && !sobre && !p.links.site && !p.links.portfolio) throw new Error('Conte um pouco sobre você (área, texto "Sobre" ou um link) antes de pedir a análise.')
+  if (!p.area && !p.sobre && !sobre && !p.links.site && !p.links.portfolio && !(p.links.outras || []).length) throw new Error('Conte um pouco sobre você (área, texto "Sobre" ou um link) antes de pedir a análise.')
   ANALISE = { id, agente, estado: 'rodando', inicio: Date.now() }
   const A = ANALISE
   perguntar(agente, prompt(p, sobre), { timeout: 300000 })

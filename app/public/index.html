@@ -90,6 +90,19 @@
     <div class="sso-list" data-in data-agentes></div>
     <div class="login-card glass" data-login hidden></div>
     <p class="fine" data-in>Cada IA usa a sua própria conta e plano. Dá para trocar depois em Ajustes.</p>
+    <details class="omni glass" data-in>
+      <summary><span class="omni-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8 7.5l3 8.5M16 7.5l-3 8.5M8.4 6h7.2"/></svg></span><span><b>Não tem assinatura de IA?</b><small>Dá para usar modelos gratuitos com o OmniRoute</small></span></summary>
+      <div class="omni-c">
+        <p>O <b>OmniRoute</b> é um projeto gratuito e de código aberto (de outra equipe, não do Vynco) que roda no seu computador e liga o Claude Code, o Codex ou o Gemini CLI a modelos gratuitos de vários provedores.</p>
+        <ol>
+          <li>Instale e abra o OmniRoute (precisa do Node.js): <code>npm install -g omniroute</code> e depois <code>omniroute</code>. O painel abre em <code>localhost:20128</code>.</li>
+          <li>No painel, conecte um ou mais provedores gratuitos.</li>
+          <li>Ligue a sua ferramenta a ele com <code>omniroute configure claude</code> (ou <code>codex</code>, <code>gemini</code>) e volte aqui para escolher a mesma IA acima.</li>
+        </ol>
+        <p class="fine">Bom saber: os modelos gratuitos não são o Claude nem o GPT oficiais, a qualidade varia e cada provedor tem os seus limites e termos de uso (o próprio OmniRoute avisa quais evitar). Para o melhor resultado, uma assinatura oficial ainda é o caminho.</p>
+        <div class="omni-a"><a class="btn sm" href="https://github.com/diegosouzapw/OmniRoute" target="_blank" rel="noopener">Ver o OmniRoute no GitHub ↗</a><button class="link" type="button" data-copy="npm install -g omniroute">Copiar o comando de instalação</button></div>
+      </div>
+    </details>
   </section>
 
   <section class="scene" data-scene="sync" hidden>
@@ -117,6 +130,8 @@
         <button class="btn accent sm" data-novo-post><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Novo post</button>
       </div>
     </div>
+    <nav class="fluxo" data-in data-fluxo="revisar" aria-label="Etapas do post"></nav>
+    <div class="semana" data-in data-semana aria-label="Próximos 7 dias"></div>
     <div class="fila-grid" data-in>
       <div class="cards" data-strip tabindex="0" aria-label="Posts"></div>
       <aside class="feed glass" data-detail aria-label="Prévia no feed"></aside>
@@ -251,6 +266,7 @@
     <div class="view-head" data-in>
       <div><h1>Criar.</h1><p class="sub" data-rot-sub>Escolha um modelo e a sua IA cria a peça a partir do seu perfil. Nada vai ao ar sem você aprovar.</p></div>
     </div>
+    <nav class="fluxo" data-in data-fluxo="criar" aria-label="Etapas do post"></nav>
     <div class="cr-rapido" data-in>
       <button class="cr-acao glass" data-novo-post><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13h2.5L13 5.5 10.5 3 3 10.5zM9.5 4l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><b>Escrever um post</b><small>texto, imagens, vídeo, PDF ou link, do seu jeito</small></span></button>
       <button class="cr-acao glass" data-gerar-img><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg></span><span><b>Gerar uma imagem</b><small>com o estúdio de imagens</small></span></button>
@@ -270,6 +286,7 @@
         <button class="btn sm icon" data-cal="prox" aria-label="Próximo mês"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
     </div>
+    <nav class="fluxo" data-in data-fluxo="agendar" aria-label="Etapas do post"></nav>
     <div class="cal-legenda" data-in><span class="cl pub">No ar</span><span class="cl ag">Agendado</span><span class="cl rot">Rotina vai criar</span><span class="fine">Arraste um post para um dia para agendar.</span></div>
     <div class="cal-grid" data-in>
       <div class="cal glass" data-cal-mes role="grid" aria-label="Mês"></div>

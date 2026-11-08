@@ -339,8 +339,32 @@ async function conectarLinkedin(proprio = false) {
 }
 // ---------------------------------------------------------------- assistente do app próprio do LinkedIn (quando a ponte não está ligada)
 let LI_REDIRECT = 'http://localhost:8765/callback', AS = 0
+// ---------------------------------------------------------------- ilustrações do passo a passo (não são capturas: desenhos simplificados das telas do LinkedIn)
+const LK = {
+  campo: (rot, val, n, dica = '') => `<div class="lk-campo${n ? ' alvo' : ''}">${n ? `<span class="lk-n">${n}</span>` : ''}<small>${rot}</small><span class="lk-in${val ? '' : ' vazio'}">${val || dica}</span></div>`,
+  botao: (t, n, prim = true) => `<span class="lk-bt${prim ? ' prim' : ''}${n ? ' alvo' : ''}">${n ? `<span class="lk-n">${n}</span>` : ''}${t}</span>`,
+  check: (t, n) => `<div class="lk-ck${n ? ' alvo' : ''}">${n ? `<span class="lk-n">${n}</span>` : ''}<i></i>${t}</div>`,
+  abas: (lista, ativa, n) => `<div class="lk-abas">${lista.map(a => `<span class="${a === ativa ? 'on' + (n ? ' alvo' : '') : ''}">${a === ativa && n ? `<span class="lk-n">${n}</span>` : ''}${a}</span>`).join('')}</div>`,
+  card: (t, d, n) => `<div class="lk-card${n ? ' alvo' : ''}">${n ? `<span class="lk-n">${n}</span>` : ''}<span><b>${t}</b><small>${d}</small></span><span class="lk-bt">Request access</span></div>`,
+  tela: (url, corpo) => `<figure class="lk" aria-label="Ilustração da página do LinkedIn"><div class="lk-bar"><i></i><i></i><i></i><span>${url}</span></div><div class="lk-body">${corpo}</div></figure>`,
+}
+const ILU_AS = [
+  () => LK.tela('linkedin.com/company/setup/new', `<b class="lk-h">Criar uma Página</b>${LK.campo('Nome', 'Estúdio Ana Lima', 1)}${LK.campo('URL pública', 'linkedin.com/company/estudio-ana-lima')}${LK.campo('Tamanho da organização', '0-1 funcionários', 2)}${LK.campo('Tipo de organização', 'Autônomo', 3)}${LK.check('Confirmo que posso agir em nome desta organização', 4)}${LK.botao('Criar página', 5)}`),
+  () => LK.tela('linkedin.com/developers/apps/new', `<b class="lk-h">Create an app</b>${LK.campo('App name', 'Vynco de Ana Lima', 1)}${LK.campo('LinkedIn Page', 'Estúdio Ana Lima', 2)}${LK.campo('App logo', 'sua-foto.png', 3)}${LK.check('I have read and agree to these terms', 4)}${LK.botao('Create app', 5)}`),
+  () => LK.tela('linkedin.com/developers/apps/…/products', `${LK.abas(['Settings', 'Auth', 'Products', 'Analytics'], 'Products', 1)}${LK.card('Share on LinkedIn', 'publicar posts no seu perfil', 2)}${LK.card('Sign In with LinkedIn using OpenID Connect', 'entrar com a sua conta', 3)}<div class="lk-card apagado"><span><b>Advertising API</b><small>não precisa</small></span><span class="lk-bt">Request access</span></div>`),
+  () => LK.tela('linkedin.com/developers/apps/…/auth', `${LK.abas(['Settings', 'Auth', 'Products', 'Analytics'], 'Auth', 1)}<b class="lk-h">OAuth 2.0 settings</b>${LK.campo('Authorized redirect URLs for your app', esc(LI_REDIRECT), 2)}<div class="lk-linha">${LK.botao('Update', 3)}<span class="lk-bt">+ Add redirect URL</span></div>`),
+  () => LK.tela('linkedin.com/developers/apps/…/auth', `${LK.abas(['Settings', 'Auth', 'Products', 'Analytics'], 'Auth')}<b class="lk-h">Application credentials</b>${LK.campo('Client ID', '77abc12xyz34', 1)}${LK.campo('Primary Client Secret', '••••••••••••• (clique no olho para ver)', 2)}`),
+]
+// o que cada número da ilustração quer dizer
+const LEGENDA_AS = [
+  ['Nome: o seu nome ou o do seu estúdio', 'Tamanho: 0-1 funcionários', 'Tipo: Autônomo (ou o que for o seu caso)', 'Marque a confirmação', 'Clique em Criar página'],
+  ['App name: "Vynco de" + o seu nome', 'LinkedIn Page: a página do passo 1', 'Logo: qualquer imagem (pode ser a sua foto)', 'Aceite os termos', 'Clique em Create app'],
+  ['Abra a aba Products', 'Request access em Share on LinkedIn', 'Request access em Sign In with LinkedIn using OpenID Connect'],
+  ['Abra a aba Auth', 'Clique no lápis e cole o endereço copiado', 'Clique em Update'],
+  ['Copie o Client ID e cole aqui embaixo', 'Clique no olho, copie o Primary Client Secret e cole aqui'],
+]
 const PASSOS_AS = [
-  { t: 'Uma Página de empresa', txt: 'O LinkedIn só deixa criar apps ligados a uma Página de empresa. Se você já administra uma (pode ser a sua página de freelancer ou estúdio), pule este passo.', abrir: ['Criar uma Página', 'https://www.linkedin.com/company/setup/new/'], dica: 'Nome: o seu nome ou "Estúdio" + o seu nome. Tamanho: o menor. Não precisa publicar nada nela.' },
+  { t: 'Uma página de empresa', txt: 'O LinkedIn só deixa criar apps ligados a uma página de empresa. Se você já administra uma (pode ser a sua página de freelancer ou estúdio), pule este passo.', abrir: ['Criar uma página', 'https://www.linkedin.com/company/setup/new/'], dica: 'Nome: o seu nome ou "Estúdio" + o seu nome. Tamanho: o menor. Não precisa publicar nada nela.' },
   { t: 'Criar o app', txt: 'Na página que abrir, preencha: <b>App name</b> "Vynco de" + o seu nome; <b>LinkedIn Page</b> a página do passo 1; um <b>logo</b> qualquer (pode ser a sua foto); marque que aceita os termos e clique em <b>Create app</b>.', abrir: ['Abrir a criação do app', 'https://www.linkedin.com/developers/apps/new'] },
   { t: 'Ligar 2 produtos', txt: 'No app recém-criado, abra a aba <b>Products</b> e clique em <b>Request access</b> nestes dois. Eles são liberados na hora:', lista: ['Share on LinkedIn', 'Sign In with LinkedIn using OpenID Connect'], abrir: ['Abrir os meus apps', 'https://www.linkedin.com/developers/apps'] },
   { t: 'Endereço de retorno', txt: 'Abra a aba <b>Auth</b>. Em <b>Authorized redirect URLs for your app</b>, clique no lápis, cole o endereço abaixo e clique em <b>Update</b>.', copiar: true },
@@ -353,12 +377,14 @@ function desenharAssistente() {
   $('[data-as-n]').textContent = `Passo ${AS + 1} de ${PASSOS_AS.length}`
   $('[data-as-intro]').hidden = AS > 0
   $('[data-as-trilha]').innerHTML = PASSOS_AS.map((x, i) => `<li class="${i < AS ? 'ok' : i === AS ? 'run' : ''}"><span class="ic"></span>${x.t}</li>`).join('')
-  $('[data-as-passo]').innerHTML = `<h4>${AS + 1}. ${p.t}</h4><p>${p.txt}</p>${p.lista ? `<ul>${p.lista.map(x => `<li><b>${x}</b> <button class="link" type="button" data-as-copia="${x}">copiar</button></li>`).join('')}</ul>` : ''}
+  $('[data-as-passo]').classList.add('com-ilu')
+  $('[data-as-passo]').innerHTML = `<div class="as-txt"><h4>${AS + 1}. ${p.t}</h4><p>${p.txt}</p>${p.lista ? `<ul>${p.lista.map(x => `<li><b>${x}</b> <button class="link" type="button" data-as-copia="${x}">copiar</button></li>`).join('')}</ul>` : ''}
     ${p.copiar ? `<div class="as-copia"><code>${esc(LI_REDIRECT)}</code><button class="btn sm accent" type="button" data-as-copia="${esc(LI_REDIRECT)}">Copiar</button></div>` : ''}
-    ${p.abrir ? `<a class="btn sm" href="${p.abrir[1]}" target="_blank" rel="noopener">${p.abrir[0]} ↗</a>` : ''}${p.dica ? `<p class="fine">${p.dica}</p>` : ''}`
+    ${p.abrir ? `<a class="btn sm" href="${p.abrir[1]}" target="_blank" rel="noopener">${p.abrir[0]} ↗</a>` : ''}${p.dica ? `<p class="fine">${p.dica}</p>` : ''}</div>
+    <div class="as-ilu">${ILU_AS[AS]()}<ol class="lk-leg">${LEGENDA_AS[AS].map(x => `<li>${esc(x)}</li>`).join('')}</ol><p class="fine">Ilustração simplificada, com um exemplo. Se o seu LinkedIn estiver em português, os nomes aparecem traduzidos, e a página pode mudar um pouco.</p></div>`
   $('[data-form=linkedin-keys]').hidden = !p.form
   $('[data-as=voltar]').disabled = AS === 0
-  $('[data-as=proximo]').textContent = ultimo ? 'Salvar e conectar' : AS === 0 ? 'Já tenho uma Página / Próximo' : 'Feito, próximo'
+  $('[data-as=proximo]').textContent = ultimo ? 'Salvar e conectar' : AS === 0 ? 'Já tenho uma página / Próximo' : 'Feito, próximo'
   if (p.form) setTimeout(() => $('[data-form=linkedin-keys] [name=client_id]').focus(), 50)
 }
 function validarChavesAs() {
@@ -442,6 +468,20 @@ const VC_NIVEIS = [['Estudante', 'ainda na faculdade ou num curso', 'estudante']
 const VC_OBJ = [['Conseguir uma vaga', 'ser encontrado por recrutadores', 'vaga'], ['Conseguir clientes', 'gerar oportunidades de negócio', 'clientes'], ['Ser referência na área', 'ser lembrado pelo que sabe', 'referencia'], ['Fazer networking', 'conhecer gente da área', 'rede'], ['Divulgar meu negócio', 'mostrar produto ou serviço', 'divulgar'], ['Mudar de área', 'mostrar que está em transição', 'mudar'], ['Aprender em público', 'compartilhar o que estuda', 'aprender']]
 const VC_PUB = [['Recrutadores', 'quem contrata', 'recrutador'], ['Lideranças', 'gestores que decidem nas empresas', 'gestor'], ['Clientes', 'pessoas e empresas que compram de você', 'empresa'], ['Colegas da área', 'quem faz o mesmo que você', 'colegas'], ['Quem está começando', 'estudantes e juniores', 'iniciante'], ['Investidores', 'e possíveis parceiros de negócio', 'investidor']]
 const VC_TONS = [['Direto', 'Três erros que vejo toda semana, e como evitar.'], ['Didático', 'Vou explicar, passo a passo, como eu faço isso.'], ['Próximo', 'Hoje quero contar uma coisa que aconteceu comigo.'], ['Inspirador', 'Ninguém começa pronto. Eu também não comecei.'], ['Bem-humorado', 'Spoiler: aquela reunião podia ter sido um e-mail.'], ['Técnico', 'Os números por trás da decisão, sem rodeio.']]
+const PLAT = {
+  'Behance': ['https://www.behance.net/', 'seu-usuario'], 'Dribbble': ['https://dribbble.com/', 'seu-usuario'], 'GitHub': ['https://github.com/', 'seu-usuario'],
+  'Stack Overflow': ['', 'https://stackoverflow.com/users/…'], 'Medium': ['https://medium.com/@', 'seu-usuario'], 'Instagram': ['https://www.instagram.com/', 'seu-usuario'],
+  'YouTube': ['https://www.youtube.com/@', 'seu-canal'], 'Lattes': ['', 'http://lattes.cnpq.br/…'], 'Doctoralia': ['', 'https://www.doctoralia.com.br/…'], 'JusBrasil': ['', 'https://www.jusbrasil.com.br/…'],
+}
+const VC_PLAT = {
+  'Design': ['Behance', 'Dribbble'], 'Tecnologia': ['GitHub', 'Stack Overflow'], 'Produto e projetos': ['Medium'], 'Marketing e comunicação': ['Instagram', 'Medium'],
+  'Pessoas e RH': ['Medium'], 'Finanças e negócios': ['Medium'], 'Saúde': ['Lattes', 'Doctoralia'], 'Direito': ['JusBrasil', 'Lattes'], 'Educação': ['Lattes', 'YouTube'],
+  'Engenharia e indústria': ['Lattes', 'GitHub'], 'Empreendedorismo': ['Instagram'], 'Arte e conteúdo': ['Instagram', 'YouTube', 'Behance'],
+}
+const vcPlats = () => ['Site ou portfólio', ...[...new Set(VC.area.flatMap(a => VC_PLAT[a] || []))].slice(0, 4), 'Outro link']
+// "seu-usuario" vira o endereço completo; um link inteiro passa como está
+const vcUrl = (rede, v) => { v = String(v || '').trim(); if (!v) return ''; if (/^https?:\/\//i.test(v)) return v; const base = (PLAT[rede] || [])[0]; return base ? base + v.replace(/^@/, '').replace(/^\/+/, '') : /^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(v) ? 'https://' + v : v }
+const urlValida = u => /^https?:\/\/[^\s"<>]+\.[^\s"<>]+$/i.test(u)
 const VC_FREQ = [['1 vez por semana', 'leve, para começar', 'leve'], ['2 a 3 vezes por semana', 'o ritmo que mais cresce', 'medio'], ['Todo dia útil', 'para quem quer acelerar', 'intenso']]
 const VC_PASSOS = [
   { k: 'area', t: n => `Prazer${n ? ', ' + n : ''}! Em que área você trabalha?`, s: 'Escolha até 3. Na próxima pergunta você detalha.', multi: 3 },
@@ -451,6 +491,8 @@ const VC_PASSOS = [
   { k: 'publico', t: () => 'Quem você quer que leia os seus posts?', s: 'Escolha até 3. A IA escreve pensando nessas pessoas.', multi: 3 },
   { k: 'tom', t: () => 'Como você quer soar?', s: 'Escolha até 2. Cada um vem com um exemplo de começo de post.', multi: 2 },
   { k: 'frequencia', t: () => 'Com que frequência quer postar?', s: 'Dá para mudar quando quiser.' },
+  { k: 'links', t: () => 'Onde você já mostra o seu trabalho?', s: 'Cole os links (ou só o seu usuário). A sua IA lê tudo e completa o seu perfil, sem você precisar escrever.' },
+  { k: 'imagens', t: () => 'Quer imagens feitas com IA nos seus posts?', s: 'Opcional. Dá para conectar depois em Ajustes.' },
   { k: 'fim', t: () => 'Pronto. É assim que a sua IA vai te ver.', s: 'Toque em qualquer parte para mudar.' },
 ]
 let VC = null
@@ -464,7 +506,8 @@ async function entrarVoce() {
   const [esp0, area0] = String(p?.area || '').includes(' · ') ? p.area.split(' · ') : ['', p?.area || '']
   const areasSalvas = area0 ? area0.split(/,\s*/) : [], conhecidas = areasSalvas.filter(a => VC_AREAS.some(x => x[0] === a)), outras = areasSalvas.filter(a => !conhecidas.includes(a))
   const espSalvas = esp0 ? esp0.split(/,\s*/) : [], opsArea = conhecidas.flatMap(a => VC_ESPEC[a] || [])
-  VC = { perfil: p, nome, passo: 0, area: [...conhecidas, ...(outras.length ? ['Outra área'] : [])].slice(0, 3), outra: outras.join(', '), esps: espSalvas.filter(e => opsArea.includes(e)), cargo: espSalvas.filter(e => !opsArea.includes(e)).join(', '), nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '' }
+  VC = { perfil: p, nome, passo: 0, area: [...conhecidas, ...(outras.length ? ['Outra área'] : [])].slice(0, 3), outra: outras.join(', '), esps: espSalvas.filter(e => opsArea.includes(e)), cargo: espSalvas.filter(e => !opsArea.includes(e)).join(', '), nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '', plat: Object.fromEntries((p?.links?.outras || []).map(o => [o.rede, o.url])), mag: null }
+  VC.plat['Site ou portfólio'] = VC.site
   const av = $('[data-vc-av]'); av.textContent = l.foto ? '' : inicial(nome || '?'); av.style.backgroundImage = l.foto ? `url("${l.foto}")` : ''
   $('[data-vc-li]').hidden = !l.connected
   desenharVoce()
@@ -472,7 +515,7 @@ async function entrarVoce() {
 const vcValor = k => VC[k]
 const vcAreas = () => VC.area.map(a => a === 'Outra área' ? VC.outra.trim() : a).filter(Boolean)
 const vcEspTxt = () => [...VC.esps, VC.cargo.trim()].filter(Boolean).join(', ')
-const vcRespondido = k => k === 'area' ? !!(VC.area.length && (!VC.area.includes('Outra área') || VC.outra.trim())) : k === 'esp' ? !!(VC.esps.length || VC.cargo.trim()) : k === 'fim' ? true : Array.isArray(VC[k]) ? VC[k].length > 0 : !!VC[k]
+const vcRespondido = k => k === 'area' ? !!(VC.area.length && (!VC.area.includes('Outra área') || VC.outra.trim())) : k === 'esp' ? !!(VC.esps.length || VC.cargo.trim()) : k === 'fim' ? true : k === 'links' ? Object.values(VC.plat).some(v => String(v || '').trim()) : k === 'imagens' ? !!(VC.mag && VC.mag.temChave) : Array.isArray(VC[k]) ? VC[k].length > 0 : !!VC[k]
 function vcTiles(k, ops, multi) {
   const sel = v => multi ? VC[k].includes(v) : VC[k] === v
   return `<div class="vc-tiles${ops.length <= 3 ? ' tres' : ''}" role="${multi ? 'group' : 'radiogroup'}">${ops.map(([v, d, i]) => `<button type="button" class="vc-tile${sel(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${sel(v)}">
@@ -495,14 +538,29 @@ function desenharVoce() {
   if (P.k === 'objetivo') h = vcTiles('objetivo', VC_OBJ, true)
   if (P.k === 'publico') h = vcTiles('publico', VC_PUB, true)
   if (P.k === 'tom') h = `<div class="vc-tons" role="group">${VC_TONS.map(([v, ex]) => `<button type="button" class="vc-tom${VC.tom.includes(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="checkbox" aria-checked="${VC.tom.includes(v)}"><b>${esc(v)}</b><q>${esc(ex)}</q><span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
-  if (P.k === 'frequencia') h = vcTiles('frequencia', VC_FREQ) + `<label class="vc-campo"><span>Tem site ou portfólio? <small class="soft">opcional</small></span><input class="vc-in" data-vc="site" type="url" placeholder="https://" spellcheck="false" value="${esc(VC.site)}"><small class="fine">A sua IA lê o link (só leitura) e sugere temas e as cores da sua marca.</small></label>`
+  if (P.k === 'frequencia') h = vcTiles('frequencia', VC_FREQ)
+  if (P.k === 'links') h = `<div class="vc-plats">${vcPlats().map(r => { const [base, ex] = PLAT[r] || ['', r === 'Outro link' ? 'https://…' : 'https://seusite.com'], v = VC.plat[r] || '', bad = v && !urlValida(vcUrl(r, v))
+      return `<label class="vc-plat${bad ? ' bad' : ''}"><span class="vc-plat-n"><b>${esc(r)}</b>${base ? `<small>${esc(base.replace(/^https:\/\/(www\.)?/, ''))}</small>` : ''}</span><input class="vc-in" data-vc-plat="${esc(r)}" value="${esc(v)}" placeholder="${esc(ex)}" spellcheck="false" autocomplete="off"></label>` }).join('')}</div>
+    <p class="fine vc-nota">Só leitura: a sua IA abre as páginas públicas para entender os seus projetos e especialidades. Nada é postado nessas plataformas.</p>`
+  if (P.k === 'imagens') {
+    const m = VC.mag, ok = m && m.temChave
+    h = `<div class="vc-mag glass">
+      <div class="vc-mag-h"><span class="vc-mag-ic" aria-hidden="true">${ico('criativo')}</span><span><b>Magnific</b><small>gerar, melhorar e refinar imagens</small></span>${ok ? '<span class="ok-badge">conectado</span>' : ''}</div>
+      <ul class="vc-mag-l"><li><b>Gerar</b> imagens a partir de um texto, no estilo da sua marca.</li><li><b>Melhorar</b> a resolução de uma imagem em até 16 vezes.</li><li><b>Refinar</b> nitidez e detalhes de fotos e telas.</li></ul>
+      ${ok ? '<p class="fine">Pronto: o estúdio de imagens já está ligado. Você define um limite de gasto por mês em Ajustes.</p>' : `<label class="vc-campo"><span>Chave da API do Magnific</span><input class="vc-in" data-vc-mag type="password" autocomplete="off" spellcheck="false" placeholder="cole a chave aqui"></label>
+      <div class="vc-mag-a"><button type="button" class="btn sm accent" data-vc-mag-ok>Conferir e salvar</button><a class="link" href="${esc((m && m.chaveUrl) || 'https://www.magnific.com/user/organization/api-keys')}" target="_blank" rel="noopener">Criar uma chave no Magnific ↗</a></div>
+      <p class="fine">O Magnific cobra à parte, pela API: a assinatura do site não vale aqui. A chave fica só no cofre deste computador. Vídeo com IA ainda não está no Vynco.</p>`}
+    </div>`
+    if (!m) api('/api/imagem').then(r => { const pr = (r.provedores || []).find(x => x.id === 'magnific') || {}; VC.mag = { temChave: !!pr.temChave, chaveUrl: pr.chaveUrl }; if (VC_PASSOS[VC.passo].k === 'imagens') desenharVoce() }).catch(() => { VC.mag = { temChave: false } })
+  }
   if (P.k === 'fim') {
     const parte = (passo, txt, vazio) => `<button type="button" class="vc-parte${txt ? '' : ' vazio'}" data-vc-ir="${passo}">${esc(txt || vazio)}</button>`
     const lista = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || '', areaTxt = lista(vcAreas())
     h = `<div class="vc-resumo glass">
       <div class="vc-r-h"><span class="avatar" style="${$('[data-vc-av]').style.backgroundImage ? `background-image:${$('[data-vc-av]').style.backgroundImage};color:transparent` : ''}">${inicial(VC.nome || '?')}</span><span><b>${esc(VC.nome || 'Você')}</b><small>${esc([vcEspTxt(), areaTxt].filter(Boolean).join(' · ') || 'área a definir')}</small></span></div>
       <p>${parte(1, lista([...VC.esps, VC.cargo.trim()].filter(Boolean)), 'o que você faz')} em ${parte(0, areaTxt, 'sua área')}, ${parte(2, VC.nivel && VC.nivel.toLowerCase(), 'momento da carreira')}. Quer ${parte(3, lista(VC.objetivo.map(o => o.toLowerCase())), 'um objetivo')}, falando com ${parte(4, lista(VC.publico.map(o => o.toLowerCase())), 'o seu público')}, num tom ${parte(5, lista(VC.tom.map(o => o.toLowerCase())), 'do seu jeito')}, ${parte(6, VC.frequencia && VC.frequencia.toLowerCase(), 'na frequência que quiser')}.</p>
-      ${VC.site ? `<small class="fine">A sua IA também vai ler ${esc(dominio(VC.site) || VC.site)} para sugerir temas e cores.</small>` : ''}</div>
+      ${(() => { const ls = vcPlats().filter(r => urlValida(vcUrl(r, VC.plat[r]))); return ls.length ? `<small class="fine">A sua IA também vai ler: ${parte(7, ls.map(r => r === 'Site ou portfólio' ? (dominio(vcUrl(r, VC.plat[r])) || 'seu site') : r).join(', '), '')}.</small>` : '' })()}
+      ${VC.mag?.temChave ? '<small class="fine">Imagens com IA: Magnific conectado.</small>' : ''}</div>
       <p class="fine vc-nota">${ST?.linkedin?.connected ? 'Do LinkedIn vieram o seu nome e a sua foto. O LinkedIn não compartilha cargo nem experiência com outros apps, por isso as perguntas.' : 'O LinkedIn ainda não está conectado: tudo bem, dá para conectar depois em Ajustes.'}</p>`
   }
   // a entrada animada só quando muda de pergunta (marcar uma opção não pisca a tela)
@@ -510,7 +568,7 @@ function desenharVoce() {
   corpo.classList.remove('troca'); if (mudou) void corpo.offsetWidth
   corpo.innerHTML = h; if (mudou) corpo.classList.add('troca')
   const ok = $('[data-vc-ok]'), resp = vcRespondido(P.k)
-  ok.textContent = P.k === 'fim' ? 'Está ótimo, continuar' : resp ? 'Continuar' : 'Pular esta'
+  ok.textContent = P.k === 'fim' ? 'Está ótimo, continuar' : resp ? 'Continuar' : P.k === 'imagens' ? 'Agora não' : 'Pular esta'
   ok.classList.toggle('accent', resp)
   $('[data-vc-voltar]').hidden = VC.passo === 0
 }
@@ -537,10 +595,12 @@ $('[data-scene=voce]').addEventListener('click', e => {
   const op = e.target.closest('[data-vc-op]'); if (op) return vcEscolher(op.dataset.vcOp)
   const es = e.target.closest('[data-vc-esp]'); if (es) return vcEscolher(es.dataset.vcEsp, 'esps')
   const ir = e.target.closest('[data-vc-ir]'); if (ir) return vcIr(+ir.dataset.vcIr)
+  if (e.target.closest('[data-vc-mag-ok]')) return salvarChaveMag()
   if (e.target.closest('[data-vc-ok]')) return vcAvancar()
   if (e.target.closest('[data-vc-voltar]')) return vcVoltar()
 })
 $('[data-scene=voce]').addEventListener('input', e => {
+  if (e.target.dataset.vcPlat) { VC.plat[e.target.dataset.vcPlat] = e.target.value; const ok = $('[data-vc-ok]'), resp = vcRespondido('links'); ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp); return }
   const k = e.target.dataset.vc; if (!k) return
   VC[k] = e.target.value
   const ok = $('[data-vc-ok]'), resp = vcRespondido(VC_PASSOS[VC.passo].k); ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp)
@@ -557,18 +617,27 @@ function teclaVoce(e, k) {
   }
   return P && false
 }
+async function salvarChaveMag() {
+  const f = $('[data-vc-mag]'), chave = (f?.value || '').trim()
+  if (!chave) return pill('Cole a chave antes', 'Ela fica na página de chaves da API do Magnific.', 'var(--amber)')
+  pill('Conferindo a chave…', '', 'var(--violet)')
+  try { await api('/api/imagem/chave', { provedor: 'magnific', chave }); VC.mag = { ...(VC.mag || {}), temChave: true }; Som.liga(); pill('Magnific conectado', 'A chave fica só no cofre deste computador.', 'var(--green)'); desenharVoce() }
+  catch (e) { falha(e) } finally { if (f) f.value = '' }
+}
 async function salvarVoce() {
   if (!VC) return proximaCena()
   const areaNome = vcAreas().join(', ')
   const area = [vcEspTxt(), areaNome].filter(Boolean).join(' · ')
-  const site = /^https?:\/\/\S+\.\S+/i.test(VC.site.trim()) ? VC.site.trim() : ''
-  if (VC.site.trim() && !site) { vcIr(VC_PASSOS.findIndex(p => p.k === 'frequencia')); return pill('Confira o link', 'Ele precisa começar com http:// ou https://', 'var(--amber)') }
+  const ruim = Object.entries(VC.plat).find(([r, v]) => String(v || '').trim() && !urlValida(vcUrl(r, v)))
+  if (ruim) { vcIr(VC_PASSOS.findIndex(p => p.k === 'links')); return pill(`Confira o link de ${ruim[0]}`, 'Cole o endereço completo, começando com https://', 'var(--amber)') }
+  const site = vcUrl('Site ou portfólio', VC.plat['Site ou portfólio'])
+  const outras = Object.entries(VC.plat).filter(([r, v]) => r !== 'Site ou portfólio' && String(v || '').trim()).map(([r, v]) => ({ rede: r === 'Outro link' ? (dominio(vcUrl(r, v)) || 'Link') : r, url: vcUrl(r, v) }))
   const p = VC.perfil || {}
-  if (area || VC.nivel || VC.objetivo.length || VC.publico.length || VC.tom.length || VC.frequencia || site) {
+  if (area || VC.nivel || VC.objetivo.length || VC.publico.length || VC.tom.length || VC.frequencia || site || outras.length) {
     try {
-      await api('/api/perfil/salvar', { id: p.id, perfil: { ...p, nome: p.nome || VC.nome, area: area || p.area || '', nivel: VC.nivel, objetivo: VC.objetivo.join(', '), publico: VC.publico.join(', '), tom: VC.tom.join(', '), frequencia: VC.frequencia, links: { ...(p.links || {}), site } } })
+      await api('/api/perfil/salvar', { id: p.id, perfil: { ...p, nome: p.nome || VC.nome, area: area || p.area || '', nivel: VC.nivel, objetivo: VC.objetivo.join(', '), publico: VC.publico.join(', '), tom: VC.tom.join(', '), frequencia: VC.frequencia, links: { ...(p.links || {}), site, outras } } })
       Som.liga(); pill('Perfil começado', 'A sua IA vai usar isso em cada post.', 'var(--green)')
-      if (area || site) store.set('analisarDepois', '1')   // quando a IA estiver pronta, ela completa o perfil
+      if (area || site || outras.length) store.set('analisarDepois', '1')   // quando a IA estiver pronta, ela completa o perfil
     } catch (e) { return falha(e) }
   }
   proximaCena()
@@ -705,7 +774,7 @@ function alternarFormato(i) {
 }
 
 // ---------------------------------------------------------------- fila
-let FILA = [], FILTRO = 'pendente', foco = 0, verMais = false, AG_AB = false
+let FILA = [], FILTRO = 'pendente', foco = 0, verMais = false, AG_AB = false, APROVOU = null
 const localISO = d => `${ymd(d)}T${hhmm(d)}`
 const proximaHora = () => { const [h, m] = store.get('hora', '09:00').split(':').map(Number), d = new Date(); d.setHours(h, m, 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1); return d }
 const TIPO = { dailyui: 'Daily UI', noticias: 'Carrossel', series: 'Série', avulsos: 'Avulso' }
@@ -719,6 +788,7 @@ const CONTA = { pendente: i => !i.published && !i.approved && !i.rascunho, pront
 const visiveis = () => FILA.filter(CONTA[FILTRO])
 async function carregarFila() {
   try { [FILA] = await Promise.all([api('/api/queue'), ST ? null : status()]) } catch (e) { return falha(e) }
+  if (APROVOU) { const k = visiveis().findIndex(x => chaveIt(x) === APROVOU); if (k >= 0) foco = k }   // o post recém-aprovado fica selecionado
   desenharFila(); atualizarHumor(); contarFila()
 }
 function atualizarHumor() {
@@ -778,7 +848,7 @@ function detalhe() {
        i.kind !== 'series' ? `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>` : '',
        i.approved && i.hasFile ? `<button class="btn${i.kind === 'series' || i.approved ? ' good' : ''}" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : '',
        i.kind !== 'series' || !i.published ? `<button class="btn" data-q="agendar" aria-expanded="${AG_AB}">${i.agendado ? 'Mudar horário' : 'Agendar'}</button>` : ''].join('')
-  d.innerHTML = `<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
+  d.innerHTML = `${APROVOU === chaveIt(i) && i.approved && !i.published && !i.agendado ? (() => { const q = proximoLivre(); return `<div class="fp-depois"><b>Aprovado. E agora?</b><div class="fp-depois-a"><button class="btn accent" data-q="ag-sugestao" data-quando="${q.toISOString()}">Agendar para ${esc(quandoCurto(q))}</button><button class="btn good" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora</button><button class="link" data-q="agendar">Outro horário</button></div><small>Sugestão: o próximo dia útil livre, no horário que você costuma usar.</small></div>` })() : ''}<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
     ${cartaoFeed(i, { aberto: verMais, quandoTxt: i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora' })}
     ${i.agendado && !i.published ? `<div class="fp-ag${i.approved ? '' : ' warn'}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${i.approved ? 'Sai sozinho' : 'Agendado, mas só sai se você aprovar'} · <b>${quandoCurto(i.agendado)}</b></span></div>` : ''}
     <div class="fp-actions">${acoes}${i.file && (!i.pasta || ST?.desktop) ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">${i.pasta ? 'Abrir a pasta' : 'Abrir o arquivo'}</a>` : ''}</div>
@@ -790,6 +860,7 @@ async function acao(q) {
   if (q === 'mais') { verMais = !verMais; return detalhe() }
   if (q === 'editar') return abrirEditor({ id: i.id })
   if (q === 'agendar') { AG_AB = !AG_AB; Som.tique(); return detalhe() }
+  if (q === 'ag-sugestao') { const b = $('[data-q=ag-sugestao]'), d = new Date(b.dataset.quando); APROVOU = null; return agendarItem(chaveIt(i), ymd(d), hhmm(d)) }
   if (q === 'ag-salvar') { const v = $('[data-ag-quando]').value; if (!v) return pill('Escolha o dia e a hora', '', 'var(--amber)'); AG_AB = false; return agendarItem(chaveIt(i), v.slice(0, 10), v.slice(11, 16)) }
   if (q === 'ag-tirar') { AG_AB = false; return tirarDaAgenda(chaveIt(i)) }
   const item = { kind: i.kind, id: i.id }
@@ -802,6 +873,8 @@ async function acao(q) {
       era ? Som.desliga() : Som.liga()
       pill(era ? 'Aprovação desfeita' : 'Aprovado', i.title, era ? 'var(--amber)' : 'var(--green)')
       ring($(`[data-strip] .post[data-n="${foco}"] .state`))
+      APROVOU = era ? null : chaveIt(i)   // mostra o "E agora?" no lugar dos botões
+      if (!era) { FILTRO = 'pronto'; foco = 0 }
     }
     if (q === 'export') { pill('Exportando…', i.title); await api('/api/export', item); Som.tique(); pill('Exportado', i.title, 'var(--green)') }
     if (q === 'publish') {
@@ -816,7 +889,7 @@ async function acao(q) {
     await carregarFila()
   } catch (e) { falha(e) }
 }
-$('[data-strip]').addEventListener('click', e => { const p = e.target.closest('.post'); if (!p) return; foco = +p.dataset.n; verMais = false; AG_AB = false; Som.tique(); desenharFila() })
+$('[data-strip]').addEventListener('click', e => { const p = e.target.closest('.post'); if (!p) return; foco = +p.dataset.n; verMais = false; AG_AB = false; APROVOU = null; Som.tique(); desenharFila() })
 $('[data-detail]').addEventListener('click', e => { const q = e.target.closest('[data-q]')?.dataset.q; if (q) acao(q) })
 $$('[data-filter] button').forEach(b => b.addEventListener('click', () => { FILTRO = b.dataset.v; foco = 0; Som.tique(); carregarFila() }))
 
@@ -1264,7 +1337,7 @@ function desenharAnalise() {
   const a = PF_INFO.analise?.id === PF.id && PF_INFO.analise.estado === 'rodando' ? null : PF.analise, rodando = PF_INFO.analise?.estado === 'rodando' && PF_INFO.analise.id === PF.id
   $('[data-pf-analisar]').disabled = rodando
   $('[data-pf-an-nota]').hidden = !!a || rodando
-  if (rodando) { $('[data-pf-analise]').innerHTML = `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>A ${esc(PF_INFO.agente || 'sua IA')} está lendo o seu perfil e os seus links</b><small>Leva de 30 segundos a alguns minutos.</small></span></li></div>`; return }
+  if (rodando) { $('[data-pf-analise]').innerHTML = `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>${esc(PF_INFO.agente ? `A sua IA (${PF_INFO.agente})` : 'A sua IA')} está lendo o seu perfil e os seus links</b><small>Leva de 30 segundos a alguns minutos.</small></span></li></div>`; return }
   if (PF_INFO.analise?.estado === 'falhou' && PF_INFO.analise.id === PF.id) { $('[data-pf-analise]').innerHTML = `<p class="ed-erro">${esc(PF_INFO.analise.erro || 'A análise não deu certo.')}</p>`; return }
   if (!a) { $('[data-pf-analise]').innerHTML = ''; return }
   const linha = (k, rot, v) => v && (!Array.isArray(v) || v.length) ? `<div class="pf-sug"><span><small>${rot}</small><b>${esc(Array.isArray(v) ? v.join(', ') : v)}</b></span><button class="link" type="button" data-aplicar="${k}">Aplicar</button></div>` : ''
@@ -1349,7 +1422,7 @@ function desenharRede() {
   for (const [k, ops] of [['modalidade', MODALIDADES], ['senioridade', NIVEIS]]) $(`[data-rd-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${o}" class="${RD_P[k] === o ? 'on' : ''}">${o}</button>`).join('')
   $$('[data-rd-ir]').forEach(b => (b.disabled = rodando))
   $('[data-rd-sub]').textContent = RD.perfil.area ? `Sugestões para ${RD.perfil.area}${RD.perfil.objetivo ? `, com foco em: ${RD.perfil.objetivo.toLowerCase()}` : ''}. Feitas pela sua IA a partir do seu perfil.` : 'Preencha a sua área em Perfil (menu da sua conta, no alto): é dela que saem as sugestões de conexões e vagas.'
-  $('[data-rd-estado]').innerHTML = rodando ? `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>A ${esc(RD.agente || 'sua IA')} está pesquisando ${RD.estado.tipo === 'vagas' ? 'vagas' : RD.estado.tipo === 'conexoes' ? 'conexões' : 'conexões e vagas'}</b><small>Leva de 1 a 4 minutos. Os links das vagas são conferidos antes de aparecer.</small></span></li></div>`
+  $('[data-rd-estado]').innerHTML = rodando ? `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>${esc(RD.agente ? `A sua IA (${RD.agente})` : 'A sua IA')} está pesquisando ${RD.estado.tipo === 'vagas' ? 'vagas' : RD.estado.tipo === 'conexoes' ? 'conexões' : 'conexões e vagas'}</b><small>Leva de 1 a 4 minutos. Os links das vagas são conferidos antes de aparecer.</small></span></li></div>`
     : RD.estado?.estado === 'falhou' ? `<p class="ed-erro">${esc(RD.estado.erro || 'A busca não deu certo.')}</p>` : r.quando ? `<p class="fine">Última busca em ${new Date(r.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}${r.descartadas ? ` · ${r.descartadas} ${r.descartadas === 1 ? 'vaga descartada' : 'vagas descartadas'} por link quebrado` : ''}.</p>` : ''
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
   $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card"><b>${esc(c.perfil)}</b><p>${esc(c.por_que)}</p>
@@ -1411,12 +1484,14 @@ const agendaTxt = a => {
 async function carregarRotinas() {
   try { ROT = await api('/api/runs') } catch (e) { return falha(e) }
   if (!ST) await status()
-  desenharRotinas()
+  FLUXO_RUNS = ROT.runs.filter(r => r.status === 'rodando').length
+  if (!FILA.length) { try { FILA = await api('/api/queue') } catch { } }
+  desenharRotinas(); desenharFluxo()
   if (ROT.runs.some(r => r.status === 'rodando')) setTimeout(() => atual?.dataset.scene === 'rotinas' && carregarRotinas(), 4000)
 }
 function desenharRotinas() {
   const d = ROT, temDesign = d.rotinas.some(r => r.design)
-  $('[data-rot-sub]').textContent = !d.agente ? 'Conecte uma IA (menu da conta → Ajustes) para criar peças.' : `A ${d.agente} cria a peça a partir do seu perfil${d.perfil?.area ? ` (${d.perfil.area})` : ''} e para antes de publicar. Nada vai ao ar sem você aprovar.`
+  $('[data-rot-sub]').textContent = !d.agente ? 'Conecte uma IA (menu da conta → Ajustes) para criar peças.' : `A sua IA (${d.agente}) cria a peça a partir do seu perfil${d.perfil?.area ? ` (${d.perfil.area})` : ''} e para antes de publicar. Nada vai ao ar sem você aprovar.`
   const f = $('[data-rot-filtro]')
   if (temDesign && !$('[data-v=design]', f)) f.insertAdjacentHTML('beforeend', '<button data-v="design">Design</button>')
   $$('button', f).forEach(b => b.classList.toggle('on', b.dataset.v === ROT_F))
@@ -1602,7 +1677,56 @@ $('#conta-menu').addEventListener('keydown', e => {
   if (e.key === 'Escape') { e.stopPropagation(); menuConta(false); $('#conns').focus() }
 })
 // número de posts esperando você, ao lado de "Fila"
-function contarFila() { const n = FILA.filter(CONTA.pendente).length, el = $('[data-nav-n=fila]'); el.hidden = !n; el.textContent = n; el.setAttribute('aria-label', `${n} ${n === 1 ? 'post esperando' : 'posts esperando'} você`) }
+// ---------------------------------------------------------------- fluxo do post: Criar → Revisar → Agendar → No ar
+// a mesma faixa aparece em Criar, Fila e Calendário; cada etapa leva para onde aquilo se resolve
+let FLUXO_RUNS = 0
+function desenharFluxo() {
+  const mes = new Date().getMonth()
+  const n = {
+    criar: FLUXO_RUNS,
+    revisar: FILA.filter(i => !i.published && !i.approved && !i.rascunho).length,
+    agendar: FILA.filter(i => !i.published && i.approved && !i.rascunho && !i.agendado).length,
+    noar: FILA.filter(i => i.agendado && !i.published).length,
+  }
+  const pub = FILA.filter(i => i.published?.quando && new Date(i.published.quando).getMonth() === mes).length
+  const etapas = [
+    ['criar', 'Criar', FLUXO_RUNS ? `${FLUXO_RUNS} sendo ${FLUXO_RUNS === 1 ? 'criado' : 'criados'}` : 'peça um post à sua IA'],
+    ['revisar', 'Revisar', n.revisar ? `${n.revisar} ${n.revisar === 1 ? 'esperando' : 'esperando'} você` : 'nada esperando'],
+    ['agendar', 'Agendar', n.agendar ? `${n.agendar} ${n.agendar === 1 ? 'aprovado' : 'aprovados'} sem data` : 'tudo com data'],
+    ['noar', 'No ar', `${n.noar} ${n.noar === 1 ? 'agendado' : 'agendados'} · ${pub} ${pub === 1 ? 'publicado' : 'publicados'} no mês`],
+  ]
+  for (const nav of $$('[data-fluxo]')) {
+    const aqui = nav.dataset.fluxo
+    nav.innerHTML = etapas.map(([k, t, sub], i) => `${i ? '<span class="fx-seta" aria-hidden="true"></span>' : ''}<button type="button" class="fx${k === aqui ? ' on' : ''}${(k === 'revisar' && n.revisar) || (k === 'agendar' && n.agendar) ? ' tem' : ''}" data-fx="${k}"${k === aqui ? ' aria-current="step"' : ''}><span class="fx-n">${i + 1}</span><span><b>${t}</b><small>${sub}</small></span></button>`).join('')
+  }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-fx]'); if (!b) return
+  const k = b.dataset.fx; Som.tique(); voltarPara = null
+  if (k === 'criar') return cena('rotinas')
+  if (k === 'revisar') { FILTRO = 'pendente'; foco = 0; return atual?.dataset.scene === 'fila' ? carregarFila() : cena('fila') }
+  if (k === 'agendar') { FILTRO = 'pronto'; foco = 0; return atual?.dataset.scene === 'fila' ? carregarFila() : cena('fila') }
+  if (k === 'noar') return cena('calendario')
+})
+// os próximos 7 dias, em cima da fila: o calendário sem sair dela
+function desenharSemana() {
+  const el = $('[data-semana]'); if (!el) return
+  const dias = Array.from({ length: 7 }, (_, k) => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + k); return d })
+  el.innerHTML = `<span class="sm-t">Próximos 7 dias</span>` + dias.map((d, k) => {
+    const ds = ymd(d), ev = FILA.filter(i => (i.agendado && !i.published && ymd(new Date(i.agendado)) === ds) || (i.published?.quando && ymd(new Date(i.published.quando)) === ds))
+    return `<button type="button" class="sm-d${ev.length ? ' tem' : ''}${k === 0 ? ' hoje' : ''}" data-semana-dia="${ds}" title="${esc(ev.map(i => i.title).join(' · ') || 'Dia livre')}"><small>${k === 0 ? 'hoje' : DIAS_N[d.getDay()]}</small><b>${d.getDate()}</b><i>${ev.length ? ev.length + (ev.length === 1 ? ' post' : ' posts') : 'livre'}</i></button>`
+  }).join('') + '<button type="button" class="link sm-ver" data-view="calendario">Ver o calendário</button>'
+}
+$('[data-semana]')?.addEventListener('click', e => { const b = e.target.closest('[data-semana-dia]'); if (!b) return; CAL.dia = b.dataset.semanaDia; const d = new Date(CAL.dia + 'T12:00'); CAL.ano = d.getFullYear(); CAL.mes = d.getMonth(); voltarPara = null; cena('calendario') })
+// próximo horário livre: o próximo dia útil sem post marcado, no horário de sempre
+function proximoLivre() {
+  const [hh, mm] = store.get('hora', '09:00').split(':').map(Number)
+  const ocupado = new Set(FILA.filter(i => i.agendado && !i.published).map(i => ymd(new Date(i.agendado))))
+  const d = new Date(); d.setHours(hh, mm, 0, 0); if (d <= new Date()) d.setDate(d.getDate() + 1)
+  for (let k = 0; k < 60; k++) { if (![0, 6].includes(d.getDay()) && !ocupado.has(ymd(d))) return d; d.setDate(d.getDate() + 1) }
+  return d
+}
+function contarFila() { desenharFluxo(); desenharSemana(); const n = FILA.filter(CONTA.pendente).length, el = $('[data-nav-n=fila]'); el.hidden = !n; el.textContent = n; el.setAttribute('aria-label', `${n} ${n === 1 ? 'post esperando' : 'posts esperando'} você`) }
 
 // ---------------------------------------------------------------- ajustes
 function desenharAjustes() {
