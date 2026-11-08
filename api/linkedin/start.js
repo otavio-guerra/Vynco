@@ -1,7 +1,7 @@
 'use strict'
 // /api/linkedin/start?state=<hex>&port=<porta do Vynco>  →  tela de login do LinkedIn
-const { ID, SECRET, redirect, pagina, porta } = require('./_comum.js')
-module.exports = (req, res) => {
+const { ID, SECRET, redirect, pagina, porta, seguro } = require('./_comum.js')
+module.exports = (req, res) => { seguro(res);
   const u = new URL(req.url, 'https://vynco')
   const state = u.searchParams.get('state') || '', p = porta(u.searchParams.get('port'))
   if (!/^[a-f0-9]{24,64}$/.test(state) || !p) return pagina(res, 400, 'Link inválido', 'Volte ao Vynco e clique em Continuar com LinkedIn de novo.')

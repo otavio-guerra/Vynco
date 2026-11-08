@@ -845,14 +845,14 @@ function detalhe() {
   const acoes = i.published ? `<a class="btn" href="${esc(urlOk(i.published.link))}" target="_blank" rel="noopener">Ver no LinkedIn</a>`
     : i.rascunho ? `<button class="btn accent" data-q="enviar">Enviar para aprovação</button>${editar}<button class="link soft" data-q="excluir">Excluir</button>`
     : [editar, !i.hasFile ? `<button class="btn" data-q="export">Exportar</button>` : '',
-       i.kind !== 'series' ? `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>` : '',
-       i.approved && i.hasFile ? `<button class="btn${i.kind === 'series' || i.approved ? ' good' : ''}" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : '',
-       i.kind !== 'series' || !i.published ? `<button class="btn" data-q="agendar" aria-expanded="${AG_AB}">${i.agendado ? 'Mudar horário' : 'Agendar'}</button>` : ''].join('')
+       `<button class="btn${i.approved ? '' : ' accent'}" data-q="toggle">${i.approved ? 'Desfazer aprovação' : 'Aprovar'} <kbd>A</kbd></button>`,
+       i.approved && i.hasFile ? `<button class="btn good" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora <kbd>P</kbd></button>` : '',
+       !i.published ? `<button class="btn" data-q="agendar" aria-expanded="${AG_AB}">${i.agendado ? 'Mudar horário' : 'Agendar'}</button>` : ''].join('')
   d.innerHTML = `${APROVOU === chaveIt(i) && i.approved && !i.published && !i.agendado ? (() => { const q = proximoLivre(); return `<div class="fp-depois"><b>Aprovado. E agora?</b><div class="fp-depois-a"><button class="btn accent" data-q="ag-sugestao" data-quando="${q.toISOString()}">Agendar para ${esc(quandoCurto(q))}</button><button class="btn good" data-q="publish"${passou ? ' disabled' : ''}>Publicar agora</button><button class="link" data-q="agendar">Outro horário</button></div><small>Sugestão: o próximo dia útil livre, no horário que você costuma usar.</small></div>` })() : ''}<div class="fp-label"><span>Prévia no feed</span><span>${TIPO[i.kind]} · ${FMT_TXT[i.formato] || ''}</span></div>
     ${cartaoFeed(i, { aberto: verMais, quandoTxt: i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora' })}
     ${i.agendado && !i.published ? `<div class="fp-ag${i.approved ? '' : ' warn'}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${i.approved ? 'Sai sozinho' : 'Agendado, mas só sai se você aprovar'} · <b>${quandoCurto(i.agendado)}</b></span></div>` : ''}
     <div class="fp-actions">${acoes}${i.file && (!i.pasta || ST?.desktop) ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">${i.pasta ? 'Abrir a pasta' : 'Abrir o arquivo'}</a>` : ''}</div>
-    ${AG_AB && !i.published && !i.rascunho ? `<div class="fp-agform"><label><span>Dia e hora</span><input type="datetime-local" data-ag-quando value="${i.agendado ? localISO(new Date(i.agendado)) : localISO(proximaHora())}" min="${localISO(new Date())}"></label><button class="btn sm accent" data-q="ag-salvar">${i.approved || i.kind === 'series' ? 'Agendar' : 'Aprovar e agendar'}</button>${i.agendado ? '<button class="link soft" data-q="ag-tirar">Tirar da agenda</button>' : ''}<p class="fine">O Vynco publica no horário enquanto estiver aberto. Se estiver fechado, publica assim que você abrir.</p></div>` : ''}
+    ${AG_AB && !i.published && !i.rascunho ? `<div class="fp-agform"><label><span>Dia e hora</span><input type="datetime-local" data-ag-quando value="${i.agendado ? localISO(new Date(i.agendado)) : localISO(proximaHora())}" min="${localISO(new Date())}"></label><button class="btn sm accent" data-q="ag-salvar">${i.approved ? 'Agendar' : 'Aprovar e agendar'}</button>${i.agendado ? '<button class="link soft" data-q="ag-tirar">Tirar da agenda</button>' : ''}<p class="fine">O Vynco publica no horário enquanto estiver aberto. Se estiver fechado, publica assim que você abrir.</p></div>` : ''}
     <p class="fp-note${passou ? ' bad' : ''}">${passou ? `O texto tem ${chars.toLocaleString('pt-BR')} caracteres: o LinkedIn aceita até ${LIMITE.toLocaleString('pt-BR')}. Encurte a legenda para publicar.` : `${chars.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')} caracteres`}${!i.published && !l.connected ? ' · Conecte o LinkedIn em Ajustes para publicar.' : l.connected && !i.published ? ` · sai como ${esc(l.name || '')}` : ''}</p>`
 }
 async function acao(q) {
@@ -867,7 +867,7 @@ async function acao(q) {
   try {
     if (q === 'enviar') { await api('/api/post/enviar', { id: i.id }); Som.liga(); pill('Enviado para aprovação', i.title, 'var(--amber)'); FILTRO = 'pendente' }
     if (q === 'excluir') { if (!(await confirmar('Excluir este rascunho?', `"${i.title}" vai para a lixeira do workspace (dá para recuperar).`, 'Excluir'))) return; await api('/api/post/excluir', { id: i.id }); Som.desliga(); pill('Rascunho excluído', i.title, 'var(--amber)') }
-    if (q === 'toggle' && i.kind !== 'series' && !i.published) {
+    if (q === 'toggle' && !i.published) {
       const era = i.approved
       await api(era ? '/api/unapprove' : '/api/approve', item)
       era ? Som.desliga() : Som.liga()
@@ -1607,7 +1607,7 @@ async function agendarItem(k, ds, hora) {
   let q = new Date(`${ds}T${hora}`)
   if (q < new Date()) { q = new Date(Date.now() + 36e5); q.setMinutes(0, 0, 0) }
   try {
-    if (!i.approved && i.kind !== 'series') {
+    if (!i.approved) {
       if (!(await confirmar('Aprovar e agendar?', `"${i.title}" só vai ao ar sozinho se estiver aprovado. Olhe a prévia na Fila se ainda não leu.`, 'Aprovar e agendar'))) return
       await api('/api/approve', { kind: i.kind, id: i.id })
     }

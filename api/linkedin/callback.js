@@ -1,7 +1,7 @@
 'use strict'
 // O LinkedIn volta aqui com ?code. Trocamos pelo token e devolvemos ao Vynco do usuário, em 127.0.0.1.
-const { ID, SECRET, redirect, pagina, porta } = require('./_comum.js')
-module.exports = async (req, res) => {
+const { ID, SECRET, redirect, pagina, porta, seguro } = require('./_comum.js')
+module.exports = async (req, res) => { seguro(res);
   const u = new URL(req.url, 'https://vynco')
   const [state, pp] = String(u.searchParams.get('state') || '').split('.')
   const p = porta(pp)

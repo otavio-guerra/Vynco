@@ -18,6 +18,7 @@ const IMAGEM = require('../engine/imagem/index.js')
 const PERFIS = require('../engine/perfis.js')
 const REDE = require('../engine/rede.js')
 const MODELOS = require('../engine/modelos.js')
+const APROV = require('../engine/aprovacao.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -93,8 +94,12 @@ function queue() {
   const pub = publicados(), base = f => path.basename(f || '').replace(MIDIA, '')
   const pubBy = Object.fromEntries(pub.map(p => [base(p.imagem), p]))
   const items = []
-  const add = (kind, id, title, file, cover, legenda, okFile, extra = {}) => {
-    items.push({ kind, id, title, formato: formato(file), file: file && path.relative(C.WS, file), cover: cover && path.relative(C.WS, cover), hasFile: exists(file), approved: kind === 'series' ? true : exists(okFile), published: pubBy[base(file)] || null, caption: exists(legenda) ? fs.readFileSync(legenda, 'utf8') : '', ...extra })
+  const add = (kind, id, title, file, cover, legenda, okFile, extra = {}, arquivos = null) => {
+    // o que a aprovação assina: a legenda e os arquivos que vão ao ar (um arquivo, ou as mídias da pasta)
+    const lista = arquivos || (file && file !== legenda && exists(file) && fs.statSync(file).isFile() ? [file] : [])
+    const it = { kind, id, title, formato: formato(file), file: file && path.relative(C.WS, file), cover: cover && path.relative(C.WS, cover), hasFile: exists(file), approved: !!okFile && exists(okFile) && APROV.valida(okFile, kind, id, legenda, lista), published: pubBy[base(file)] || null, caption: exists(legenda) ? fs.readFileSync(legenda, 'utf8') : '', ...extra }
+    Object.defineProperties(it, { _ok: { value: okFile }, _legenda: { value: legenda }, _arquivos: { value: lista } })
+    items.push(it)
   }
   // o GIF vai ao ar quando existe; o PNG fica de reserva
   const preferirGif = (dir, nome) => { const g = path.join(dir, 'gif', nome + '.gif'); return exists(g) ? g : path.join(dir, 'png', nome + '.png') }
@@ -112,11 +117,11 @@ function queue() {
     const tit = /^\d{4}-\d\d-\d\d-[a-z]$/.test(id) ? `Carrossel ${id.slice(-1).toUpperCase()} · ${id.slice(0, 10)}` : primeiraLinha(path.join(nt, 'legendas', f)) || id
     add('noticias', id, tit, path.join(nt, 'pdf', id + '.pdf'), path.join(nt, 'png', id, '01.png'), path.join(nt, 'legendas', f), path.join(nt, 'aprovados', id + '.ok'), { paginas: ls(path.join(nt, 'png', id)).filter(x => x.endsWith('.png')).length })
   }
-  // série própria (já aprovada pelo autor ao gerar)
+  // série própria (também precisa da sua aprovação)
   const se = C.ws('series')
   for (const f of ls(path.join(se, 'legendas')).filter(f => /^\d\d-.*\.txt$/.test(f))) {
     const id = f.replace('.txt', '')
-    add('series', id, `Série ${id.slice(0, 2)}`, preferirGif(se, id), path.join(se, 'png', id + '.png'), path.join(se, 'legendas', f), null)
+    add('series', id, `Série ${id.slice(0, 2)}`, preferirGif(se, id), path.join(se, 'png', id + '.png'), path.join(se, 'legendas', f), path.join(se, 'aprovados', id + '.ok'))
   }
   // avulsos (workspace/avulsos), em qualquer formato que a API aceita:
   //   nome.png|gif|jpg|mp4|pdf + nome.txt   → um arquivo         nome.txt sozinho  → só texto
@@ -138,7 +143,7 @@ function queue() {
     let p; try { p = PUB_LI.montar(dir) } catch { continue }   // pasta sem legenda.txt: ainda não é um post
     const meta = readJSON(path.join(dir, 'post.json'), {})
     const capa = p.arquivos.find(f => /\.(png|gif|jpe?g)$/i.test(f)) || null
-    add('avulsos', d, meta.titulo || d, dir, capa, path.join(dir, 'legenda.txt'), okAv(d), { formato: p.formato, pasta: true, rascunho: !!meta.rascunho, editor: !!meta.criado, arquivos: p.arquivos.map(f => path.relative(C.WS, f)), artigo: p.artigo || undefined })
+    add('avulsos', d, meta.titulo || d, dir, capa, path.join(dir, 'legenda.txt'), okAv(d), { formato: p.formato, pasta: true, rascunho: !!meta.rascunho, editor: !!meta.criado, arquivos: p.arquivos.map(f => path.relative(C.WS, f)), artigo: p.artigo || undefined }, [...p.arquivos, ...(exists(path.join(dir, 'link.json')) ? [path.join(dir, 'link.json')] : [])])
   }
   const ag = agenda()
   for (const it of items) { it.caracteres = it.caption.trim().length; it.agendado = (!it.published && ag[`${it.kind}:${it.id}`]) || null }
@@ -153,6 +158,7 @@ const legendaDe = it => it.kind !== 'avulsos' ? C.ws(it.kind, 'legendas', it.id 
 async function publicarItem(it) {
   if (!it || !it.hasFile) return [400, { erro: 'Arquivo do post não encontrado: exporte antes.' }]
   if (!it.approved) return [400, { erro: 'Aprove o post antes de publicar.' }]
+  if (!APROV.valida(it._ok, it.kind, it.id, it._legenda, it._arquivos, { completa: true })) return [409, { erro: 'O post mudou depois da aprovação. Olhe a prévia de novo e aprove outra vez.' }]
   if (it.published) return [409, { erro: 'Esse post já foi publicado.' }]
   if (!linkedinStatus().connected) return [400, { erro: 'Conecte o LinkedIn antes.' }]
   if (it.caracteres > PUB_LI.LIMITE) return [400, { erro: `O texto tem ${it.caracteres} caracteres; o LinkedIn aceita até ${PUB_LI.LIMITE}.` }]
@@ -389,10 +395,10 @@ const server = http.createServer(async (req, res) => {
       }
       // ---- fila
       case '/api/approve': case '/api/unapprove': {
-        const it = findItem(b.kind, b.id); if (!it || it.kind === 'series') return send(res, 400, { erro: 'Item não encontrado.' })
+        const it = findItem(b.kind, b.id); if (!it || !it._ok) return send(res, 400, { erro: 'Item não encontrado.' })
         if (it.rascunho && u.pathname === '/api/approve') return send(res, 400, { erro: 'Este post ainda é rascunho: envie para aprovação antes.' })
-        const ok = it.kind === 'avulsos' ? C.ws('avulsos', 'aprovados', it.id + '.ok') : path.join(C.ws(it.kind, 'aprovados'), it.id + '.ok')
-        if (u.pathname === '/api/approve') { fs.mkdirSync(path.dirname(ok), { recursive: true }); fs.writeFileSync(ok, `${new Date().toISOString()} aprovado no painel\n`) } else if (exists(ok)) fs.unlinkSync(ok)
+        const ok = it._ok
+        if (u.pathname === '/api/approve') APROV.aprovar(ok, it.kind, it.id, it._legenda, it._arquivos); else if (exists(ok)) fs.unlinkSync(ok)
         return send(res, 200, { ok: true })
       }
       case '/api/publish': { const [code, r] = await publicarItem(findItem(b.kind, b.id)); return send(res, code, r) }

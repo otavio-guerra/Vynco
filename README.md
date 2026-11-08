@@ -3,7 +3,7 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.6.2%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.7.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
@@ -164,17 +164,34 @@ Como o app funciona por dentro:
 O `Vynco.exe` portátil (`npm run exe`) continua existindo, para quem prefere não instalar.
 
 ## Segurança
-- O app escuta só em `127.0.0.1` e toda ação exige um token novo a cada vez que ele sobe. Assim, um site aberto no navegador não consegue agir por você.
-- O painel só responde a quem chama pelo endereço local exato (`127.0.0.1:<porta>` ou `localhost:<porta>`). Isso barra o "DNS rebinding", em que um site aponta o próprio domínio para o seu computador para ler o painel.
-- **Nada de moldura de outro site:** o painel manda `X-Frame-Options: DENY` e uma CSP (`frame-ancestors 'none'`). Assim, nenhum site consegue carregar o Vynco escondido num quadro para fazer você clicar em "Publicar". A CSP também só deixa rodar os arquivos do próprio Vynco e conversar com ele mesmo: se um texto vindo da IA ou da web tentar virar código, ele não roda nem manda dados para fora.
-- **Arquivos do workspace** (`/files/`) só abrem para o próprio painel (`Cross-Origin-Resource-Policy` e `Sec-Fetch-Site`), nunca dentro de outro site, e nunca fora da pasta `workspace`.
-- **Links que vêm da IA:** o painel só aceita `http` e `https`. Na aba Rede, antes de conferir o link de uma vaga, o Vynco recusa endereços da rede de casa, do roteador ou deste computador, inclusive quando um site redireciona para eles.
-- **Cofre de segredos** (`engine/segredos.js`): o token e as chaves do LinkedIn ficam em `config/segredos.dat`, cifrado com a DPAPI do Windows, que só o seu usuário, neste computador, consegue abrir. Os arquivos antigos em texto puro são migrados e apagados sozinhos na primeira vez. O app nunca devolve segredos para a tela.
-- No login de um clique, o token volta da ponte só para `127.0.0.1`, com um código de verificação (`state`) que expira em 10 minutos; o Vynco confere o token com o LinkedIn antes de salvar.
-- **A IA não publica e não abre o cofre.** Nas rotinas, ela só pode ler, pesquisar, usar o Desigma, escrever em `engine/dailyui/dias` e `engine/noticias/pautas` e rodar os scripts das rotinas (`SCRIPTS` em `engine/agentes.js`). Ler `config/`, rodar `node -e`, PowerShell ou o script de publicação fica bloqueado.
-- **Caixa de permissões** (`engine/caixa.js`): o código que a IA escreve (um dia do Daily UI, uma pauta) roda dentro do modelo de permissões do Node, sem abrir processos, sem rede e lendo só o motor, as imagens e a configuração. Se uma página da web induzir a IA a escrever algo malicioso, esse código não consegue rodar programas, abrir o cofre nem publicar. Precisa do Node 22.13 ou mais novo (no Node 25+ a rede também fica bloqueada).
-- O Claude tem o isolamento mais forte (a lista fechada impede editar o resto do motor). As outras IAs podem editar qualquer arquivo do projeto; para elas a caixa protege o código das rotinas, mas uma IA mal-intencionada poderia desligá-la editando o motor.
-- O token do LinkedIn vence em 60 dias e não renova sozinho (a renovação automática é só para parceiros aprovados pelo LinkedIn). O app avisa uma semana antes, e reconectar leva um clique.
+> O Vynco está em beta test. As proteções abaixo foram revisadas na versão 0.7.0. Achou um problema de segurança? Veja como avisar em [SECURITY.md](SECURITY.md).
+
+**Nada vai ao ar sem você**
+- **Aprovação assinada** (`engine/aprovacao.js`): ao aprovar, o Vynco grava a "impressão" do post (SHA-256 da legenda e de cada arquivo) e uma assinatura HMAC feita com uma chave que fica só no cofre. Só conta como aprovado, e só é publicado, o post cuja assinatura confere e que não mudou desde a aprovação. Antes de publicar (na hora ou pela agenda), o Vynco confere o SHA-256 de todos os arquivos de novo. Assim, uma IA induzida por uma página da web não consegue se autoaprovar, e um post mexido depois da aprovação volta a esperar você. Isso vale para todos os tipos, inclusive a série.
+- **A agenda** só publica o que passou nessa conferência. Se o post não estiver aprovado na hora, ele sai da agenda e o app avisa.
+
+**O app no seu computador**
+- O painel escuta só em `127.0.0.1` e toda ação exige um token novo a cada vez que o app abre. Um site aberto no navegador não consegue agir por você.
+- O painel só responde ao endereço local exato (`127.0.0.1:<porta>` ou `localhost:<porta>`). Isso barra o "DNS rebinding", em que um site aponta o próprio domínio para o seu computador.
+- **Nada de moldura de outro site:** `X-Frame-Options: DENY` e uma CSP com `frame-ancestors 'none'`. Nenhum site consegue carregar o Vynco escondido num quadro para fazer você clicar em "Publicar". A CSP também só deixa rodar os arquivos do próprio Vynco e falar com ele mesmo.
+- **Arquivos do workspace** (`/files/`) só abrem para o próprio painel (`Cross-Origin-Resource-Policy` e `Sec-Fetch-Site`) e nunca fora da pasta `workspace`.
+- **Versão desktop:** a janela não tem acesso às funções do sistema (só a permissão `core:default` do Tauri); tudo passa pelo painel local, com as mesmas proteções.
+
+**Segredos**
+- **Cofre** (`engine/segredos.js`): o token e as chaves do LinkedIn, a chave do Magnific e a chave das aprovações ficam em `config/segredos.dat`, cifrado com a DPAPI do Windows. Só o seu usuário, neste computador, consegue abrir. O app nunca devolve segredos para a tela, e o campo da chave é limpo assim que ela é salva.
+- No login de um clique, o token volta da ponte só para `127.0.0.1`, num fragmento (`#`) que não passa por servidor nenhum, com um código de verificação (`state`) que expira em 10 minutos. O Vynco confere o token com o LinkedIn antes de salvar.
+- **A ponte na Vercel** guarda só o Client Secret do app do Vynco e responde com `X-Frame-Options`, `Referrer-Policy: no-referrer` (o endereço de volta leva o código do login) e uma CSP sem scripts.
+- O repositório e o histórico do git foram conferidos: nenhuma chave, token ou arquivo pessoal publicado.
+
+**A sua IA**
+- **Ela não publica e não abre o cofre.** Nas rotinas, ela só pode ler, pesquisar, usar o Desigma, escrever em `engine/dailyui/dias`, `engine/noticias/pautas` e `workspace/avulsos`, e rodar os scripts das rotinas (`SCRIPTS` em `engine/agentes.js`). Ler `config/`, rodar `node -e`, PowerShell ou o script de publicação fica bloqueado. Mesmo escrevendo em `workspace/avulsos`, ela não consegue aprovar nada (veja a aprovação assinada).
+- **Caixa de permissões** (`engine/caixa.js`): o código que a IA escreve (um dia do Daily UI, uma pauta) roda dentro do modelo de permissões do Node, sem abrir processos, sem rede e lendo só o motor, as imagens e a configuração. Precisa do Node 22.13 ou mais novo (no Node 25+ a rede também fica bloqueada).
+- **Análises só de leitura:** a análise do perfil e a busca da Rede rodam numa pasta vazia, só com leitura e pesquisa na web. O que a IA sugere só muda o seu perfil quando você clica em "Aplicar".
+- **Links que vêm da IA:** o painel só aceita `http` e `https`. Na Rede, antes de conferir o link de uma vaga, o Vynco recusa endereços da rede de casa, do roteador ou deste computador, inclusive quando um site redireciona para eles.
+- **Limite conhecido:** o Claude tem o isolamento mais forte (a lista fechada impede editar o resto do motor). As outras IAs podem editar qualquer arquivo do projeto; para elas, a aprovação assinada e a caixa continuam valendo, mas uma IA mal-intencionada poderia, em tese, mexer no próprio motor. Use o Claude se puder, e o OmniRoute com cuidado (os modelos são de terceiros).
+
+**LinkedIn**
+- O token vence em 60 dias e não renova sozinho (a renovação automática é só para parceiros aprovados pelo LinkedIn). O app avisa uma semana antes, e reconectar leva um clique.
 - Sem a permissão restrita `r_member_social`, a API não deixa ler os próprios posts. Por isso o histórico fica em `workspace/publicados.json`: data, formato, arquivos, identificador e link de cada post, e quem publicou.
 
 ## Marca
