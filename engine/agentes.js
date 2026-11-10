@@ -226,7 +226,8 @@ function sincronizar(id, desigma) {
   SYNC = { agente: id, nome: a.nome, passos, inicio: Date.now(), fim: null, ok: false, resumo: { skills: 0, prompts: 0, plugins: 0 } }
   const S = SYNC
   const passo = async (pid, fn) => {
-    const p = passos.find(x => x.id === pid); p.estado = 'rodando'
+    const p = passos.find(x => x.id === pid); if (S.cancelado) { p.estado = 'pulado'; return 'pulado' }
+    p.estado = 'rodando'
     const t0 = Date.now()
     try { const d = await fn(); p.estado = d && d.aviso ? 'aviso' : 'ok'; p.detalhe = (d && (d.aviso || d.detalhe)) || '' } catch (e) { p.estado = 'falhou'; p.detalhe = e.message }
     const falta = 450 - (Date.now() - t0); if (falta > 0) await new Promise(r => setTimeout(r, falta))   // dá tempo de ler cada passo
@@ -269,12 +270,15 @@ function sincronizar(id, desigma) {
       if (r.code !== 0 || !/ok/i.test(r.out)) return { aviso: 'O agente demorou ou não respondeu. As rotinas devem funcionar mesmo assim; se não, sincronize de novo.' }
       return { detalhe: 'respondeu "ok"' }
     })
+    if (S.cancelado) return   // cancelada no meio: não marca como sincronizada
     C.save({ agente: { id, sincronizado: new Date().toISOString(), desigma: S.resumo.plugins > 0 } })
     S.ok = !passos.some(p => p.estado === 'falhou'); S.fim = Date.now()
   })()
   return estadoSync()
 }
-const estadoSync = () => SYNC && { agente: SYNC.agente, nome: SYNC.nome, passos: SYNC.passos, fim: SYNC.fim, ok: SYNC.ok, resumo: SYNC.resumo }
+const estadoSync = () => SYNC && { agente: SYNC.agente, nome: SYNC.nome, passos: SYNC.passos, fim: SYNC.fim, ok: SYNC.ok, resumo: SYNC.resumo, cancelado: !!SYNC.cancelado }
+// para de esperar: o passo que está rodando termina sozinho, os próximos são pulados, e dá para sincronizar de novo na hora
+function cancelarSync() { if (!SYNC || SYNC.fim) return estadoSync(); SYNC.cancelado = true; SYNC.passos.filter(p => p.estado === 'espera').forEach(p => (p.estado = 'pulado')); SYNC.fim = Date.now(); return estadoSync() }
 
 // ---------------------------------------------------------------- rotinas (o agente escolhido, sem ninguém no teclado)
 function rotina(id, rid) {
@@ -313,4 +317,4 @@ async function perguntar(id, texto, { timeout = 240000 } = {}) {
   return r.out
 }
 
-module.exports = { AGENTES, ROTINAS, lista, status, login, job, cancelar, sincronizar, estadoSync, rotina, agendamento, achar, abrirUrl, perguntar }
+module.exports = { AGENTES, ROTINAS, lista, status, login, job, cancelar, sincronizar, estadoSync, cancelarSync, rotina, agendamento, achar, abrirUrl, perguntar }

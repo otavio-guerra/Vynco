@@ -113,6 +113,7 @@
     <p class="sub" data-in data-sync-s>Instalando o que ela precisa para trabalhar no Vynco. Leva menos de um minuto.</p>
     <ol class="steps glass" data-in data-steps aria-live="polite"></ol>
     <div class="cta" data-sync-cta hidden></div>
+    <div class="cta small" data-sync-parar hidden><button class="link soft" type="button" data-sync-cancelar>Cancelar e escolher outra IA</button></div>
   </section>
 
   <section class="scene" data-scene="estrategia" hidden>
@@ -195,6 +196,7 @@
       <div><h1>Estratégia.</h1><p class="sub">Quem você é no LinkedIn, para quem escreve, com que tom e sobre o quê. A sua IA lê isso antes de cada post.</p></div>
       <div class="head-a"><span class="ed-salvo" data-pf-salvo></span><select class="sel" data-pf-sel aria-label="Perfil em edição"></select></div>
     </div>
+    <section class="glass ed-box pf-resumo" data-in data-pf-resumo></section>
     <section class="glass ed-box pf-ritmo" data-in data-pf-ritmo></section>
     <div class="pf-grid" data-in>
       <div class="ed-col">
@@ -270,9 +272,7 @@
       <div><h1>Criar.</h1><p class="sub" data-rot-sub>Escolha um modelo e a sua IA cria a peça a partir do seu perfil. Nada vai ao ar sem você aprovar.</p></div>
     </div>
     <div class="cr-rapido" data-in>
-      <button class="cr-acao glass" data-novo-post><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13h2.5L13 5.5 10.5 3 3 10.5zM9.5 4l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><b>Escrever um post</b><small>texto, imagens, vídeo, PDF ou link, do seu jeito</small></span></button>
-      <button class="cr-acao glass" data-gerar-img><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg></span><span><b>Gerar uma imagem</b><small>com o estúdio de imagens</small></span></button>
-      <button class="cr-acao glass" data-view="calendario"><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><span><b>Ver o calendário</b><small>o que sai e quando</small></span></button>
+      <button class="cr-acao glass" data-novo-post><span class="cr-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13h2.5L13 5.5 10.5 3 3 10.5zM9.5 4l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span><b>Escrever você mesmo</b><small>texto, imagens, vídeo, PDF ou link. Para gerar imagens com IA, use Mídias.</small></span></button>
     </div>
     <div class="cr-avisos" data-in data-rot-avisos></div>
     <div class="cr-rec" data-in data-rot-rec></div>
@@ -303,23 +303,13 @@
   </section>
 
   <section class="scene view" data-scene="ajustes" hidden>
-    <div class="view-head" data-in><div><h1>Ajustes.</h1><p class="sub">Conexões, preferências e pastas.</p></div></div>
+    <div class="view-head" data-in><div><h1>Ajustes.</h1><p class="sub">Conexões, imagens e preferências. O resto fica em Avançado.</p></div></div>
     <div class="settings" data-in>
       <section class="set glass">
         <h3>Conexões</h3>
         <div class="conn-row" data-conn="linkedin"><span class="c-ic li"></span><span class="c-t"><b>LinkedIn</b><small data-conn-t></small></span><span class="c-a" data-conn-a></span></div>
         <div class="accs" data-li-contas hidden></div>
         <div class="conn-row" data-conn="agente"><span class="c-ic" data-conn-ic></span><span class="c-t"><b data-conn-n>IA</b><small data-conn-t></small></span><span class="c-a" data-conn-a></span></div>
-        <div class="conn-row" data-conn="desigma"><span class="c-ic dg">D</span><span class="c-t"><b>Desigma <small class="opt">opcional</small></b><small data-conn-t></small></span><span class="c-a" data-conn-a></span></div>
-        <details class="more" data-desigma-more><summary>Caminhos do Desigma</summary>
-          <form class="fields two" data-form="desigma" autocomplete="off">
-            <label><span>desigma.exe</span><input name="exe" spellcheck="false"></label>
-            <label><span>desigma-mcp.exe</span><input name="mcpExe" spellcheck="false"></label>
-            <label><span>Pasta que o Desigma enxerga</span><input name="workspace" spellcheck="false"></label>
-            <label><span>Projeto .desigma</span><input name="project" spellcheck="false"></label>
-            <div class="f-act"><a class="link" href="https://github.com/deepfounder-ai/desigma/releases" target="_blank" rel="noopener">Baixar o Desigma</a><button class="btn" type="submit">Salvar e sincronizar</button></div>
-          </form>
-        </details>
       </section>
       <section class="set glass" data-img-ajustes>
         <h3>Imagens com IA</h3>
@@ -340,17 +330,29 @@
         <div class="prefs">
           <div class="pref"><span>Tema</span><div class="chips" data-pref="theme"><button data-v="auto">Automático</button><button data-v="light">Claro</button><button data-v="dark">Escuro</button></div></div>
           <div class="pref"><span>Som</span><div class="chips" data-pref="sound"><button data-v="tom">Tom</button><button data-v="clique">Clique suave</button><button data-v="bipe">Bipe duplo</button><button data-v="off">Sem som</button></div></div>
+          <div class="pref"><span>Atalhos de teclado</span><button class="btn sm" type="button" data-atalhos>Ver atalhos <kbd>?</kbd></button></div>
           <div class="pref"><span>Aviso na tela</span><div class="chips" data-pref="toast"><button data-v="compacto">Compacto</button><button data-v="padrao">Padrão</button><button data-v="detalhado">Detalhado</button></div></div>
         </div>
       </section>
-      <section class="set glass">
-        <h3>Pastas e datas</h3>
+      <details class="set glass avancado" data-avancado>
+        <summary><h3>Avançado</h3><small class="soft">Desigma, pastas e datas das rotinas. Só mexa se souber o que é.</small></summary>
+        <div class="conn-row" data-conn="desigma"><span class="c-ic dg">D</span><span class="c-t"><b>Desigma <small class="opt">opcional</small></b><small data-conn-t></small></span><span class="c-a" data-conn-a></span></div>
+        <details class="more" data-desigma-more open><summary>Caminhos do Desigma</summary>
+          <form class="fields two" data-form="desigma" autocomplete="off">
+            <label><span>desigma.exe</span><input name="exe" spellcheck="false"></label>
+            <label><span>desigma-mcp.exe</span><input name="mcpExe" spellcheck="false"></label>
+            <label><span>Pasta que o Desigma enxerga</span><input name="workspace" spellcheck="false"></label>
+            <label><span>Projeto .desigma</span><input name="project" spellcheck="false"></label>
+            <div class="f-act"><a class="link" href="https://github.com/deepfounder-ai/desigma/releases" target="_blank" rel="noopener">Baixar o Desigma</a><button class="btn" type="submit">Salvar e sincronizar</button></div>
+          </form>
+        </details>
+        <h4 class="av-h">Pastas e datas</h4>
         <form class="fields two" data-form="config" autocomplete="off">
           <label><span>Pasta de imagens</span><input name="assetsDir" spellcheck="false"></label>
           <label><span>Dia 1 do Daily UI</span><input name="dailyUiStart" type="date"></label>
           <div class="f-act"><button class="btn" type="submit">Salvar</button></div>
         </form>
-      </section>
+      </details>
       <div class="cta small"><button class="link" data-restart>Ver a apresentação de novo</button></div>
     </div>
   </section>
@@ -360,6 +362,16 @@
   <li data-s="linkedin"><i></i><span>LinkedIn</span></li><li data-s="voce"><i></i><span>Você</span></li><li data-s="agente"><i></i><span>IA</span></li><li data-s="sync"><i></i><span>Sincronizar</span></li><li data-s="estrategia"><i></i><span>Estratégia</span></li>
 </ol></footer>
 
+<dialog id="atalhos"><div class="glass sheet">
+  <header class="ed-box-h"><h3>Atalhos de teclado</h3><button class="btn sm" type="button" data-close>Fechar <kbd>Esc</kbd></button></header>
+  <dl class="atalhos">
+    <dt>Em qualquer tela</dt><dd><span><kbd>?</kbd> esta lista</span><span><kbd>Esc</kbd> volta ou fecha</span></dd>
+    <dt>Revisar</dt><dd><span><kbd>A</kbd> aprova ou desfaz</span><span><kbd>P</kbd> publica agora</span><span><kbd>←</kbd> <kbd>→</kbd> anda pelos posts</span></dd>
+    <dt>Agenda</dt><dd><span><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> anda pelos dias</span><span><kbd>Enter</kbd> abre o dia</span></dd>
+    <dt>Editor e Estratégia</dt><dd><span><kbd>Ctrl</kbd> <kbd>S</kbd> salva</span></dd>
+    <dt>Entrada</dt><dd><span><kbd>1</kbd> a <kbd>9</kbd> escolhem</span><span><kbd>Enter</kbd> continua</span></dd>
+  </dl>
+</div></dialog>
 <dialog id="dlg"><form method="dialog" class="glass"><h3 id="dlg-t"></h3><p id="dlg-p"></p><div class="cta"><button class="btn" value="nao">Cancelar</button><button class="btn accent" value="sim" id="dlg-ok">Confirmar</button></div></form></dialog>
 
 <dialog id="proprio"><div class="glass sheet sheet-lg assist">

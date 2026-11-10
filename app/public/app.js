@@ -104,12 +104,13 @@ async function apiDemo(path, data) {
     case '/api/agente/job': return D.jobs[id] || {}
     case '/api/agente/cancelar': delete D.jobs[id]; return { ok: true }
     case '/api/agente/escolher': D.escolhido = id; return { ok: true }
+    case '/api/sync/cancelar': if (D.sync && !D.sync.fim) { D.sync.cancelado = true; D.sync.passos.filter(p => p.estado === 'espera').forEach(p => (p.estado = 'pulado')); D.sync.fim = Date.now() } return D.sync || {}
     case '/api/sync': {
       if (!data) return D.sync || {}
       const a = ag(id || D.escolhido); D.escolhido = a.id
       const rot = [['conta', `Conferindo a sua conta do ${a.nome}`, 'voce@exemplo.com'], ['instrucoes', 'Ensinando as regras do Vynco', a.id === 'claude' ? 'CLAUDE.md' : a.id === 'gemini' ? 'GEMINI.md' : 'AGENTS.md'], ['skills', 'Instalando 4 skills', 'vynco-daily-ui, vynco-legendas, vynco-marca, vynco-pauta-noticias'], ['prompts', 'Copiando 2 prompts das rotinas', '/vynco-daily-ui, /vynco-pauta-noticias'], ['plugins', 'Ligando o Desigma (plugin MCP)', 'desigma'], ['trava', 'Travando a publicação para o agente', `O ${a.nome} não pode rodar o script de publicação.`], ['teste', `Testando uma resposta do ${a.nome}`, 'respondeu "ok"']]
       const S = D.sync = { agente: a.id, nome: a.nome, passos: rot.map(([pid, rotulo]) => ({ id: pid, rotulo, estado: 'espera', detalhe: '' })), fim: null, ok: false, resumo: { skills: 4, prompts: 2, plugins: 1 } }
-      ;(async () => { for (let i = 0; i < rot.length; i++) { S.passos[i].estado = 'rodando'; await espera(i === 6 ? 1400 : 650); Object.assign(S.passos[i], { estado: 'ok', detalhe: rot[i][2] }) } S.ok = true; S.fim = Date.now(); D.sincronizado = true })()
+      ;(async () => { for (let i = 0; i < rot.length; i++) { if (S.cancelado) return; S.passos[i].estado = 'rodando'; await espera(i === 6 ? 1400 : 650); Object.assign(S.passos[i], { estado: 'ok', detalhe: rot[i][2] }) } S.ok = true; S.fim = Date.now(); D.sincronizado = true })()
       return S
     }
     case '/api/linkedin/connect': D.liTimer = setTimeout(() => Object.assign(D.linkedin, { connected: true, name: 'Seu Nome', expiresAt: Date.now() + 60 * 864e5 }), 2400); return { ok: true, modo: 'ponte', msg: 'Demonstração: o login é simulado.' }
@@ -241,7 +242,7 @@ aplicarTema()
 // ---------------------------------------------------------------- cenas
 const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'estrategia']
 // áreas da navegação: Estratégia (perfil, rede) · Criar (modelos, mídias, editor) · Revisar (fila) · Agenda (calendário)
-const AREA = { perfil: 'perfil', rede: 'perfil', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
+const AREA = { voce: 'perfil', perfil: 'perfil', rede: 'perfil', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
 let atual = null, voltarPara = null
 function cena(nome, { som = true } = {}) {
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
@@ -502,16 +503,24 @@ const VC_PASSOS = [
 let VC = null
 const vcPrimeiro = () => (VC.nome || '').split(' ')[0]
 const casa = (lista, txt) => lista.map(o => o[0]).filter(v => String(txt || '').toLowerCase().includes(v.toLowerCase()))
-async function entrarVoce() {
-  let p = null; try { p = (await api('/api/perfil')).perfil } catch { }
-  if (!ST) await status()
-  const l = ST?.linkedin || {}, nome = p?.nome || l.name || ''
+// editar a estratégia reabre uma pergunta da entrada e volta para Estratégia ao salvar
+let VC_EDITAR = null
+function vcDoPerfil(p, nome) {
   // o que já estiver salvo volta marcado (perfil salvo como "Especialidade · Área")
   const [esp0, area0] = String(p?.area || '').includes(' · ') ? p.area.split(' · ') : ['', p?.area || '']
   const areasSalvas = area0 ? area0.split(/,\s*/) : [], conhecidas = areasSalvas.filter(a => VC_AREAS.some(x => x[0] === a)), outras = areasSalvas.filter(a => !conhecidas.includes(a))
   const espSalvas = esp0 ? esp0.split(/,\s*/) : [], opsArea = conhecidas.flatMap(a => VC_ESPEC[a] || [])
-  VC = { perfil: p, nome, passo: 0, area: [...conhecidas, ...(outras.length ? ['Outra área'] : [])].slice(0, 3), outra: outras.join(', '), esps: espSalvas.filter(e => opsArea.includes(e)), cargo: espSalvas.filter(e => !opsArea.includes(e)).join(', '), nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '', plat: Object.fromEntries((p?.links?.outras || []).map(o => [o.rede, o.url])), mag: null }
+  const VC = { perfil: p, nome, passo: 0, area: [...conhecidas, ...(outras.length ? ['Outra área'] : [])].slice(0, 3), outra: outras.join(', '), esps: espSalvas.filter(e => opsArea.includes(e)), cargo: espSalvas.filter(e => !opsArea.includes(e)).join(', '), nivel: p?.nivel || '', objetivo: casa(VC_OBJ, p?.objetivo), publico: casa(VC_PUB, p?.publico), tom: casa(VC_TONS, p?.tom), frequencia: p?.frequencia || '', site: p?.links?.site || p?.links?.portfolio || '', plat: Object.fromEntries((p?.links?.outras || []).map(o => [o.rede, o.url])), mag: null }
   VC.plat['Site ou portfólio'] = VC.site
+  return VC
+}
+async function entrarVoce() {
+  const ed = VC_EDITAR; VC_EDITAR = null
+  let p = null; try { p = (await api('/api/perfil' + (ed?.id ? '?id=' + encodeURIComponent(ed.id) : ''))).perfil } catch { }
+  if (!ST) await status()
+  const l = ST?.linkedin || {}, nome = p?.nome || l.name || ''
+  VC = vcDoPerfil(p, nome)
+  if (ed) { VC.passo = ed.passo; VC.editando = true }
   const av = $('[data-vc-av]'); av.textContent = l.foto ? '' : inicial(nome || '?'); av.style.backgroundImage = l.foto ? `url("${l.foto}")` : ''
   $('[data-vc-li]').hidden = !l.connected
   desenharVoce()
@@ -525,11 +534,17 @@ function vcTiles(k, ops, multi) {
   return `<div class="vc-tiles${ops.length <= 3 ? ' tres' : ''}" role="${multi ? 'group' : 'radiogroup'}">${ops.map(([v, d, i]) => `<button type="button" class="vc-tile${sel(v) ? ' on' : ''}" data-vc-op="${esc(v)}" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${sel(v)}">
     <span class="vc-tic">${ico(i)}</span><b>${esc(v)}</b><small>${esc(d)}</small><span class="vc-ok" aria-hidden="true"></span></button>`).join('')}</div>`
 }
+// a frase "o que você faz em …, quer …, falando com …" com cada parte clicável
+const listaE2 = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || ''
+function vcFrase(V, parte) {
+  const areas = V.area.map(a => a === 'Outra área' ? V.outra.trim() : a).filter(Boolean), low = a => a.map(o => o.toLowerCase())
+  return `${parte(1, listaE2([...V.esps, V.cargo.trim()].filter(Boolean)), 'o que você faz')} em ${parte(0, listaE2(areas), 'sua área')}, ${parte(2, V.nivel && V.nivel.toLowerCase(), 'momento da carreira')}. Quer ${parte(3, listaE2(low(V.objetivo)), 'um objetivo')}, falando com ${parte(4, listaE2(low(V.publico)), 'o seu público')}, num tom ${parte(5, listaE2(low(V.tom)), 'do seu jeito')}, ${parte(6, V.frequencia && V.frequencia.toLowerCase(), 'na frequência que quiser')}.`
+}
 function desenharVoce() {
   const P = VC_PASSOS[VC.passo], total = VC_PASSOS.length - 1
   $('[data-vc-t]').textContent = P.t(vcPrimeiro())
   $('[data-vc-s]').textContent = P.s
-  $('[data-vc-passo]').textContent = P.k === 'fim' ? 'Revisão' : `Pergunta ${VC.passo + 1} de ${total}`
+  $('[data-vc-passo]').textContent = VC.editando ? 'Editando a estratégia' : P.k === 'fim' ? 'Revisão' : `Pergunta ${VC.passo + 1} de ${total}`
   const prog = $('[data-vc-prog]'); prog.style.setProperty('--p', (Math.min(VC.passo, total) / total * 100) + '%'); prog.setAttribute('aria-valuenow', VC.passo + 1)
   let h = ''
   if (P.k === 'area') h = vcTiles('area', VC_AREAS, true) + (VC.area.includes('Outra área') ? `<label class="vc-campo"><span>Qual é a sua área?</span><input class="vc-in" data-vc="outra" maxlength="80" placeholder="Ex.: Arquitetura, Agronegócio, Turismo" value="${esc(VC.outra)}"></label>` : '')
@@ -562,7 +577,7 @@ function desenharVoce() {
     const lista = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : a[0] || '', areaTxt = lista(vcAreas())
     h = `<div class="vc-resumo glass">
       <div class="vc-r-h"><span class="avatar" style="${$('[data-vc-av]').style.backgroundImage ? `background-image:${$('[data-vc-av]').style.backgroundImage};color:transparent` : ''}">${inicial(VC.nome || '?')}</span><span><b>${esc(VC.nome || 'Você')}</b><small>${esc([vcEspTxt(), areaTxt].filter(Boolean).join(' · ') || 'área a definir')}</small></span></div>
-      <p>${parte(1, lista([...VC.esps, VC.cargo.trim()].filter(Boolean)), 'o que você faz')} em ${parte(0, areaTxt, 'sua área')}, ${parte(2, VC.nivel && VC.nivel.toLowerCase(), 'momento da carreira')}. Quer ${parte(3, lista(VC.objetivo.map(o => o.toLowerCase())), 'um objetivo')}, falando com ${parte(4, lista(VC.publico.map(o => o.toLowerCase())), 'o seu público')}, num tom ${parte(5, lista(VC.tom.map(o => o.toLowerCase())), 'do seu jeito')}, ${parte(6, VC.frequencia && VC.frequencia.toLowerCase(), 'na frequência que quiser')}.</p>
+      <p>${vcFrase(VC, parte)}</p>
       ${(() => { const ls = vcPlats().filter(r => urlValida(vcUrl(r, VC.plat[r]))); return ls.length ? `<small class="fine">A sua IA também vai ler: ${parte(7, ls.map(r => r === 'Site ou portfólio' ? (dominio(vcUrl(r, VC.plat[r])) || 'seu site') : r).join(', '), '')}.</small>` : '' })()}
       ${VC.mag?.temChave ? '<small class="fine">Imagens com IA: Magnific conectado.</small>' : ''}</div>
       <p class="fine vc-nota">${ST?.linkedin?.connected ? 'Do LinkedIn vieram o seu nome e a sua foto. O LinkedIn não compartilha cargo nem experiência com outros apps, por isso as perguntas.' : 'O LinkedIn ainda não está conectado: tudo bem, dá para conectar depois em Ajustes.'}</p>`
@@ -572,9 +587,9 @@ function desenharVoce() {
   corpo.classList.remove('troca'); if (mudou) void corpo.offsetWidth
   corpo.innerHTML = h; if (mudou) corpo.classList.add('troca')
   const ok = $('[data-vc-ok]'), resp = vcRespondido(P.k)
-  ok.textContent = P.k === 'fim' ? 'Está ótimo, continuar' : resp ? 'Continuar' : P.k === 'imagens' ? 'Agora não' : 'Pular esta'
-  ok.classList.toggle('accent', resp)
-  $('[data-vc-voltar]').hidden = VC.passo === 0
+  ok.textContent = VC.editando ? 'Salvar e voltar' : P.k === 'fim' ? 'Está ótimo, continuar' : resp ? 'Continuar' : P.k === 'imagens' ? 'Agora não' : 'Pular esta'
+  ok.classList.toggle('accent', VC.editando || resp)
+  $('[data-vc-voltar]').hidden = VC.passo === 0 || VC.editando
 }
 function vcIr(n) { VC.passo = Math.max(0, Math.min(VC_PASSOS.length - 1, n)); Som.tique(); desenharVoce(); $('[data-vc-corpo] input, [data-vc-corpo] button')?.focus({ preventScroll: true }) }
 function vcEscolher(v, campo) {
@@ -593,7 +608,7 @@ function vcEscolher(v, campo) {
   Som.liga(); desenharVoce()
   if (!era) $('[data-vc-ok]')?.focus({ preventScroll: true })
 }
-function vcAvancar() { if (VC_PASSOS[VC.passo].k === 'fim') return salvarVoce(); vcIr(VC.passo + 1) }
+function vcAvancar() { if (VC.editando || VC_PASSOS[VC.passo].k === 'fim') return salvarVoce(); vcIr(VC.passo + 1) }
 function vcVoltar() { if (VC.passo > 0) vcIr(VC.passo - 1) }
 $('[data-scene=voce]').addEventListener('click', e => {
   const op = e.target.closest('[data-vc-op]'); if (op) return vcEscolher(op.dataset.vcOp)
@@ -604,15 +619,16 @@ $('[data-scene=voce]').addEventListener('click', e => {
   if (e.target.closest('[data-vc-voltar]')) return vcVoltar()
 })
 $('[data-scene=voce]').addEventListener('input', e => {
-  if (e.target.dataset.vcPlat) { VC.plat[e.target.dataset.vcPlat] = e.target.value; const ok = $('[data-vc-ok]'), resp = vcRespondido('links'); ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp); return }
+  if (e.target.dataset.vcPlat) { VC.plat[e.target.dataset.vcPlat] = e.target.value; const ok = $('[data-vc-ok]'), resp = vcRespondido('links'); if (!VC.editando) { ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp) }; return }
   const k = e.target.dataset.vc; if (!k) return
   VC[k] = e.target.value
-  const ok = $('[data-vc-ok]'), resp = vcRespondido(VC_PASSOS[VC.passo].k); ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp)
+  const ok = $('[data-vc-ok]'), resp = vcRespondido(VC_PASSOS[VC.passo].k); if (!VC.editando) { ok.textContent = resp ? 'Continuar' : 'Pular esta'; ok.classList.toggle('accent', resp) }
 })
 // teclado na triagem: 1 a 9 escolhem, Enter continua, Esc volta uma pergunta
 function teclaVoce(e, k) {
   if (!VC) return false
   const P = VC_PASSOS[VC.passo]
+  if (k === 'Escape' && VC.editando) { voltar(); return true }
   if (k === 'Escape' && VC.passo > 0) { vcVoltar(); return true }
   if (k === 'Enter') { e.preventDefault(); vcAvancar(); return true }
   if (/^[1-9]$/.test(k) && !e.target.closest('input')) {
@@ -640,8 +656,8 @@ async function salvarVoce() {
   if (area || VC.nivel || VC.objetivo.length || VC.publico.length || VC.tom.length || VC.frequencia || site || outras.length) {
     try {
       await api('/api/perfil/salvar', { id: p.id, perfil: { ...p, nome: p.nome || VC.nome, area: area || p.area || '', nivel: VC.nivel, objetivo: VC.objetivo.join(', '), publico: VC.publico.join(', '), tom: VC.tom.join(', '), frequencia: VC.frequencia, links: { ...(p.links || {}), site, outras } } })
-      Som.liga(); pill('Perfil começado', 'A sua IA vai usar isso em cada post.', 'var(--green)')
-      if (area || site || outras.length) store.set('analisarDepois', '1')   // quando a IA estiver pronta, ela completa o perfil
+      Som.liga(); pill(VC.editando ? 'Estratégia salva' : 'Perfil começado', 'A sua IA vai usar isso em cada post.', 'var(--green)')
+      if (!VC.editando && (area || site || outras.length)) store.set('analisarDepois', '1')   // quando a IA estiver pronta, ela completa o perfil
     } catch (e) { return falha(e) }
   }
   proximaCena()
@@ -718,6 +734,13 @@ function cancelarLogin() {
 // ---------------------------------------------------------------- 3. sincronização (tela de carregamento com cada passo)
 let SYNC_ON = false
 const EST = { espera: '', rodando: 'run', ok: 'ok', aviso: 'warn', falhou: 'bad', pulado: 'skip' }
+let SYNC_PARAR = false
+$('[data-sync-cancelar]').addEventListener('click', async () => {
+  SYNC_PARAR = true
+  try { await api('/api/sync/cancelar', {}) } catch { }
+  Som.desliga(); pill('Sincronização cancelada', 'O que já foi instalado fica. Dá para sincronizar de novo quando quiser.', 'var(--amber)')
+  SYNC_ON = false; $('[data-sync-parar]').hidden = true; voltar()
+})
 async function entrarSync() {
   const aId = AGS?.escolhido || ST?.agente?.id || (DEMO ? 'claude' : null)
   if (!aId) return cena('agente')
@@ -727,18 +750,21 @@ async function entrarSync() {
   $('[data-sync-t]').textContent = `Preparando o ${a.nome}…`
   $('[data-sync-s]').textContent = 'Instalando o que ele precisa para trabalhar no Vynco. Leva menos de um minuto.'
   $('[data-sync-cta]').hidden = true; $('[data-steps]').classList.remove('done')
-  SYNC_ON = true; $('#back').hidden = true; $('[data-sync-orb]').toggleAttribute('data-busy', true); humor('work')
+  SYNC_ON = true; SYNC_PARAR = false; $('[data-sync-parar]').hidden = false; $('#back').hidden = true; $('[data-sync-orb]').toggleAttribute('data-busy', true); humor('work')
   let s
-  try { s = await api('/api/sync', { id: a.id }) } catch (e) { if (e.status !== 409) { SYNC_ON = false; return falha(e) } s = await api('/api/sync') }
+  try { s = await api('/api/sync', { id: a.id }) } catch (e) { if (e.status !== 409) { SYNC_ON = false; $('[data-sync-parar]').hidden = true; $('#back').hidden = false; return falha(e) } s = await api('/api/sync') }
   let feitos = 0
   while (true) {
     desenharSync(s, a)
     const n = s.passos.filter(p => !['espera', 'rodando'].includes(p.estado)).length
     if (n > feitos) { for (let i = feitos; i < n; i++) setTimeout(() => Som.tique(), (i - feitos) * 80); feitos = n }
-    if (s.fim) break
+    if (s.fim || SYNC_PARAR) break
     await espera(DEMO ? 220 : 400)
+    if (SYNC_PARAR) break
     s = await api('/api/sync')
   }
+  $('[data-sync-parar]').hidden = true
+  if (SYNC_PARAR) { $('[data-sync-orb]').removeAttribute('data-busy'); $('#back').hidden = false; humor('neutral'); return }
   SYNC_ON = false; $('[data-sync-orb]').removeAttribute('data-busy'); $('#back').hidden = false
   $('[data-steps]').classList.add('done')
   const falhou = s.passos.find(p => p.estado === 'falhou'), avisos = s.passos.filter(p => p.estado === 'aviso')
@@ -843,7 +869,7 @@ function detalhe() {
     ${cartaoFeed(i, { aberto: verMais, quandoTxt: i.published ? 'publicado ' + quando(Date.parse(i.published.quando)) : 'agora' })}
     ${i.agendado && !i.published ? `<div class="fp-ag${i.approved ? '' : ' warn'}"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${i.approved ? 'Sai sozinho' : 'Agendado, mas só sai se você aprovar'} · <b>${quandoCurto(i.agendado)}</b></span></div>` : ''}
     <div class="fp-actions">${acoes}${i.file && (!i.pasta || ST?.desktop) ? `<a class="link" href="${arquivo(i.file)}" target="_blank" rel="noopener">${i.pasta ? 'Abrir a pasta' : 'Abrir o arquivo'}</a>` : ''}</div>
-    ${AG_AB && !i.published && !i.rascunho ? `<div class="fp-agform"><label><span>Dia e hora</span><input type="datetime-local" data-ag-quando value="${i.agendado ? localISO(new Date(i.agendado)) : localISO(proximaHora())}" min="${localISO(new Date())}"></label><button class="btn sm accent" data-q="ag-salvar">${i.approved ? 'Agendar' : 'Aprovar e agendar'}</button>${i.agendado ? '<button class="link soft" data-q="ag-tirar">Tirar da agenda</button>' : ''}<p class="fine">O Vynco publica no horário enquanto estiver aberto. Se estiver fechado, publica assim que você abrir.</p></div>` : ''}
+    ${AG_AB && !i.published && !i.rascunho ? `<div class="fp-agform">${(() => { const q = i.agendado ? new Date(i.agendado) : proximoLivre(); return `<label><span>Dia</span><input type="date" data-ag-dia value="${ymd(q)}" min="${hoje0()}"></label><label><span>Hora</span><input type="time" data-ag-hora value="${hhmm(q)}"></label>` })()}<button class="btn sm accent" data-q="ag-salvar">${i.approved ? 'Agendar' : 'Aprovar e agendar'}</button>${i.agendado ? '<button class="link soft" data-q="ag-tirar">Tirar da agenda</button>' : ''}<p class="fine">Sugestão: o próximo dia útil livre, no horário que você costuma usar. O Vynco publica no horário enquanto estiver aberto; se estiver fechado, publica assim que você abrir. <button class="link" data-q="ag-ver">Ver na Agenda</button></p></div>` : ''}
     <p class="fp-note${passou ? ' bad' : ''}">${passou ? `O texto tem ${chars.toLocaleString('pt-BR')} caracteres: o LinkedIn aceita até ${LIMITE.toLocaleString('pt-BR')}. Encurte a legenda para publicar.` : `${chars.toLocaleString('pt-BR')} de ${LIMITE.toLocaleString('pt-BR')} caracteres`}${!i.published && !l.connected ? ' · Conecte o LinkedIn em Ajustes para publicar.' : l.connected && !i.published ? ` · sai como ${esc(l.name || '')}` : ''}</p>`
 }
 async function acao(q) {
@@ -852,7 +878,8 @@ async function acao(q) {
   if (q === 'editar') return abrirEditor({ id: i.id })
   if (q === 'agendar') { AG_AB = !AG_AB; Som.tique(); return detalhe() }
   if (q === 'ag-sugestao') { const b = $('[data-q=ag-sugestao]'), d = new Date(b.dataset.quando); APROVOU = null; return agendarItem(chaveIt(i), ymd(d), hhmm(d)) }
-  if (q === 'ag-salvar') { const v = $('[data-ag-quando]').value; if (!v) return pill('Escolha o dia e a hora', '', 'var(--amber)'); AG_AB = false; return agendarItem(chaveIt(i), v.slice(0, 10), v.slice(11, 16)) }
+  if (q === 'ag-salvar') { const dia = $('[data-ag-dia]').value, hora = $('[data-ag-hora]').value, v = dia && hora ? dia + 'T' + hora : ''; if (!v) return pill('Escolha o dia e a hora', '', 'var(--amber)'); AG_AB = false; return agendarItem(chaveIt(i), v.slice(0, 10), v.slice(11, 16)) }
+  if (q === 'ag-ver') { const d = $('[data-ag-dia]').value || hoje0(), n = new Date(d + 'T12:00'); CAL.dia = d; CAL.ano = n.getFullYear(); CAL.mes = n.getMonth(); AG_ABA = 'mes'; AG_AB = false; voltarPara = null; return cena('calendario') }
   if (q === 'ag-tirar') { AG_AB = false; return tirarDaAgenda(chaveIt(i)) }
   const item = { kind: i.kind, id: i.id }
   try {
@@ -1264,8 +1291,8 @@ $('[data-img-ajustes]').addEventListener('click', async e => {
 
 // ---------------------------------------------------------------- perfil (quem publica, público, tom, pilares, marca)
 let PF = null, PF_INFO = null, pfSujo = false, pfAnT = null
-const OBJETIVOS = ['Conseguir clientes', 'Conseguir uma vaga', 'Ser referência na área', 'Fazer rede', 'Divulgar um produto']
-const TONS = ['Simpático', 'Direto', 'Técnico', 'Inspirador', 'Bem-humorado']
+const OBJETIVOS = VC_OBJ.map(o => o[0])   // as mesmas opções da entrada
+const TONS = VC_TONS.map(o => o[0])
 const COR_ROT = { principal: 'Principal', secundaria: 'Secundária', acento: 'Acento', fundo: 'Fundo', texto: 'Texto' }
 const COR_PADRAO = { principal: '#9246f9', secundaria: '#26eda0', acento: '#ffb547', fundo: '#1a1230', texto: '#f6f2ff' }
 const caminhoPf = (o, k) => k.split('.').reduce((a, x) => a?.[x], o)
@@ -1282,6 +1309,13 @@ async function carregarPerfil(id) {
   desenharPerfil()
   if (PF_INFO.analise?.estado === 'rodando' && PF_INFO.analise.id === PF.id) acompanharAnalise()
 }
+// a estratégia em uma frase: cada parte reabre a pergunta da entrada (os mesmos cartões)
+function desenharResumoPf() {
+  const box = $('[data-pf-resumo]'); if (!box) return
+  const V = vcDoPerfil(PF, PF.nome || ST?.linkedin?.name || '')
+  const parte = (passo, txt, vazio) => `<button type="button" class="vc-parte${txt ? '' : ' vazio'}" data-pf-ir="${passo}">${esc(txt || vazio)}</button>`
+  box.innerHTML = `<header class="ed-box-h"><h3>Sua estratégia em uma frase</h3><span class="fine">toque numa parte para mudar</span></header><p class="pf-frase">${vcFrase(V, parte)}</p>`
+}
 async function desenharRitmo() {
   const box = $('[data-pf-ritmo]'); if (!box) return
   let r = null, p = null; try { [r, p] = await Promise.all([api('/api/runs'), api('/api/perfil').then(x => x.perfil)]) } catch { return }
@@ -1291,12 +1325,16 @@ async function desenharRitmo() {
 }
 function desenharPerfil() {
   if (!PF) return
+  desenharResumoPf()
   $('[data-pf-sel]').innerHTML = PF_INFO.perfis.map(p => `<option value="${esc(p.id)}"${p.id === PF.id ? ' selected' : ''}>${esc(p.nome)}${p.id === PF_INFO.ativo ? ' (em uso)' : ''}</option>`).join('')
   $('[data-pf-sel]').hidden = PF_INFO.perfis.length < 2
   const conta = PF_INFO.perfis.find(p => p.id === PF.id)?.conta
   $('[data-pf-conta]').textContent = conta ? `LinkedIn: ${conta}` : PF.id === 'principal' ? 'sem conta ligada' : ''
   for (const el of $$('[data-pf]')) { if (document.activeElement === el) continue; const v = caminhoPf(PF, el.dataset.pf); el.value = Array.isArray(v) ? v.join(', ') : v || '' }
-  for (const [k, ops] of [['objetivo', OBJETIVOS], ['tom', TONS]]) $(`[data-pf-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${esc(o)}" class="${(PF[k] || '').split(/,\s*/).includes(o) ? 'on' : ''}">${o}</button>`).join('')
+  for (const [k, ops0] of [['objetivo', OBJETIVOS], ['tom', TONS]]) {
+    const salvos = (PF[k] || '').split(/,\s*/).filter(Boolean), ops = [...ops0, ...salvos.filter(v => !ops0.includes(v))]   // valores antigos continuam visíveis
+    $(`[data-pf-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${esc(o)}" class="${salvos.includes(o) ? 'on' : ''}">${esc(o)}</button>`).join('')
+  }
   const c = PF.marca.cores
   $('[data-pf-cores]').innerHTML = Object.keys(COR_ROT).map(k => `<label class="pf-cor"><input type="color" data-pf-cor="${k}" value="${corOk(c[k]) ? c[k] : COR_PADRAO[k]}"${corOk(c[k]) ? '' : ' class="vazia"'}><span><b>${COR_ROT[k]}</b><input data-pf-hex="${k}" value="${esc(c[k] || '')}" maxlength="7" placeholder="—" spellcheck="false"></span></label>`).join('')
   const imgs = BIB.filter(m => ['imagem', 'gif'].includes(m.tipo)).slice(0, 24)
@@ -1394,7 +1432,7 @@ $('[data-scene=perfil]').addEventListener('change', e => {
   if (t.matches('[data-pf-sel]')) { (pfSujo ? salvarPerfil({ quieto: true }) : Promise.resolve()).then(() => carregarPerfil(t.value)) }
   if (t.closest('.pf-pilar') && t.dataset.pl === 'ideias') desenharPilares()
 })
-$('[data-scene=perfil]').addEventListener('click', e => {
+$('[data-scene=perfil]').addEventListener('click', async e => {
   const t = e.target.closest('button'); if (!t) return
   if (t.closest('[data-pf-chips]')) { const k = t.closest('[data-pf-chips]').dataset.pfChips, v = t.dataset.v, atual_ = (PF[k] || '').split(/,\s*/).filter(Boolean); PF[k] = (atual_.includes(v) ? atual_.filter(x => x !== v) : [...atual_, v]).join(', '); Som.tique(); pfMudou(); return desenharPerfil() }
   if (t.dataset.pfRef) { const r = PF.marca.referencias, i = r.indexOf(t.dataset.pfRef); i >= 0 ? r.splice(i, 1) : r.length < 3 ? r.push(t.dataset.pfRef) : pill('Até 3 referências', 'Tire uma antes de escolher outra.', 'var(--amber)'); Som.tique(); pfMudou(); return desenharPerfil() }
@@ -1402,6 +1440,10 @@ $('[data-scene=perfil]').addEventListener('click', e => {
   if (t.dataset.plTirar != null) { PF.pilares.splice(+t.dataset.plTirar, 1); pfMudou(); return desenharPilares() }
   if (t.dataset.ideia) { const [k, n] = t.dataset.ideia.split(':').map(Number), ideia = PF.pilares[k].ideias[n]; return abrirEditor({ titulo: ideia.slice(0, 80), legenda: '' , dica: `Ideia do pilar "${PF.pilares[k].tema}": ${ideia}` }) }
   if (t.dataset.aplicar) return aplicarSugestao(t.dataset.aplicar)
+  if (t.matches('[data-pf-ir]')) {
+    if (pfSujo) await salvarPerfil({ quieto: true })
+    VC_EDITAR = { passo: +t.dataset.pfIr, id: PF.id }; voltarPara = 'perfil'; Som.tique(); return cena('voce')
+  }
   if (t.matches('[data-pf-analisar]')) return analisarPerfil()
   if (t.matches('[data-pf-salvar]')) return salvarPerfil()
 })
@@ -1685,7 +1727,8 @@ function desenharMenuConta() {
   if (!ST) return
   const l = ST.linkedin, a = ST.agente
   $('#conta-menu').innerHTML = `<div class="cm-h"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(l.name || 'Você')}</span><span><b>${esc(l.name || 'Você')}</b><small>${l.connected ? (venceLogo(l) ? `LinkedIn vence ${prazo(l.dias)}` : 'LinkedIn conectado') : 'LinkedIn não conectado'} · ${a ? esc(a.nome) + (a.conectado ? '' : ' (falta entrar)') : 'sem IA'}</small></span></div>
-    <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>`
+    <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>
+    <button role="menuitem" data-cm="atalhos"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h1M7 7h1M10 7h2M5 9.8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Atalhos de teclado<small>aperte ? em qualquer tela</small></span></button>`
 }
 function menuConta(abrir) {
   const m = $('#conta-menu'), b = $('#conns'), on = abrir ?? m.hidden
@@ -1693,7 +1736,7 @@ function menuConta(abrir) {
   m.hidden = !on; b.setAttribute('aria-expanded', on)
   if (on) $('button', m)?.focus()
 }
-$('#conta-menu').addEventListener('click', e => { const b = e.target.closest('[data-cm]'); if (!b) return; menuConta(false); voltarPara = null; cena(b.dataset.cm) })
+$('#conta-menu').addEventListener('click', e => { const b = e.target.closest('[data-cm]'); if (!b) return; menuConta(false); if (b.dataset.cm === 'atalhos') return $('#atalhos').showModal(); voltarPara = null; cena(b.dataset.cm) })
 document.addEventListener('click', e => { if (!e.target.closest('#conta')) menuConta(false) })
 $('#conta-menu').addEventListener('keydown', e => {
   const bs = $$('#conta-menu button'), k = bs.indexOf(document.activeElement)
@@ -1823,6 +1866,7 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-usar]')) { try { await api('/api/linkedin/usar', { id: t.dataset.usar }); Som.liga(); await status(); pill('Conta em uso', `Os posts saem como ${ST.linkedin.name}`, 'var(--green)') } catch (err) { falha(err) } return }
   if (t.matches('[data-copy]')) { try { await navigator.clipboard.writeText(t.dataset.copy); Som.tique(); pill('Copiado') } catch { pill('Não consegui copiar', 'Selecione o texto e copie à mão.', 'var(--amber)') } return }
   if (t.matches('[data-close]')) return t.closest('dialog').close()
+  if (t.matches('[data-atalhos]')) { Som.tique(); return $('#atalhos').showModal() }
   if (t.id === 'back') return voltar()
   if (t.id === 'conns') return menuConta()
   const act = t.dataset.act; if (!act) return
@@ -1863,6 +1907,7 @@ addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLower
 addEventListener('keydown', e => {
   if (atual?.dataset.scene === 'voce' && !$('dialog[open]') && !e.target.closest('textarea, select')) { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if ((k !== 'Enter' || !e.target.closest('button, a')) && teclaVoce(e, k)) return }
   if (e.target.closest('input, textarea, select') || $('dialog[open]')) return
+  if (e.key === '?') { e.preventDefault(); menuConta(false); return $('#atalhos').showModal() }
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key
   const nome = atual?.dataset.scene
   lit({ ArrowLeft: '←', ArrowRight: '→' }[k] || k, true)

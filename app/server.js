@@ -339,6 +339,7 @@ const server = http.createServer(async (req, res) => {
       case '/api/agente/login': return send(res, 200, AG.login(b.id, { console: !!b.console }))
       case '/api/agente/cancelar': AG.cancelar(b.id); return send(res, 200, { ok: true })
       case '/api/agente/escolher': { if (!AG.AGENTES[b.id]) return send(res, 400, { erro: 'agente desconhecido' }); C.save({ agente: { id: b.id } }); return send(res, 200, { ok: true }) }
+      case '/api/sync/cancelar': return send(res, 200, AG.cancelarSync() || {})
       case '/api/sync': {
         const id = b.id || agenteId(); if (!AG.AGENTES[id]) return send(res, 400, { erro: 'Escolha um agente antes.' })
         C.save({ agente: { id } })
