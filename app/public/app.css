@@ -841,3 +841,21 @@ dialog p { color: var(--soft); margin: 0 }
 .est-pilares ul { margin: 0; padding-left: 18px; display: grid; gap: 6px } .est-pilares li small { display: block; color: var(--soft); font-size: 13px }
 .est-espera { width: min(560px, 100%); margin: 0 auto; text-align: left }
 @media (max-width: 700px) { .ativ { max-width: 60vw } }
+
+/* abas internas de cada área (Estratégia, Criar, Agenda) */
+.subnav { display: flex; justify-content: center; gap: 4px; margin: -6px auto 14px; padding: 3px; width: fit-content; max-width: 100%; border-radius: 99px; background: var(--glass); border: 1px solid var(--edge); flex-wrap: wrap }
+.subnav button { font: 600 13px var(--font); color: var(--soft); background: none; border: 0; padding: 6px 14px; min-height: 32px; border-radius: 99px; cursor: pointer; transition: color .2s, background .2s; display: inline-flex; align-items: center }
+.subnav button:hover { color: var(--text) } .subnav button[aria-current] { color: var(--text); background: var(--glass-3); box-shadow: inset 0 0 0 1px var(--edge) }
+.nav-n.soft { background: var(--glass-2); color: var(--soft) }
+/* Criar: recomendados */
+.cr-rec:empty { display: none } .cr-rec { display: grid; gap: 4px; margin-bottom: 10px }
+.cr-rec .cr-head { gap: 4px; margin-bottom: 8px } .cr-rec .cr-head .fine { margin: 0; text-align: center; max-width: 620px }
+.rot-grid.rec > .rot { border-color: color-mix(in srgb, var(--accent) 45%, var(--edge)) }
+/* Estratégia: ritmo */
+.pf-ritmo { margin-bottom: 14px } .pf-ritmo-t { margin: 0; color: var(--soft); font-size: 14.5px } .pf-ritmo-t b { color: var(--text) }
+/* Agenda: no ar */
+.noar { width: min(860px, 100%); margin: 0 auto; display: grid; gap: 10px }
+.noar-nota { text-align: center; margin: 0 0 4px }
+.noar-it { display: flex; align-items: center; gap: 14px; padding: 10px 14px 10px 10px }
+.noar-capa { flex: 0 0 64px; height: 64px; border-radius: 10px; overflow: hidden; background: var(--wf-bg) } .noar-capa img, .noar-capa .wf { width: 100%; height: 100%; object-fit: cover }
+.noar-it > span { flex: 1; min-width: 0; display: grid } .noar-it b { font-size: 14.5px } .noar-it small { color: var(--faint); font-size: 12.5px }

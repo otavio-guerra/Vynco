@@ -240,6 +240,8 @@ aplicarTema()
 
 // ---------------------------------------------------------------- cenas
 const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'estrategia']
+// áreas da navegação: Estratégia (perfil, rede) · Criar (modelos, mídias, editor) · Revisar (fila) · Agenda (calendário)
+const AREA = { perfil: 'perfil', rede: 'perfil', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
 let atual = null, voltarPara = null
 function cena(nome, { som = true } = {}) {
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
@@ -255,8 +257,10 @@ function cena(nome, { som = true } = {}) {
     $$('#stepper li').forEach(li => { const i = ONB.indexOf(li.dataset.s); li.classList.toggle('on', i === ob); li.classList.toggle('done', i < ob) })
     $('#nav').hidden = naEntrada; $('#conns').hidden = naEntrada
     $('#back').hidden = !(ob > 0 || voltarPara)
-    $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === nome))
-    $('#conns').classList.toggle('on', ['perfil', 'ajustes'].includes(nome)); menuConta(false)
+    const area = AREA[nome] || nome
+    $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === area))
+    $$('.subnav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === nome))
+    $('#conns').classList.toggle('on', nome === 'ajustes'); menuConta(false)
     if (som) Som.pad()
     ENTRAR[nome]?.(); if (!ST && !ONB.includes(nome) && !['fila', 'ajustes', 'calendario'].includes(nome)) status()
   }
@@ -646,7 +650,7 @@ async function salvarVoce() {
 function analisarDepoisDaTriagem() {
   if (store.get('analisarDepois') !== '1') return
   store.set('analisarDepois', '0')
-  api('/api/perfil/analisar', {}).then(() => setTimeout(() => pill('A sua IA está completando o seu perfil', 'As sugestões aparecem em Perfil (no menu da sua conta), para você aplicar.', 'var(--violet)'), 1800)).catch(() => {})
+  api('/api/perfil/analisar', {}).then(() => setTimeout(() => pill('A sua IA está completando o seu perfil', 'As sugestões aparecem em Estratégia, para você aplicar.', 'var(--violet)'), 1800)).catch(() => {})
 }
 
 // ---------------------------------------------------------------- 2. agente de IA
@@ -768,8 +772,10 @@ const estado = i => i.published ? 'pub' : i.rascunho ? 'draft' : i.agendado && i
 const quandoCurto = q => new Date(q).toLocaleString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 const estadoTxt = i => i.published ? 'no ar' : i.rascunho ? 'rascunho' : i.aprovacaoAviso ? 'aprove de novo' : i.agendado ? (i.approved ? 'sai ' : 'agendado, falta aprovar · ') + quandoCurto(i.agendado) : i.approved ? 'aprovado' : 'esperando você'
 const CONTA = { pendente: i => !i.published && !i.approved && !i.rascunho, pronto: i => !i.published && i.approved && !i.rascunho, publicado: i => !!i.published, rascunho: i => !i.published && !!i.rascunho, todos: () => true }
+const FILTROS_REVISAR = ['pendente', 'pronto', 'rascunho']
 const visiveis = () => FILA.filter(CONTA[FILTRO])
 async function carregarFila() {
+  if (!FILTROS_REVISAR.includes(FILTRO)) FILTRO = 'pendente'   // o que já foi ao ar mora na Agenda
   try { [FILA] = await Promise.all([api('/api/queue'), ST ? null : status()]) } catch (e) { return falha(e) }
   if (APROVOU) { const k = visiveis().findIndex(x => chaveIt(x) === APROVOU); if (k >= 0) foco = k }   // o post recém-aprovado fica selecionado
   desenharFila(); atualizarHumor(); contarFila()
@@ -810,8 +816,8 @@ function cartaoFeed(i, { aberto = false, quandoTxt = 'agora' } = {}) {
 function desenharFila() {
   const v = visiveis(), pend = FILA.filter(CONTA.pendente).length, prontos = FILA.filter(CONTA.pronto).length
   $$('[data-filter] button').forEach(b => { b.classList.toggle('on', b.dataset.v === FILTRO); const n = FILA.filter(CONTA[b.dataset.v]).length; b.innerHTML = `${b.textContent.replace(/\d+$/, '').trim()}<span class="n">${n}</span>` })
-  $('[data-fila-title]').textContent = pend ? `${pend} ${pend === 1 ? 'post esperando' : 'posts esperando'} você.` : prontos ? 'Tudo aprovado.' : FILA.length ? 'Tudo no ar.' : 'Nada na fila ainda.'
-  $('[data-fila-sub]').innerHTML = pend ? 'Olhe a prévia, aperte <kbd class="sm">A</kbd> para aprovar e <kbd class="sm">P</kbd> para publicar.' : prontos ? `${prontos} ${prontos === 1 ? 'pronto' : 'prontos'} para ir ao ar quando você quiser (<kbd class="sm">P</kbd>).` : 'Peça posts novos para a sua IA na aba Criar, ou escreva um em Novo post.'
+  $('[data-fila-title]').textContent = pend ? `${pend} ${pend === 1 ? 'post esperando' : 'posts esperando'} você.` : prontos ? 'Tudo aprovado.' : FILA.length ? 'Nada para revisar.' : 'Nada para revisar ainda.'
+  $('[data-fila-sub]').innerHTML = pend ? 'Olhe a prévia, aperte <kbd class="sm">A</kbd> para aprovar e <kbd class="sm">P</kbd> para publicar.' : prontos ? `${prontos} ${prontos === 1 ? 'pronto' : 'prontos'} para ir ao ar quando você quiser (<kbd class="sm">P</kbd>).` : 'Peça um post novo para a sua IA em Criar. Quando ficar pronto, ele aparece aqui.'
   foco = Math.max(0, Math.min(foco, v.length - 1))
   $('[data-strip]').innerHTML = v.length ? v.map((i, n) => `<button class="post${n === foco ? ' focus' : ''}" data-n="${n}" aria-pressed="${n === foco}">
     <div class="shot">${capa(i)}</div>
@@ -1269,11 +1275,19 @@ const lumH = h => { const n = parseInt(h.slice(1), 16), c = [n >> 16, (n >> 8) &
 const contraste = (a, b) => { const [x, y] = [lumH(a), lumH(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
 const corOk = h => /^#[0-9a-f]{6}$/i.test(h || '')
 async function carregarPerfil(id) {
+  desenharRitmo()
   try { PF_INFO = await api('/api/perfil' + (id ? '?id=' + encodeURIComponent(id) : '')) } catch (e) { return falha(e) }
   PF = JSON.parse(JSON.stringify(PF_INFO.perfil)); pfSujo = false
   if (!BIB.length) { try { BIB = (await api('/api/midia')).itens } catch { } }
   desenharPerfil()
   if (PF_INFO.analise?.estado === 'rodando' && PF_INFO.analise.id === PF.id) acompanharAnalise()
+}
+async function desenharRitmo() {
+  const box = $('[data-pf-ritmo]'); if (!box) return
+  let r = null, p = null; try { [r, p] = await Promise.all([api('/api/runs'), api('/api/perfil').then(x => x.perfil)]) } catch { return }
+  const ativas = (r.rotinas || []).filter(m => m.agenda?.ativo)
+  box.innerHTML = `<header class="ed-box-h"><h3>Ritmo</h3><button class="link" type="button" data-view="rotinas">Ajustar em Criar</button></header>
+    <p class="pf-ritmo-t"><b>${esc(p.frequencia || 'Frequência ainda não definida')}</b>${ativas.length ? ` · ${ativas.length === 1 ? 'a sua IA cria sozinha' : 'a sua IA cria sozinha'}: ${ativas.map(m => `${esc(m.titulo)} (${esc(agendaTxt(m.agenda).replace(/^Repete /, ''))})`).join('; ')}` : ' · nenhum modelo se repete sozinho ainda. Em Criar, "Repetir" faz a sua IA criar nos dias e na hora que você escolher.'}</p>`
 }
 function desenharPerfil() {
   if (!PF) return
@@ -1458,7 +1472,7 @@ $('[data-scene=rede]').addEventListener('click', async e => {
 })
 
 // ---------------------------------------------------------------- criar: modelos de post (rotinas) para qualquer área
-let ROT = null, ROT_F = 'todos', ROT_AB = null, ROT_FORM = null
+let ROT = null, ROT_F = 'todos', ROT_AB = null, ROT_FORM = null, PERF_CR = null
 const DIAS_C = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'], DIAS_N = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 const FMT_MOD = { carrossel: 'Carrossel', texto: 'Texto', imagem: 'Imagem' }
 const agendaTxt = a => {
@@ -1467,7 +1481,7 @@ const agendaTxt = a => {
   return `Repete ${d.length === 7 ? 'todo dia' : uteis ? 'de segunda a sexta' : d.map(x => DIAS_N[x]).join(', ')} às ${a.hora || '08:00'}`
 }
 async function carregarRotinas() {
-  try { ROT = await api('/api/runs') } catch (e) { return falha(e) }
+  try { [ROT, PERF_CR] = await Promise.all([api('/api/runs'), api('/api/perfil').then(r => r.perfil).catch(() => PERF_CR)]) } catch (e) { return falha(e) }
   if (!ST) await status()
   FLUXO_RUNS = ROT.runs.filter(r => r.status === 'rodando').length
   if (!FILA.length) { try { FILA = await api('/api/queue') } catch { } }
@@ -1481,18 +1495,17 @@ function desenharRotinas() {
   if (temDesign && !$('[data-v=design]', f)) f.insertAdjacentHTML('beforeend', '<button data-v="design">Design</button>')
   $$('button', f).forEach(b => b.classList.toggle('on', b.dataset.v === ROT_F))
   $('[data-rot-avisos]').innerHTML = ''
-  const lista = d.rotinas.filter(r => ROT_F === 'todos' || (ROT_F === 'design' ? r.design : r.formato === ROT_F && !r.design))
-  $('[data-rotinas]').innerHTML = lista.map(r => {
+  const card = r => {
     const u = d.runs.find(x => x.id === r.id), rodando = u && u.status === 'rodando', ag = agendaTxt(r.agenda)
     const est = !u ? '' : rodando ? `<span class="rot-st run"><span class="spin"></span>Criando… começou às ${new Date(u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })}</span>`
-      : u.status === 'concluída' ? `<span class="rot-st ok">Pronto às ${new Date(u.fim || u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })} · <button class="link" data-view="fila">ver na Fila</button></span>`
+      : u.status === 'concluída' ? `<span class="rot-st ok">Pronto às ${new Date(u.fim || u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })} · <button class="link" data-view="fila">revisar</button></span>`
       : `<span class="rot-st bad">Não deu certo. Veja o registro abaixo e tente de novo.</span>`
     const form = ROT_AB === r.id ? `<div class="rot-form">
         <span class="fine">Em quais dias a IA cria este post?</span>
         <div class="dias" role="group" aria-label="Dias da semana">${DIAS_C.map((c, k) => `<button type="button" data-rot-dia="${k}" class="${ROT_FORM.dias.includes(k) ? 'on' : ''}" aria-pressed="${ROT_FORM.dias.includes(k)}" title="${DIAS_N[k]}">${c}</button>`).join('')}</div>
         <label class="hora"><span>às</span><input type="time" data-rot-hora value="${esc(ROT_FORM.hora)}"></label>
         <div class="row"><button class="btn sm accent" data-rot-salvar="${r.id}">Salvar</button>${r.agenda?.ativo ? `<button class="btn sm" data-rot-parar="${r.id}">Parar de repetir</button>` : ''}<button class="link soft" data-rot-fechar>Cancelar</button></div>
-        <p class="fine">Roda enquanto o Vynco estiver aberto (se estiver fechado, roda quando você abrir). A peça vai para a Fila esperando você.</p></div>` : ''
+        <p class="fine">Roda enquanto o Vynco estiver aberto (se estiver fechado, roda quando você abrir). A peça vai para Revisar esperando você.</p></div>` : ''
     return `<article class="glass rot${rodando ? ' rodando' : ''}">
       <div class="rot-art">${wire(r.formato === 'imagem' ? 'gif' : r.formato)}</div>
       <div class="rot-c">
@@ -1504,12 +1517,26 @@ function desenharRotinas() {
         ${form}
         ${u ? `<details class="more"><summary>O que a IA fez</summary><pre class="log">${esc(u.tail || '…')}</pre></details>` : ''}
       </div></article>`
-  }).join('') || `<div class="es-vazio"><p>Nenhum modelo neste filtro.</p></div>`
+  }
+  const rec = recomendados(PERF_CR || {}, d.rotinas)
+  $('[data-rot-rec]').innerHTML = rec.ids.length ? `<div class="cr-head"><h2>Recomendados para você</h2><p class="fine">${esc(rec.motivo)}</p></div><div class="rot-grid rec">${rec.ids.map(id => card(d.rotinas.find(r => r.id === id))).join('')}</div>` : ''
+  const lista = d.rotinas.filter(r => !rec.ids.includes(r.id)).filter(r => ROT_F === 'todos' || (ROT_F === 'design' ? r.design : r.formato === ROT_F && !r.design))
+  $('[data-rotinas]').innerHTML = lista.map(card).join('') || `<div class="es-vazio"><p>Nenhum modelo neste filtro.</p></div>`
+}
+// três modelos que combinam com o que a pessoa quer do LinkedIn (o mesmo critério da entrada)
+const REC_OBJ = { 'Conseguir uma vaga': ['licao', 'bastidores', 'dicas'], 'Conseguir clientes': ['mito-verdade', 'dicas', 'recomendacao'], 'Ser referência na área': ['dicas', 'opiniao', 'passo-a-passo'], 'Fazer networking': ['pergunta', 'opiniao', 'bastidores'], 'Divulgar meu negócio': ['passo-a-passo', 'bastidores', 'mito-verdade'], 'Mudar de área': ['licao', 'recomendacao', 'pergunta'], 'Aprender em público': ['licao', 'recomendacao', 'dicas'] }
+function recomendados(p, modelos) {
+  const existe = id => modelos.some(m => m.id === id), objs = Object.keys(REC_OBJ).filter(o => String(p.objetivo || '').toLowerCase().includes(o.toLowerCase()))
+  const ids = []
+  if (existe('daily-ui') && /design|ux|ui\b/i.test(p.area || '')) ids.push('daily-ui')
+  for (const o of objs) for (const id of REC_OBJ[o]) if (existe(id) && !ids.includes(id)) ids.push(id)
+  for (const id of ['dicas', 'licao', 'pergunta']) if (existe(id) && !ids.includes(id)) ids.push(id)
+  return { ids: ids.slice(0, 3), motivo: objs.length ? `Para quem quer ${listaE(objs.map(o => o.toLowerCase()))}. Cada um usa os seus pilares e o seu tom.` : 'Bons para começar. Conte o seu objetivo em Estratégia para recomendações mais certeiras.' }
 }
 async function rodar(id) {
   if (!ST) await status()
   if (!ST?.agente?.conectado) return falha(new Error('Conecte uma IA primeiro (menu da conta → Ajustes).'))
-  try { await api('/api/run', { id }); Som.liga(); pill('Criando o seu post', 'Ele aparece na Fila quando ficar pronto (de 2 a 10 minutos).', 'var(--violet)'); if (atual?.dataset.scene === 'rotinas') carregarRotinas() } catch (e) { falha(e) }
+  try { await api('/api/run', { id }); Som.liga(); pill('Criando o seu post', 'Ele aparece em Revisar quando ficar pronto (de 2 a 10 minutos).', 'var(--violet)'); if (atual?.dataset.scene === 'rotinas') carregarRotinas() } catch (e) { falha(e) }
 }
 $('[data-rot-filtro]').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ROT_F = b.dataset.v; Som.tique(); desenharRotinas() })
 $('[data-rotinas]').addEventListener('click', async e => {
@@ -1535,11 +1562,23 @@ const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julh
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const hhmm = d => d.toTimeString().slice(0, 5)
 const hoje0 = () => ymd(new Date())
-let CAL = { ano: new Date().getFullYear(), mes: new Date().getMonth(), dia: hoje0() }, CAL_ROT = []
+let CAL = { ano: new Date().getFullYear(), mes: new Date().getMonth(), dia: hoje0() }, CAL_ROT = [], AG_ABA = 'mes'
 async function carregarCalendario() {
   try { const [f, r] = await Promise.all([api('/api/queue'), api('/api/runs'), ST ? null : status()]); FILA = f; CAL_ROT = r.rotinas.filter(x => x.agenda?.ativo) } catch (e) { return falha(e) }
-  desenharCalendario(); contarFila()
+  desenharCalendario(); contarFila(); desenharAgAba()
 }
+function desenharAgAba() {
+  const noar = AG_ABA === 'noar', pub = FILA.filter(i => i.published).sort((a, b) => String(b.published.quando || '').localeCompare(String(a.published.quando || '')))
+  $$('[data-ag]').forEach(b => b.toggleAttribute('aria-current', b.dataset.ag === AG_ABA))
+  const n = $('[data-ag-n]'); n.hidden = !pub.length; n.textContent = pub.length
+  for (const sel of ['.cal-legenda', '.cal-grid', '.cal-nav']) { const el = $('[data-scene=calendario] ' + sel); if (el) el.hidden = noar }
+  const box = $('[data-ag-noar]'); box.hidden = !noar
+  if (noar) box.innerHTML = pub.length ? `<p class="fine noar-nota">O LinkedIn não deixa apps lerem curtidas, comentários ou alcance. Aqui fica o que saiu, quando e o link para ver no LinkedIn.</p>` + pub.map(i => `<article class="noar-it glass"><div class="noar-capa">${capa(i)}</div><span><b>${esc(i.title)}</b><small>${FMT_TXT[i.formato] || ''} · publicado ${i.published.quando ? new Date(i.published.quando).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' }) : ''}</small></span>${i.published.link ? `<a class="btn sm" href="${esc(urlOk(i.published.link))}" target="_blank" rel="noopener">Ver no LinkedIn ↗</a>` : ''}</article>`).join('')
+    : `<div class="empty"><h3>Nada publicado ainda.</h3><p>Quando um post for ao ar, ele aparece aqui com a data e o link.</p><div class="cta small"><button class="btn sm accent" data-view="fila">Ir para Revisar</button></div></div>`
+  if (noar) $('[data-cal-titulo]').textContent = 'No ar.'
+  $('[data-cal-sub]').textContent = noar ? (pub.length ? `${pub.length} ${pub.length === 1 ? 'post publicado' : 'posts publicados'} pelo Vynco.` : 'O que foi ao ar aparece aqui.') : $('[data-cal-sub]').textContent
+}
+$('[data-ag-abas]')?.addEventListener('click', e => { const b = e.target.closest('[data-ag]'); if (!b) return; AG_ABA = b.dataset.ag; Som.tique(); if (AG_ABA === 'mes') desenharCalendario(); desenharAgAba() })
 function eventos(ds) {
   const ev = []
   for (const i of FILA) {
@@ -1577,7 +1616,7 @@ function desenharDia() {
   const ds = CAL.dia, d = new Date(ds + 'T12:00'), ev = eventos(ds), passado = ds < hoje0(), sem = semData()
   $('[data-cal-dia]').innerHTML = `<header class="ed-box-h"><h3>${d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>${ds === hoje0() ? '<span class="tag">hoje</span>' : ''}</header>
     <div class="cal-lista">${ev.length ? ev.map(e => e.t === 'rot'
-      ? `<div class="cal-li rot"><i>${e.hora}</i><span><b>${esc(e.r.titulo)}</b><small>a sua IA cria e manda para a Fila</small></span><button class="link" data-view="rotinas">Ajustar</button></div>`
+      ? `<div class="cal-li rot"><i>${e.hora}</i><span><b>${esc(e.r.titulo)}</b><small>a sua IA cria e manda para Revisar</small></span><button class="link" data-view="rotinas">Ajustar</button></div>`
       : `<div class="cal-li ${e.t}"><i>${e.hora}</i><span><b>${esc(e.i.title)}</b><small>${e.t === 'pub' ? 'no ar' : e.i.approved ? 'agendado · sai sozinho' : 'agendado · falta aprovar'}</small></span>
           ${e.t === 'pub' ? `<a class="link" href="${esc(urlOk(e.i.published.link))}" target="_blank" rel="noopener">Ver ↗</a>` : `<span class="cal-li-a"><input type="time" value="${e.hora}" data-cal-hora="${esc(chaveIt(e.i))}" aria-label="Horário"><button class="link" data-cal-fila="${esc(chaveIt(e.i))}">Abrir</button><button class="link soft" data-cal-tirar="${esc(chaveIt(e.i))}">Tirar</button></span>`}</div>`).join('')
       : `<p class="fine">${passado ? 'Nada neste dia.' : 'Dia livre.'}</p>`}</div>
@@ -1593,7 +1632,7 @@ async function agendarItem(k, ds, hora) {
   if (q < new Date()) { q = new Date(Date.now() + 36e5); q.setMinutes(0, 0, 0) }
   try {
     if (!i.approved) {
-      if (!(await confirmar('Aprovar e agendar?', `"${i.title}" só vai ao ar sozinho se estiver aprovado. Olhe a prévia na Fila se ainda não leu.`, 'Aprovar e agendar'))) return
+      if (!(await confirmar('Aprovar e agendar?', `"${i.title}" só vai ao ar sozinho se estiver aprovado. Olhe a prévia em Revisar se ainda não leu.`, 'Aprovar e agendar'))) return
       await api('/api/approve', { kind: i.kind, id: i.id })
     }
     await api('/api/agendar', { kind: i.kind, id: i.id, quando: q.toISOString() })
@@ -1608,6 +1647,7 @@ async function tirarDaAgenda(k) {
 }
 function abrirNaFila(k) {
   const i = itemDe(k); if (!i) return
+  if (i.published) { AG_ABA = 'noar'; voltarPara = null; return cena('calendario') }
   FILTRO = CONTA.pendente(i) ? 'pendente' : CONTA.pronto(i) ? 'pronto' : CONTA.publicado(i) ? 'publicado' : 'todos'
   foco = Math.max(0, visiveis().findIndex(x => chaveIt(x) === k)); verMais = false
   voltarPara = null; cena('fila')
@@ -1640,12 +1680,11 @@ cal.addEventListener('dragend', e => { e.target.closest('[data-arrasta]')?.class
 cal.addEventListener('dragover', e => { const d = e.target.closest('[data-dia]'); if (!d || d.dataset.dia < hoje0()) return; e.preventDefault(); $$('.cal-d.alvo', cal).forEach(x => x !== d && x.classList.remove('alvo')); d.classList.add('alvo') })
 cal.addEventListener('drop', e => { const d = e.target.closest('[data-dia]'); if (!d) return; e.preventDefault(); d.classList.remove('alvo'); const k = e.dataTransfer.getData('text/plain'); if (k) agendarItem(k, d.dataset.dia) })
 
-// ---------------------------------------------------------------- menu da conta (Perfil e Ajustes moram aqui)
+// ---------------------------------------------------------------- menu da conta (Ajustes mora aqui)
 function desenharMenuConta() {
   if (!ST) return
   const l = ST.linkedin, a = ST.agente
   $('#conta-menu').innerHTML = `<div class="cm-h"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(l.name || 'Você')}</span><span><b>${esc(l.name || 'Você')}</b><small>${l.connected ? (venceLogo(l) ? `LinkedIn vence ${prazo(l.dias)}` : 'LinkedIn conectado') : 'LinkedIn não conectado'} · ${a ? esc(a.nome) + (a.conectado ? '' : ' (falta entrar)') : 'sem IA'}</small></span></div>
-    <button role="menuitem" data-cm="perfil"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5.5" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 14c.8-2.8 3-4 5.5-4s4.7 1.2 5.5 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Perfil<small>área, público, tom, pilares e identidade visual</small></span></button>
     <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>`
 }
 function menuConta(abrir) {
@@ -1869,7 +1908,7 @@ async function vigiar() {
   for (const r of a.rotinas) {
     const k = r.id + ':' + r.inicio, antes = ATIV_VISTO.runs[k]
     if (!ativPrimeira && antes === 'rodando' && r.status !== 'rodando') {
-      if (r.status === 'concluída') { Som.liga(); avisoFixo({ tipo: 'ok', titulo: `Pronto: ${r.titulo}`, texto: 'O post está na Fila esperando você revisar.', acao: { rotulo: 'Revisar agora', fn: () => { FILTRO = 'pendente'; foco = 0; voltarPara = null; cena('fila') } } }) }
+      if (r.status === 'concluída') { Som.liga(); avisoFixo({ tipo: 'ok', titulo: `Pronto: ${r.titulo}`, texto: 'O post está em Revisar esperando você.', acao: { rotulo: 'Revisar agora', fn: () => { FILTRO = 'pendente'; foco = 0; voltarPara = null; cena('fila') } } }) }
       else { Som.erro(); avisoFixo({ tipo: 'erro', titulo: `${r.titulo} não deu certo`, texto: 'Veja o que a IA fez e tente de novo.', acao: { rotulo: 'Ver em Criar', fn: () => { voltarPara = null; cena('rotinas') } } }) }
       if (aqui === 'fila') carregarFila(); if (aqui === 'rotinas') carregarRotinas()
     }
@@ -1879,7 +1918,7 @@ async function vigiar() {
   const an = a.analise?.estado
   if (!ativPrimeira && ATIV_VISTO.analise === 'rodando' && an && an !== 'rodando' && !['perfil', 'estrategia'].includes(aqui)) {
     an === 'pronto' ? avisoFixo({ tipo: 'ok', titulo: 'A sua IA terminou de ler o seu perfil', texto: 'Veja as sugestões e aplique o que fizer sentido.', acao: { rotulo: 'Ver sugestões', fn: () => { voltarPara = null; cena('perfil') } } })
-      : avisoFixo({ tipo: 'erro', titulo: 'A análise do perfil não deu certo', texto: a.analise.erro || 'Tente de novo em Perfil.', acao: { rotulo: 'Abrir Perfil', fn: () => { voltarPara = null; cena('perfil') } } })
+      : avisoFixo({ tipo: 'erro', titulo: 'A análise do perfil não deu certo', texto: a.analise.erro || 'Tente de novo em Estratégia.', acao: { rotulo: 'Abrir Estratégia', fn: () => { voltarPara = null; cena('perfil') } } })
   }
   ATIV_VISTO.analise = an || null
   // busca da Rede
@@ -1913,7 +1952,7 @@ function desenharAtiv() {
   el.title = 'Ver o andamento'
 }
 $('#ativ')?.addEventListener('click', e => { const ir = e.currentTarget.dataset.ir; if (ONB.includes(atual?.dataset.scene)) return; voltarPara = null; cena(ir) })
-// avisos da agenda na Calendário
+// avisos da agenda na Agenda
 function desenharCalAvisos() {
   const box = $('[data-cal-avisos]'); if (!box) return
   box.innerHTML = ATIV.avisos.slice(0, 3).map(a => `<div class="cr-aviso ${a.ok ? 'ok' : 'bad'}"><span class="dot"></span><span><b>${esc(a.titulo)}</b> · ${esc(a.texto)}</span>${a.chave && !a.ok ? `<button class="link" type="button" data-cal-fila="${esc(a.chave)}">Ver o post</button>` : a.link ? `<a class="link" href="${esc(urlOk(a.link))}" target="_blank" rel="noopener">Ver no LinkedIn ↗</a>` : ''}</div>`).join('')
@@ -1943,33 +1982,33 @@ function aplicarAnalise(P, a, chaves) {   // as mesmas regras do botão "Aplicar
 function desenharEstrategia() {
   const p = ESTR.perfil, st = ESTR.estado, a = (st?.estado === 'pronto' && st.resultado) || p.analise, rodando = st?.estado === 'rodando'
   const t = $('[data-est-t]'), s = $('[data-est-s]'), corpo = $('[data-est]'), cta = $('[data-est-cta]')
-  const fim = `<button class="btn accent lg" type="button" data-est-criar>Criar meu primeiro post</button><button class="btn lg" type="button" data-finish>Ir para a fila</button>`
+  const fim = `<button class="btn accent lg" type="button" data-est-criar>Criar meu primeiro post</button><button class="btn lg" type="button" data-finish>Ir para Revisar</button>`
   if (rodando) {
     t.innerHTML = 'Lendo o seu perfil…'
     s.textContent = `A sua IA${ESTR.agente ? ` (${ESTR.agente})` : ''} está lendo as suas respostas e os seus links para sugerir a sua estratégia. Leva de 30 segundos a alguns minutos.`
     corpo.innerHTML = `<ol class="steps glass est-espera"><li class="run"><span class="ic"></span><span><b>Entendendo a sua área e o seu público</b><small>a partir das perguntas e das plataformas que você colou</small></span></li><li><span class="ic"></span><span><b>Sugerindo tom, temas e pilares de conteúdo</b><small>nada muda no seu perfil sem você escolher</small></span></li></ol>`
-    cta.innerHTML = `<button class="link soft" type="button" data-finish>Continuar sem esperar (as sugestões ficam em Perfil)</button>`
+    cta.innerHTML = `<button class="link soft" type="button" data-finish>Continuar sem esperar (as sugestões ficam em Estratégia)</button>`
     return
   }
   if (a && (a.area || a.resumo || (a.pilares || []).length)) {
     if (!ESTR.marcados) ESTR.marcados = Object.fromEntries([...EST_CAMPOS.map(c => c[0]), 'temas', 'pilares', 'cores'].map(k => [k, true]))
     const m = ESTR.marcados, caixa = (k, rot, conteudo) => conteudo ? `<label class="est-c${m[k] ? ' on' : ''}"><input type="checkbox" data-est-k="${k}"${m[k] ? ' checked' : ''}${ESTR.usada ? ' disabled' : ''}><span class="est-h"><small>${rot}</small></span><span class="est-v">${conteudo}</span></label>` : ''
     t.innerHTML = ESTR.usada ? 'Pronto. <span class="soft">A sua IA já escreve com isso.</span>' : 'Sua estratégia.'
-    s.textContent = ESTR.usada ? 'Agora é criar. A sua IA faz o primeiro post a partir de um dos seus pilares, e ele chega na Fila para você revisar.' : 'A sua IA juntou as suas respostas e os seus links. Marque o que quer usar; dá para mudar tudo depois em Perfil.'
+    s.textContent = ESTR.usada ? 'Agora é criar. A sua IA faz o primeiro post a partir de um dos seus pilares, e ele chega em Revisar para você olhar.' : 'A sua IA juntou as suas respostas e os seus links. Marque o que quer usar; dá para mudar tudo depois em Estratégia.'
     corpo.innerHTML = `${a.resumo ? `<p class="est-resumo glass">${esc(a.resumo)}</p>` : ''}<div class="est-grade">
       ${EST_CAMPOS.map(([k, rot]) => caixa(k, rot, a[k] ? esc(Array.isArray(a[k]) ? a[k].join(', ') : a[k]) : '')).join('')}
       ${caixa('temas', 'Temas', (a.temas || []).length ? esc(a.temas.join(', ')) : '')}
       ${caixa('cores', 'Cores da sua marca', Object.values(a.cores || {}).filter(corOk).length ? `<span class="est-cores">${Object.values(a.cores).filter(corOk).map(c => `<i style="background:${c}" title="${c}"></i>`).join('')}</span>${a.estilo_visual ? `<small>${esc(a.estilo_visual)}</small>` : ''}` : '')}
     </div>
     ${(a.pilares || []).length ? `<div class="est-pilares">${caixa('pilares', 'Pilares de conteúdo', `<ul>${a.pilares.map(x => `<li><b>${esc(x.tema)}</b>${x.por_que ? ` · ${esc(x.por_que)}` : ''}${(x.ideias || [])[0] ? `<small>ideia: ${esc(x.ideias[0])}</small>` : ''}</li>`).join('')}</ul>`)}</div>` : ''}`
-    cta.innerHTML = ESTR.usada ? fim : `<button class="btn accent lg" type="button" data-est-usar>Usar esta estratégia</button><button class="link soft" type="button" data-finish>Pular, ver depois em Perfil</button>`
+    cta.innerHTML = ESTR.usada ? fim : `<button class="btn accent lg" type="button" data-est-usar>Usar esta estratégia</button><button class="link soft" type="button" data-finish>Pular, ver depois em Estratégia</button>`
     return
   }
   // sem análise (sem IA, ou deu errado): mostra o ponto de partida que a pessoa respondeu
   t.innerHTML = 'Seu ponto de partida.'
-  s.textContent = st?.estado === 'falhou' ? `A análise não deu certo agora (${st.erro || 'erro'}). Dá para pedir de novo em Perfil; a sua IA já usa o que você respondeu.` : 'Isto é o que você contou. Quando quiser, peça à sua IA para completar a estratégia em Perfil.'
+  s.textContent = st?.estado === 'falhou' ? `A análise não deu certo agora (${st.erro || 'erro'}). Dá para pedir de novo em Estratégia; a sua IA já usa o que você respondeu.` : 'Isto é o que você contou. Quando quiser, peça à sua IA para completar a estratégia em Perfil.'
   const linhas = [...EST_CAMPOS, ['nivel', 'Momento da carreira'], ['frequencia', 'Frequência']].filter(([k]) => p[k]).map(([k, rot]) => `<div class="est-c on fixo"><span class="est-h"><small>${rot}</small></span><span class="est-v">${esc(p[k])}</span></div>`).join('')
-  corpo.innerHTML = linhas ? `<div class="est-grade">${linhas}</div>` : '<p class="fine">Você pulou as perguntas. Tudo bem: dá para preencher em Perfil.</p>'
+  corpo.innerHTML = linhas ? `<div class="est-grade">${linhas}</div>` : '<p class="fine">Você pulou as perguntas. Tudo bem: dá para preencher em Estratégia.</p>'
   cta.innerHTML = fim
 }
 $('[data-scene=estrategia]')?.addEventListener('change', e => { const c = e.target.closest('[data-est-k]'); if (!c) return; ESTR.marcados[c.dataset.estK] = c.checked; Som.tique(); desenharEstrategia() })
@@ -1977,7 +2016,7 @@ $('[data-scene=estrategia]')?.addEventListener('click', async e => {
   if (e.target.closest('[data-est-usar]')) {
     const st = ESTR.estado, a = (st?.estado === 'pronto' && st.resultado) || ESTR.perfil.analise
     const chaves = Object.entries(ESTR.marcados || {}).filter(([, v]) => v).map(([k]) => k)
-    if (!chaves.length) return pill('Marque pelo menos um item', 'Ou pule e veja depois em Perfil.', 'var(--amber)')
+    if (!chaves.length) return pill('Marque pelo menos um item', 'Ou pule e veja depois em Estratégia.', 'var(--amber)')
     try {
       const P = aplicarAnalise(JSON.parse(JSON.stringify(ESTR.perfil)), a, chaves)
       ESTR.perfil = await api('/api/perfil/salvar', { id: P.id, perfil: P }); ESTR.usada = true
@@ -1985,7 +2024,18 @@ $('[data-scene=estrategia]')?.addEventListener('click', async e => {
     } catch (err) { falha(err) }
     return
   }
-  if (e.target.closest('[data-est-criar]')) { store.set('onboarded', '1'); voltarPara = null; cena('rotinas') }
+  if (e.target.closest('[data-est-criar]')) {
+    store.set('onboarded', '1'); voltarPara = null
+    if (!ST) await status()
+    if (!ST?.agente?.conectado) return cena('rotinas')
+    try {
+      const mod = (await api('/api/runs')).rotinas, id = recomendados(ESTR.perfil, mod).ids[0]
+      if (!id) return cena('rotinas')
+      await api('/api/run', { id }); Som.liga()
+      avisoFixo({ tipo: 'info', titulo: 'A sua IA começou o seu primeiro post', texto: `Modelo "${(mod.find(m => m.id === id) || {}).titulo || id}". Leva de 2 a 10 minutos; o aviso aparece quando ficar pronto.` })
+      vigiar(); cena('fila')
+    } catch (err) { falha(err); cena('rotinas') }
+  }
 })
 
 // ---------------------------------------------------------------- início
