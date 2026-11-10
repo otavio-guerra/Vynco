@@ -137,11 +137,4 @@
   const res = document.querySelector('[data-ini-resumo]')
   if (res) new MutationObserver(() => fx.contar(res)).observe(res, { childList: true })
 
-  // ---------------------------------------------------------------- inclinação leve no destaque do Início
-  document.addEventListener('pointermove', e => {
-    const h = e.target.closest && e.target.closest('.ini-hero'); if (!h) return
-    const r = h.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5
-    h.style.transform = `perspective(1200px) rotateX(${(-y * 2.2).toFixed(2)}deg) rotateY(${(x * 3).toFixed(2)}deg)`
-  }, { passive: true })
-  document.addEventListener('pointerout', e => { const h = e.target.closest && e.target.closest('.ini-hero'); if (h && !h.contains(e.relatedTarget)) h.style.transform = '' })
 })()

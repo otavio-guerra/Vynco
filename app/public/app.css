@@ -1324,3 +1324,11 @@ label .vsel { width: 100% }
 .cal-lado .ed-box { border-radius: var(--r-lg) }
 @media (max-width: 1100px) { .cal-grid { grid-template-columns: minmax(0, 1fr) } }
 .cal-legenda .cl.rot::before { background: transparent !important; border: 1.5px dashed var(--sec-criar) !important; width: 8px; height: 8px }
+
+/* luz do cursor bem mais suave; o destaque do Início não inclina nem brilha forte */
+.post::before, .ini-chip::before, .rot::before, .cr-acao::before, .midia::before, .ed-box::before { background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--area) 6%, transparent), transparent 65%) }
+.ini-hero::before { background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--area) 4%, transparent), transparent 70%) }
+.ini-hero { transform: none !important }
+.ini-hero:hover { border-color: color-mix(in srgb, var(--area) 45%, var(--edge)) }
+.ini-hero:hover .ini-hero-capa img { transform: none }
+.post:hover, .rot:hover, .cr-acao:hover, .ini-chip:hover { box-shadow: var(--e-1) }
