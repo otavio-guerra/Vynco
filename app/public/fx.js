@@ -23,8 +23,8 @@
     dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight
     cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const n = Math.round(Math.min(110, (W * H) / 16000))
-    pts = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, z: [0.35, 0.6, 1][Math.floor(Math.random() * 3)], r: 0.6 + Math.random() * 1.6, vx: (Math.random() - 0.5) * 0.12, vy: -0.05 - Math.random() * 0.18, f: Math.random() * Math.PI * 2 }))
+    const n = Math.round(Math.min(55, (W * H) / 30000))
+    pts = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, z: [0.35, 0.6, 1][Math.floor(Math.random() * 3)], r: 0.5 + Math.random() * 0.9, vx: (Math.random() - 0.5) * 0.12, vy: -0.05 - Math.random() * 0.18, f: Math.random() * Math.PI * 2 }))
     estrelas = []
   }
   let mx = 0.5, my = 0.5, smx = 0.5, smy = 0.5, t0 = performance.now(), vivo = true
@@ -42,17 +42,17 @@
       if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W } if (p.x < -10) p.x = W + 10; if (p.x > W + 10) p.x = -10
       const px = p.x + (smx - 0.5) * 40 * p.z, py = p.y + (smy - 0.5) * 28 * p.z
       // perto do mouse, a partícula acende um pouco (sem empurrar: é ambiente, não brinquedo)
-      const dx = px - mx * W, dy = py - my * H, perto = Math.max(0, 1 - Math.hypot(dx, dy) / 180)
-      const a = (claro ? 0.22 : 0.38) * (0.55 + 0.45 * Math.sin(p.f)) * (0.5 + p.z * 0.5) + perto * 0.45
-      ctx.beginPath(); ctx.arc(px, py, p.r * (0.7 + p.z * 0.5) + perto * 1.2, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(${p.z === 1 && !claro ? '244,245,250' : base.join(',')},${a.toFixed(3)})`; ctx.fill()
+      const dx = px - mx * W, dy = py - my * H, perto = Math.max(0, 1 - Math.hypot(dx, dy) / 160) * 0.35
+      const a = (claro ? 0.12 : 0.16) * (0.55 + 0.45 * Math.sin(p.f)) * (0.5 + p.z * 0.5) + perto * 0.25
+      ctx.beginPath(); ctx.arc(px, py, p.r * (0.7 + p.z * 0.4), 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${base.join(',')},${a.toFixed(3)})`; ctx.fill()
     }
     // uma estrela cadente de vez em quando (só no tema escuro)
-    if (!claro && Math.random() < 0.0016 * dt / 16 && estrelas.length < 2) estrelas.push({ x: Math.random() * W * 0.8 + W * 0.2, y: Math.random() * H * 0.35, v: 0.9 + Math.random() * 0.6, vida: 1 })
+    if (!claro && Math.random() < 0.0004 * dt / 16 && estrelas.length < 1) estrelas.push({ x: Math.random() * W * 0.8 + W * 0.2, y: Math.random() * H * 0.35, v: 0.9 + Math.random() * 0.6, vida: 1 })
     for (const s of estrelas) {
       s.x -= s.v * dt * 0.9; s.y += s.v * dt * 0.38; s.vida -= dt / 900
       const gr = ctx.createLinearGradient(s.x, s.y, s.x + 90, s.y - 38)
-      gr.addColorStop(0, `rgba(244,245,250,${Math.max(0, s.vida) * 0.7})`); gr.addColorStop(1, 'rgba(244,245,250,0)')
+      gr.addColorStop(0, `rgba(244,245,250,${Math.max(0, s.vida) * 0.35})`); gr.addColorStop(1, 'rgba(244,245,250,0)')
       ctx.strokeStyle = gr; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + 90, s.y - 38); ctx.stroke()
     }
     estrelas = estrelas.filter(s => s.vida > 0)

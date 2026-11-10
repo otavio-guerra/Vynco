@@ -252,11 +252,10 @@ let atual = null, voltarPara = null
 let RD_FOCO = 'conexoes'
 function focoRede(foco) {
   RD_FOCO = foco
-  $$('[data-rd-col]').forEach(c => { c.hidden = c.dataset.rdCol !== foco })
-  $('.rd-grid')?.classList.add('um')
+  $$('[data-rd-pag]').forEach(p => { p.hidden = p.dataset.rdPag !== foco })
   const t = $('[data-rd-t]'); if (t) t.textContent = foco === 'vagas' ? 'Vagas.' : 'Conexões.'
-  $$('[data-rd-ir]').forEach(b => { b.hidden = !['ambos', foco].includes(b.dataset.rdIr); b.classList.toggle('accent', b.dataset.rdIr === foco); if (b.dataset.rdIr === foco) b.textContent = foco === 'vagas' ? 'Buscar vagas' : 'Buscar conexões'; if (b.dataset.rdIr === 'ambos') b.textContent = 'Buscar as duas' })
   $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === foco))
+  if (RD) desenharRede()
 }
 function cena(nome, { som = true } = {}) {
   if (nome === 'conexoes' || nome === 'vagas') { focoRede(nome); nome = 'rede'; if (atual?.dataset.scene === 'rede') return }
@@ -1483,7 +1482,7 @@ $('[data-scene=perfil]').addEventListener('click', async e => {
 })
 
 // ---------------------------------------------------------------- rede: conexões e vagas (a IA pesquisa na web; convites e candidaturas são da pessoa)
-let RD = null, RD_P = { local: '', modalidade: '', senioridade: '' }, rdT = null
+let RD = null, RD_P = { local: '', modalidade: '', senioridade: '' }, rdT = null, VG_F = 'todas'
 const MODALIDADES = ['Remoto', 'Híbrido', 'Presencial'], NIVEIS = ['Júnior', 'Pleno', 'Sênior', 'Liderança']
 async function carregarRede() {
   try { RD = await api('/api/rede') } catch (e) { return falha(e) }
@@ -1496,18 +1495,29 @@ function desenharRede() {
   const r = RD.rede, rodando = RD.estado?.estado === 'rodando'
   for (const [k, ops] of [['modalidade', MODALIDADES], ['senioridade', NIVEIS]]) $(`[data-rd-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${o}" class="${RD_P[k] === o ? 'on' : ''}">${o}</button>`).join('')
   $$('[data-rd-ir]').forEach(b => (b.disabled = rodando))
-  $('[data-rd-sub]').textContent = RD.perfil.area ? `Sugestões para ${RD.perfil.area}${RD.perfil.objetivo ? `, com foco em: ${RD.perfil.objetivo.toLowerCase()}` : ''}. Feitas pela sua IA a partir do seu perfil.` : 'Preencha a sua área em Estratégia: é dela que saem as sugestões de conexões e vagas.'
+  const P = RD.perfil, obj = (P.objetivo || '').toLowerCase()
+  $('[data-rd-sub]').textContent = !P.area ? 'Preencha a sua área em Estratégia: é dela que saem as sugestões.' : RD_FOCO === 'vagas' ? `Vagas públicas recentes para ${P.area}, com o link conferido pela sua IA.` : `Pessoas que ajudam o seu objetivo${obj ? ` (${obj})` : ''}. A busca já vem pronta para o LinkedIn, com um convite no seu tom.`
   $('[data-rd-estado]').innerHTML = rodando ? `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>${esc(RD.agente ? `A sua IA (${RD.agente})` : 'A sua IA')} está pesquisando ${RD.estado.tipo === 'vagas' ? 'vagas' : RD.estado.tipo === 'conexoes' ? 'conexões' : 'conexões e vagas'}</b><small>Leva de 1 a 4 minutos. Os links das vagas são conferidos antes de aparecer.</small></span></li></div>`
     : RD.estado?.estado === 'falhou' ? `<p class="ed-erro">${esc(RD.estado.erro || 'A busca não deu certo.')}</p>` : r.quando ? `<p class="fine">Última busca em ${new Date(r.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}${r.descartadas ? ` · ${r.descartadas} ${r.descartadas === 1 ? 'vaga descartada' : 'vagas descartadas'} por link quebrado` : ''}.</p>` : ''
+  const ctx = $('[data-rd-ctx]')
+  if (ctx) {
+    const chips = (rot, v) => v ? `<div class="rd-ctx-l"><small>${rot}</small><span>${String(v).split(/,\s*/).filter(Boolean).map(x => `<i>${esc(x)}</i>`).join('')}</span></div>` : ''
+    ctx.innerHTML = `<div class="rd-ctx-c">${chips('Seu objetivo', P.objetivo)}${chips('Para quem você escreve', P.publico)}${chips('Sua área', P.area)}${!P.objetivo && !P.publico ? '<p class="fine">Conte o seu objetivo e o seu público em Estratégia: as sugestões ficam mais certeiras.</p>' : ''}</div>
+      <div class="rd-ctx-a"><button class="btn accent" data-rd-ir="conexoes"${rodando ? ' disabled' : ''}>${r.conexoes.length ? 'Sugerir de novo' : 'Sugerir conexões'}</button><button class="link" type="button" data-view="perfil">Ajustar em Estratégia</button></div>`
+  }
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
-  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card"><b>${esc(c.perfil)}</b><p>${esc(c.por_que)}</p>
-      ${c.convite ? `<div class="rd-convite"><small>Mensagem de convite</small><span>${esc(c.convite)}</span></div>` : ''}
+  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card cx-card"><header class="cx-h"><span class="cx-av" aria-hidden="true">${inicial(c.perfil)}</span><b>${esc(c.perfil)}</b></header><p>${esc(c.por_que)}</p>
+      ${c.convite ? `<details class="rd-convite"><summary><small>Convite no seu tom</small><span class="cx-cont${c.convite.length > 200 ? ' muito' : ''}">${c.convite.length}/200</span></summary><span>${esc(c.convite)}</span></details>` : ''}
       <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">Buscar no LinkedIn ↗</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">Copiar o convite</button>` : ''}</div></article>`).join('')
-    : `<div class="es-vazio"><p>Aqui aparecem os tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e uma mensagem de convite no seu tom.</p></div>`
-  $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<div class="rd-seguir"><small>Para seguir</small>${r.seguir.map(s => `<span class="rd-tag" title="${esc(s.por_que)}">${esc(s.nome)}<i>${esc(s.tipo)}</i></span>`).join('')}</div>` : ''
+    : `<div class="es-vazio glass"><h3>Nenhuma sugestão ainda</h3><p>Clique em "Sugerir conexões": a sua IA indica tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e um convite no seu tom.</p></div>`
+  $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<header class="rd-h"><h2>Para seguir</h2><span class="tag">${r.seguir.length}</span></header><div class="cx-seg-grid">${r.seguir.map(s => `<article class="cx-seg glass"><span class="cx-av sm" aria-hidden="true">${inicial(s.nome)}</span><span><b>${esc(s.nome)}</b><small>${esc(s.tipo || '')}</small>${s.por_que ? `<p>${esc(s.por_que)}</p>` : ''}</span></article>`).join('')}</div>` : ''
   $('[data-rd-nv]').textContent = r.vagas.length ? `${r.vagas.length} ${r.vagas.length === 1 ? "vaga" : "vagas"}` : ''
-  $('[data-rd-vagas]').innerHTML = (r.vagas.length ? r.vagas.map(cartaoVaga).join('')
-    : `<div class="es-vazio"><p>${r.quando ? 'A IA não achou vagas recentes com essas preferências. Tente outro local ou modalidade.' : 'Aqui aparecem vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
+  const mods = [...new Set(r.vagas.map(v => v.modalidade).filter(Boolean))]
+  if (VG_F !== 'todas' && !mods.includes(VG_F)) VG_F = 'todas'
+  $('[data-vg-filtro]').innerHTML = mods.length > 1 ? ['todas', ...mods].map(m => `<button type="button" data-vg-f="${esc(m)}" class="${VG_F === m ? 'on' : ''}">${m === 'todas' ? 'Todas' : esc(m)}<span class="n">${m === 'todas' ? r.vagas.length : r.vagas.filter(v => v.modalidade === m).length}</span></button>`).join('') : ''
+  const vs = r.vagas.filter(v => VG_F === 'todas' || v.modalidade === VG_F)
+  $('[data-rd-vagas]').innerHTML = (vs.length ? vs.map(cartaoVaga).join('')
+    : `<div class="es-vazio glass"><h3>${r.quando ? 'Nada com essas preferências' : 'Nenhuma vaga ainda'}</h3><p>${r.quando ? 'A IA não achou vagas recentes assim. Tente outro local, modalidade ou nível.' : 'Diga onde e como quer trabalhar e clique em "Buscar vagas". A sua IA traz vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
     + (r.maisVagas ? `<a class="link" href="${esc(urlOk(r.maisVagas))}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
 }
 // a vaga em duas camadas: o essencial à vista (cargo, empresa, etiquetas, por que combina) e o resto em "Ver detalhes"
@@ -1544,6 +1554,7 @@ $('[data-scene=rede]').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return
   if (b.closest('[data-rd-chips]')) { const k = b.closest('[data-rd-chips]').dataset.rdChips; RD_P[k] = RD_P[k] === b.dataset.v ? '' : b.dataset.v; Som.tique(); return desenharRede() }
   if (b.dataset.rdIr) return buscarRede(b.dataset.rdIr)
+  if (b.dataset.vgF) { VG_F = b.dataset.vgF; Som.tique(); return desenharRede() }
   if (b.dataset.rdCopia != null) { try { await navigator.clipboard.writeText(RD.rede.conexoes[+b.dataset.rdCopia].convite); Som.tique(); pill('Convite copiado', 'Cole na mensagem do convite no LinkedIn.', 'var(--green)') } catch { pill('Não consegui copiar', '', 'var(--amber)') } }
 })
 

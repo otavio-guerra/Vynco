@@ -1038,7 +1038,7 @@ body.com-lado .scene.view { padding-top: 76px }
 @keyframes deriva1 { 0% { transform: translate(0, 0) scale(1) } 50% { transform: translate(-6vw, -5vh) scale(1.08) } 100% { transform: translate(5vw, -9vh) scale(.96) } }
 @keyframes deriva2 { 0% { transform: translate(0, 0) scale(1) } 100% { transform: translate(9vw, 7vh) scale(1.12) } }
 @keyframes aurora { 0% { transform: rotate(0deg) scale(1) } 50% { transform: rotate(180deg) scale(1.15) } 100% { transform: rotate(360deg) scale(1) } }
-.fx-grade { position: absolute; inset: 0; background-image: radial-gradient(color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1.2px); background-size: 26px 26px; -webkit-mask: radial-gradient(ellipse 70% 60% at 50% 35%, #000 0%, transparent 75%); mask: radial-gradient(ellipse 70% 60% at 50% 35%, #000 0%, transparent 75%); opacity: .55 }
+.fx-grade { position: absolute; inset: 0; background-image: radial-gradient(color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1.2px); background-size: 26px 26px; -webkit-mask: radial-gradient(ellipse 70% 60% at 50% 35%, #000 0%, transparent 75%); mask: radial-gradient(ellipse 70% 60% at 50% 35%, #000 0%, transparent 75%); opacity: .55 }
 .fx-ceu { position: absolute; inset: 0 }
 .fx-vinheta { position: absolute; inset: 0; background: radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, color-mix(in srgb, var(--bg) 70%, #000) 100%); opacity: .7 }
 [data-theme=light] .fx-vinheta { opacity: .15 } [data-theme=light] .g3 { opacity: .35 }
@@ -1123,3 +1123,39 @@ body::after { content: ''; position: fixed; inset: -50%; z-index: 90; pointer-ev
 .tour.centro .tour-pop { animation: tour-in .5s var(--spring) both } @keyframes tour-in { from { opacity: 0; transform: translate(-50%, -46%) scale(.94) } }
 .tour.centro .tour-dica { justify-content: center }
 @media (prefers-reduced-motion: reduce) { .tour-mao { display: none } .tour-pulso { display: none } }
+
+/* menu lateral mais calmo: sem pulo nos ícones, indicador desliza sem mola */
+.lado button:hover svg { transform: none } .lado button svg { transition: color .2s }
+.lado-ind { transition: transform .28s var(--ease), height .2s var(--ease), opacity .2s; box-shadow: inset 0 0 0 1px var(--edge) }
+.lado-ind::before { box-shadow: none }
+.lado button .fx-onda { display: none }
+
+/* rede: páginas próprias */
+.rd-nota { text-align: center; margin: 22px auto 0; max-width: 720px }
+.rd-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px } .rd-h h2 { margin: 0; font-size: 17px }
+.rd-ctx { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px }
+.rd-ctx-c { display: flex; flex-wrap: wrap; gap: 18px 28px; min-width: 0 }
+.rd-ctx-l { display: grid; gap: 6px } .rd-ctx-l small { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint) }
+.rd-ctx-l span { display: flex; flex-wrap: wrap; gap: 6px } .rd-ctx-l i { font-style: normal; font-size: 13px; padding: 4px 10px; border-radius: 99px; background: var(--glass-2); border: 1px solid var(--edge) }
+.rd-ctx-a { display: flex; align-items: center; gap: 14px }
+.cx-grid { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 20px; align-items: start }
+.cx-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px }
+.cx-card { display: grid; gap: 10px; align-content: start }
+.cx-h { display: flex; align-items: center; gap: 10px } .cx-h b { font-size: 15px; line-height: 1.3 }
+.cx-av { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--mint) 60%, var(--brand))) }
+.cx-av.sm { flex-basis: 30px; width: 30px; height: 30px; border-radius: 10px; font-size: 13px }
+.cx-card details.rd-convite { border-radius: 10px; background: var(--glass); border: 1px solid var(--edge); padding: 8px 10px }
+.cx-card details.rd-convite summary { display: flex; justify-content: space-between; cursor: pointer; list-style: none } .cx-card details.rd-convite summary::-webkit-details-marker { display: none }
+.cx-card details.rd-convite > span { display: block; margin-top: 8px; font-size: 13.5px; color: var(--soft) }
+.cx-cont { font-size: 12px; color: var(--green) } .cx-cont.muito { color: var(--amber) }
+.cx-dicas { display: grid; gap: 10px; position: sticky; top: 80px } .cx-dicas h3 { margin: 0; font-size: 15px }
+.cx-dicas ol { margin: 0; padding-left: 18px; display: grid; gap: 10px } .cx-dicas li b { display: block; font-size: 13.5px } .cx-dicas li span { font-size: 13px; color: var(--soft) }
+.cx-dicas .fine { margin: 0 }
+.cx-seguir { margin-top: 26px } .cx-seguir:empty { display: none }
+.cx-seg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px }
+.cx-seg { display: flex; gap: 10px; padding: 12px; border-radius: 14px; border: 1px solid var(--edge) } .cx-seg b { display: block; font-size: 14px } .cx-seg small { color: var(--faint); font-size: 12px } .cx-seg p { margin: 4px 0 0; font-size: 12.5px; color: var(--soft) }
+.vg-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 22px 0 12px } .vg-barra .rd-h { margin: 0 }
+.vg-lista { display: grid; gap: 12px; max-width: 900px }
+.rd-pag .es-vazio { padding: 22px; border-radius: 16px; border: 1px dashed var(--edge-2); text-align: center } .rd-pag .es-vazio h3 { margin: 0 0 6px; font-size: 16px } .rd-pag .es-vazio p { margin: 0 auto; max-width: 520px; color: var(--soft) }
+@media (max-width: 1000px) { .cx-grid { grid-template-columns: minmax(0, 1fr) } .cx-dicas { position: static } }
+.vg-barra { max-width: 900px }

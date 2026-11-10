@@ -417,7 +417,7 @@ const server = http.createServer(async (req, res) => {
           const ativo = perfilAtivo(), id = u.searchParams.get('id') || ativo
           try { return send(res, 200, { perfil: PERFIS.carregar(id), ativo, perfis: PERFIS.lista(CONTAS.lista()), analise: PERFIS.estadoAnalise(), agente: agenteId() && AG.AGENTES[agenteId()].nome }) } catch (e) { return send(res, 400, { erro: e.message }) }
         }
-        case '/api/rede': { const id = perfilAtivo(), p = PERFIS.carregar(id); return send(res, 200, { rede: REDE.carregar(id), estado: REDE.estado(), perfil: { area: p.area, objetivo: p.objetivo, temas: p.temas }, agente: agenteId() && AG.AGENTES[agenteId()].nome }) }
+        case '/api/rede': { const id = perfilAtivo(), p = PERFIS.carregar(id); return send(res, 200, { rede: REDE.carregar(id), estado: REDE.estado(), perfil: { area: p.area, objetivo: p.objetivo, publico: p.publico, temas: p.temas }, agente: agenteId() && AG.AGENTES[agenteId()].nome }) }
         case '/api/linkedin/ponte': return send(res, 200, { pronto: await ponteOk() })
         case '/api/perfil/analise': return send(res, 200, PERFIS.estadoAnalise() || {})
         case '/api/atividade': {

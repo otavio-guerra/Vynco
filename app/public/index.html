@@ -283,20 +283,35 @@
     <div class="view-head" data-in>
       <div><h1 data-rd-t>Rede.</h1><p class="sub" data-rd-sub>Pessoas para se conectar e vagas que combinam com você, sugeridas pela sua IA a partir do seu perfil.</p></div>
     </div>
-    <section class="glass ed-box rd-prefs" data-in>
-      <div class="fields two">
-        <label><span>Onde <small>cidade, país ou "remoto"</small></span><input data-rd="local" maxlength="80" placeholder="Ex.: São Paulo, Brasil"></label>
-        <div class="es-linha"><span>Modalidade</span><div class="chips" data-rd-chips="modalidade"></div></div>
-        <div class="es-linha full"><span>Nível</span><div class="chips" data-rd-chips="senioridade"></div></div>
-      </div>
-      <div class="ed-acoes"><button class="btn accent" data-rd-ir="ambos">Buscar conexões e vagas</button><button class="btn" data-rd-ir="conexoes">Só conexões</button><button class="btn" data-rd-ir="vagas">Só vagas</button></div>
-      <p class="fine">O LinkedIn não deixa apps verem pessoas, conexões ou vagas. Por isso a sua IA pesquisa na web (só leitura), sugere <b>tipos</b> de pessoas com a busca pronta para abrir no LinkedIn, e confere os links das vagas antes de mostrar. Convites e candidaturas: sempre você.</p>
-    </section>
     <div class="rd-estado" data-in data-rd-estado></div>
-    <div class="rd-grid" data-in>
-      <section class="glass ed-box" data-rd-col="conexoes"><header class="ed-box-h"><h3>Conexões para a sua área</h3><span class="tag" data-rd-nc></span></header><div class="rd-lista" data-rd-conexoes></div><div data-rd-seguir></div></section>
-      <section class="glass ed-box" data-rd-col="vagas"><header class="ed-box-h"><h3>Vagas interessantes</h3><span class="tag" data-rd-nv></span></header><div class="rd-lista" data-rd-vagas></div></section>
+
+    <!-- Conexões: quem ajuda o seu objetivo -->
+    <div class="rd-pag" data-rd-pag="conexoes">
+      <section class="glass ed-box rd-ctx" data-in data-rd-ctx></section>
+      <div class="cx-grid" data-in>
+        <div class="cx-col"><header class="rd-h"><h2>Tipos de pessoa para conectar</h2><span class="tag" data-rd-nc></span></header><div class="cx-lista" data-rd-conexoes></div></div>
+        <aside class="glass ed-box cx-dicas"><h3>Como convidar bem</h3>
+          <ol><li><b>Diga por que ela.</b><span>Um detalhe do trabalho da pessoa vale mais que um elogio genérico.</span></li><li><b>Uma frase sobre você.</b><span>O que você faz e o que tem em comum com ela.</span></li><li><b>Sem pedido no primeiro contato.</b><span>Peça conversa depois que ela aceitar.</span></li></ol>
+          <p class="fine">O LinkedIn limita a nota do convite (cerca de 200 caracteres no plano grátis). O contador mostra quanto cada sugestão usa.</p></aside>
+      </div>
+      <section class="cx-seguir" data-in data-rd-seguir></section>
     </div>
+
+    <!-- Vagas: o que combina com você agora -->
+    <div class="rd-pag" data-rd-pag="vagas" hidden>
+      <section class="glass ed-box rd-prefs" data-in>
+        <header class="ed-box-h"><h3>O que você procura</h3></header>
+        <div class="fields two">
+          <label><span>Onde <small>cidade, país ou "remoto"</small></span><input data-rd="local" maxlength="80" placeholder="Ex.: São Paulo, Brasil"></label>
+          <div class="es-linha"><span>Modalidade</span><div class="chips" data-rd-chips="modalidade"></div></div>
+          <div class="es-linha full"><span>Nível</span><div class="chips" data-rd-chips="senioridade"></div></div>
+        </div>
+        <div class="ed-acoes"><button class="btn accent" data-rd-ir="vagas">Buscar vagas</button><span class="fine">A sua IA procura vagas públicas recentes e confere cada link antes de mostrar.</span></div>
+      </section>
+      <div class="vg-barra" data-in><header class="rd-h"><h2>Vagas para você</h2><span class="tag" data-rd-nv></span></header><div class="filters chips" data-vg-filtro></div></div>
+      <div class="vg-lista" data-in data-rd-vagas></div>
+    </div>
+    <p class="fine rd-nota">O LinkedIn não deixa apps verem pessoas, conexões ou vagas. A sua IA pesquisa na web (só leitura). Convites e candidaturas: sempre você.</p>
   </section>
 
   <section class="scene view" data-scene="rotinas" hidden>
