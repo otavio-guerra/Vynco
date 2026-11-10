@@ -1332,3 +1332,27 @@ label .vsel { width: 100% }
 .ini-hero:hover { border-color: color-mix(in srgb, var(--area) 45%, var(--edge)) }
 .ini-hero:hover .ini-hero-capa img { transform: none }
 .post:hover, .rot:hover, .cr-acao:hover, .ini-chip:hover { box-shadow: var(--e-1) }
+
+/* logo do Magnific e foto do LinkedIn */
+.mg-ic, .c-ic.mg { background: #000 !important; padding: 0; overflow: visible } .mg-ic svg, .c-ic.mg svg { width: 100%; height: 100%; border-radius: inherit }
+.cx-ic.foto { background-size: cover; background-position: center }
+.cx-in { position: absolute; left: -3px; bottom: -3px; width: 13px; height: 13px; border-radius: 3px; display: grid; place-items: center; background: var(--li); color: #fff; box-shadow: 0 0 0 2px var(--bg) }
+.cx-in svg { width: 8px !important; height: 8px !important }
+/* desktop: a conta fica logo abaixo dos botões da janela */
+.desktop .bar { padding-top: 30px; min-height: 84px }
+.desktop .bar-r { margin-right: 0; margin-top: 0 }
+.desktop .lado { padding-top: 96px }
+.desktop .scene.view { padding-top: 104px }
+.desktop .avisos { top: 92px }
+/* pop-up do evento no calendário */
+.cal-pop { position: fixed; z-index: 130; display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: var(--sp-3); width: 340px; padding: var(--sp-3); border-radius: var(--r-md); background: var(--bg-3); border: 1px solid var(--edge-2); box-shadow: var(--e-2); pointer-events: none; animation: vsel-in .16s var(--ease) both }
+.cal-pop-capa { aspect-ratio: 4 / 5; border-radius: var(--r-sm); overflow: hidden; background: var(--bg-2); border: 1px solid var(--edge) }
+.cal-pop-capa img, .cal-pop-capa .wf, .cal-pop-capa video { width: 100%; height: 100%; object-fit: cover; display: block }
+.cal-pop-c { display: grid; gap: 4px; align-content: start; min-width: 0 }
+.cal-pop-c b { font-size: var(--fs-small); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.cal-pop-c small { font-size: var(--fs-caption); color: var(--faint) } .cal-pop-c small::first-letter { text-transform: uppercase }
+.cal-pop-c p { margin: 2px 0 0; font-size: var(--fs-caption); color: var(--soft); line-height: 1.45 }
+.cal-pop-t { justify-self: start; padding: 2px 8px; border-radius: var(--r-pill); font-size: var(--fs-overline); font-weight: var(--fw-semibold); letter-spacing: var(--ls-overline); text-transform: uppercase; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent) }
+.cal-pop-t.pub { --c: var(--green) } .cal-pop-t.ag { --c: var(--sec-agenda) } .cal-pop-t.falta { --c: var(--amber) } .cal-pop-t.rot { --c: var(--sec-criar) }
+.cal-pop-a { font-size: var(--fs-caption); color: var(--accent); margin-top: 2px }
+.cal-pop-capa .wf-badge { display: none } .cal-pop-capa .wf { font-size: 7px }
