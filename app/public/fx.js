@@ -128,6 +128,7 @@
   // ---------------------------------------------------------------- números que contam ao aparecer (Início)
   fx.contar = raiz => {
     for (const b of (raiz || document).querySelectorAll('.ini-chip b')) {
+      if (b.children.length || !/^\d+$/.test(b.textContent.trim())) continue   // só número puro (nada de 3/5 ou 19h48)
       const fim = parseInt(b.textContent, 10); if (!(fim > 0) || b.dataset.contou === String(fim)) continue
       b.dataset.contou = String(fim); const t1 = performance.now(), dur = 700
       const passo = t => { const k = Math.min(1, (t - t1) / dur), e = 1 - Math.pow(1 - k, 3); b.textContent = Math.round(fim * e); if (k < 1) requestAnimationFrame(passo) }

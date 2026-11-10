@@ -105,13 +105,14 @@ const AGENTES = {
     nome: 'Antigravity', via: 'Antigravity CLI', bin: 'agy', cor: '#3B82F6', gratis: true,
     instalar: IS_WIN ? { tipo: 'ps', cmd: 'irm https://antigravity.google/cli/install.ps1 | iex', rotulo: 'instalador oficial do Antigravity CLI' } : { tipo: 'sh', cmd: 'curl -fsSL https://antigravity.google/cli/install.sh | bash', rotulo: 'instalador oficial do Antigravity CLI' },
     antesDoLogin() { confiarAgy() },
-    login: [], loginConsole: [],
-    // não há arquivo de login documentado: o jeito seguro é uma pergunta curta (guardada por 20 min para não gastar cota)
+    login: ['-p', 'Responda apenas: ok', '--print-timeout', '300s'], loginConsole: [], codigo: true,
+    // conferir a conta sem abrir nada: "agy models" só lista os modelos quando há login (um "-p" sem login abriria o navegador)
     async conta(bin) {
       const c = CONTA_AGY; if (c && Date.now() - c.t < (c.ok ? 20 * 60000 : 45000)) return c.r
-      const r = await rodar(bin, ['-p', 'Responda apenas: ok', '--print-timeout', '60s'], { timeout: 90000 })
-      const t = r.out + r.err, ok = r.code === 0 && /\bok\b/i.test(r.out) && !/authenticat|sign.?in|log.?in/i.test(r.err)
+      const r = await rodar(bin, ['models'], { timeout: 30000 })
+      const t = r.out + r.err, ok = r.code === 0 && /\t/.test(r.out)
       CONTA_AGY = { t: Date.now(), ok, r: ok ? { ok: true, conta: 'conta do Google' } : { ok: false, erro: t.trim().split('\n').pop() } }
+      if (!ok) CONTA_AGY.t = Date.now() - 40000   // sem login: confere de novo logo (enquanto a pessoa entra)
       return CONTA_AGY.r
     },
     instrucoes: 'AGENTS.md', skills: ['.agents/skills'],
@@ -221,7 +222,13 @@ function login(id, { console: emConsole = false } = {}) {
   })()
   return pub(job)
 }
-const pub = j => j && ({ id: j.id, fase: j.fase, msg: j.msg, conta: j.conta })
+const pub = j => j && ({ id: j.id, fase: j.fase, msg: j.msg, conta: j.conta, codigo: !!(AGENTES[j.id] && AGENTES[j.id].codigo) })
+function enviarCodigo(id, codigo) {
+  const j = JOBS[id]; if (!j || !j.proc || j.fase !== 'esperando') throw new Error('O login não está esperando um código agora. Comece de novo.')
+  const c = String(codigo || '').trim(); if (!/^[\w\-./=+]{4,512}$/.test(c)) throw new Error('Esse código não parece certo. Copie só o código que o navegador mostrou.')
+  j.proc.stdin.write(c + '\n'); if (AGENTES[id].nome === 'Antigravity') CONTA_AGY = null
+  return { ok: true }
+}
 const job = id => pub(JOBS[id])
 function cancelar(id) { const j = JOBS[id]; if (j) { try { j.proc && j.proc.kill() } catch {} delete JOBS[id] } }
 
@@ -356,4 +363,4 @@ async function perguntar(id, texto, { timeout = 240000 } = {}) {
   return r.out
 }
 
-module.exports = { AGENTES, ROTINAS, lista, status, login, job, cancelar, sincronizar, estadoSync, cancelarSync, rotina, agendamento, achar, abrirUrl, perguntar }
+module.exports = { AGENTES, ROTINAS, lista, status, login, job, cancelar, enviarCodigo, sincronizar, estadoSync, cancelarSync, rotina, agendamento, achar, abrirUrl, perguntar }

@@ -60,7 +60,7 @@ async function conferir(link) {
 }
 
 let JOB = null
-function buscar(id, agente, perguntar, { tipo = 'ambos', local = '', modalidade = '', senioridade = '' } = {}) {
+function buscar(id, agente, perguntar, { tipo = 'ambos', local = '', modalidade = '', senioridade = '', auto = false } = {}) {
   if (JOB && JOB.estado === 'rodando') throw new Error('Já tem uma busca em andamento.')
   const p = PERFIS.carregar(id)
   if (!p.area && !p.temas.length && !p.sobre) throw new Error('Conte a sua área no Perfil antes: é dela que saem as sugestões.')
@@ -80,7 +80,7 @@ function buscar(id, agente, perguntar, { tipo = 'ambos', local = '', modalidade 
       descartadas = brutas.length - vagas.length
     }
     const termo = p.area || p.temas[0] || ''
-    const dados = { conexoes: tipo === 'vagas' ? antes.conexoes : conexoes, seguir: tipo === 'vagas' ? antes.seguir : seguir, vagas, descartadas, prefs, maisVagas: buscaVagas(termo, prefs.local), agente, quando: new Date().toISOString() }
+    const dados = { auto: !!auto, conexoes: tipo === 'vagas' ? antes.conexoes : conexoes, seguir: tipo === 'vagas' ? antes.seguir : seguir, vagas, descartadas, prefs, maisVagas: buscaVagas(termo, prefs.local), agente, quando: new Date().toISOString() }
     fs.mkdirSync(path.dirname(arq(id)), { recursive: true }); fs.writeFileSync(arq(id), JSON.stringify(dados, null, 2), 'utf8')
     Object.assign(J, { estado: 'pronto' })
   }).catch(e => Object.assign(J, { estado: 'falhou', erro: e.message }))

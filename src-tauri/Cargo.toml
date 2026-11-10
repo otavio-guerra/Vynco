@@ -1,6 +1,6 @@
 [package]
 name = "vynco"
-version = "0.16.3"
+version = "0.17.0"
 description = "Vynco: seus posts no LinkedIn, feitos pela sua IA e aprovados por vocÃª"
 authors = ["Otavio Guerra"]
 license = "MIT"

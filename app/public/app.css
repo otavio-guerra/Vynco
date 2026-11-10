@@ -1356,3 +1356,55 @@ label .vsel { width: 100% }
 .cal-pop-t.pub { --c: var(--green) } .cal-pop-t.ag { --c: var(--sec-agenda) } .cal-pop-t.falta { --c: var(--amber) } .cal-pop-t.rot { --c: var(--sec-criar) }
 .cal-pop-a { font-size: var(--fs-caption); color: var(--accent); margin-top: 2px }
 .cal-pop-capa .wf-badge { display: none } .cal-pop-capa .wf { font-size: 7px }
+.view-head::after, .ini-head::after, [data-scene=fila] .view-head::after { content: none !important; display: none !important }
+
+/* menu da conta 2: compacto, agrupado e com ações em ícones */
+.bar-r .conta-menu { width: 340px; padding: 0; overflow: hidden }
+.conta-menu .cm-h { padding: var(--sp-4); margin: 0; gap: var(--sp-3); border-bottom: 1px solid var(--edge); background: linear-gradient(135deg, color-mix(in srgb, var(--li) 14%, transparent), transparent 70%) }
+.conta-menu .cm-h small { display: flex; align-items: center; gap: 6px } .conta-menu .cm-h small svg { width: 12px; height: 12px; color: var(--li-hi) }
+.conta-menu .cm-h small.warn { color: var(--amber) }
+.cm-grupo { display: grid; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--edge) }
+.cm-k { font-size: var(--fs-overline); font-weight: var(--fw-semibold); letter-spacing: var(--ls-overline); text-transform: uppercase; color: var(--faint) }
+.cm-linha { display: flex; align-items: center; gap: var(--sp-3) } .cm-linha .btn { margin-left: auto }
+.cm-t { display: grid; min-width: 0; flex: 1 } .cm-t b { font-size: var(--fs-small); display: flex; align-items: center; gap: 6px } .cm-t small { font-size: var(--fs-caption); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.cm-papel { font-size: 10px; font-weight: var(--fw-semibold); letter-spacing: var(--ls-overline); text-transform: uppercase; color: var(--soft); padding: 1px 6px; border-radius: var(--r-pill); background: var(--glass-2) }
+.cm-usos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); padding-left: 36px } .cm-usos.um { grid-template-columns: 1fr }
+.cm-uso { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; align-items: center } .cm-uso span { font-size: var(--fs-caption); color: var(--soft) } .cm-uso b { font-size: var(--fs-caption) }
+.cm-uso i { grid-column: 1 / -1; height: 5px; border-radius: 99px; background: var(--glass-3); overflow: hidden } .cm-uso i em { display: block; height: 100% }
+.cm-uso small { grid-column: 1 / -1; font-size: 11px; color: var(--faint) }
+.cm-nota { margin: 0; padding-left: 36px; font-size: var(--fs-caption); color: var(--faint); line-height: 1.45 }
+.cm-ext { margin-left: auto; font-size: var(--fs-caption) }
+.cm-acoes { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-1); padding: var(--sp-2) }
+.conta-menu .cm-acoes button { flex-direction: column; justify-content: center; gap: 6px; min-height: 64px; padding: var(--sp-2); font-size: var(--fs-caption); font-weight: var(--fw-semibold); border-radius: var(--r-md) }
+.conta-menu .cm-acoes button svg { flex: 0 0 auto; width: 18px; height: 18px }
+
+/* início: números com ícone e meta da semana */
+.ini-chip { display: flex; align-items: flex-start; gap: var(--sp-3) }
+.ini-ic { flex: 0 0 34px; height: 34px; border-radius: var(--r-sm); display: grid; place-items: center; color: var(--area); background: color-mix(in srgb, var(--area) 14%, transparent) }
+.ini-ic svg { width: 18px; height: 18px }
+.ini-chip.warn .ini-ic { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent) } .ini-chip.ok .ini-ic { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent) }
+.ini-chip-c { display: grid; gap: 2px; min-width: 0; flex: 1 } .ini-chip-c b small { font-size: 14px; color: var(--faint); font-weight: var(--fw-semibold) }
+.ini-chip-c > span { font-size: var(--fs-caption); color: var(--soft); line-height: 1.35 }
+.ini-meta { display: block; height: 4px; margin-top: 6px; border-radius: 99px; background: var(--glass-3); overflow: hidden } .ini-meta em { display: block; height: 100%; background: var(--area); border-radius: 99px }
+.ini-chip.ok .ini-meta em { background: var(--green) }
+.ini-alerta.bad { background: color-mix(in srgb, var(--red) 10%, transparent); border-color: color-mix(in srgb, var(--red) 40%, transparent) }
+
+.res-codigo { display: flex; gap: var(--sp-2); align-items: center; width: 100%; margin-top: var(--sp-2) } .res-codigo input { flex: 1; min-width: 0; font: var(--fw-medium) var(--fs-small) var(--mono); padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--edge-2); background: var(--glass-2); color: var(--text) }
+[data-conn=reserva] .c-a { flex-wrap: wrap; justify-content: flex-end; max-width: 380px }
+
+/* conexões e vagas: ícones no lugar de parte do texto */
+.icr { width: 14px; height: 14px; flex: 0 0 14px; vertical-align: -2px }
+.rd-h h2 { display: inline-flex; align-items: center; gap: var(--sp-2) } .rd-h h2 .icr { width: 18px; height: 18px; color: var(--area) }
+.rd-ctx-l small { display: inline-flex; align-items: center; gap: 6px } .rd-ctx-l small .icr { color: var(--area) }
+.cx-card { --cx: var(--area) } .cx-av { background: color-mix(in srgb, var(--cx, var(--area)) 18%, transparent); color: var(--cx, var(--area)); border: 1px solid color-mix(in srgb, var(--cx, var(--area)) 40%, transparent) } .cx-av .icr { width: 18px; height: 18px }
+.cx-seg .cx-av { --cx: var(--sec-rede) } .cx-av.sm .icr { width: 15px; height: 15px }
+.cx-card details.rd-convite summary small { display: inline-flex; align-items: center; gap: 6px; color: var(--soft) }
+.rd-a .btn, .rd-a .link { display: inline-flex; align-items: center; gap: 6px }
+.cx-dicas h3 { display: flex; align-items: center; gap: var(--sp-2) } .cx-dicas h3 .icr { color: var(--area); width: 18px; height: 18px }
+.cx-dicas ol { list-style: none; padding: 0 } .cx-dicas li { display: grid; grid-template-columns: 30px 1fr; column-gap: var(--sp-2) } .cx-dicas li i { grid-row: span 2; width: 30px; height: 30px; border-radius: var(--r-sm); display: grid; place-items: center; color: var(--area); background: color-mix(in srgb, var(--area) 14%, transparent) }
+.vg-tag { display: inline-flex; align-items: center; gap: 5px } .vg-tag .icr { width: 12px; height: 12px; opacity: .85 }
+.rd-meta { display: flex; flex-wrap: wrap; gap: 4px 12px } .rd-meta, .rd-meta span { align-items: center } .rd-meta span, .rd-meta { display: inline-flex; gap: 5px } .rd-meta .icr { width: 12px; height: 12px; color: var(--faint) }
+.vg-quando { display: inline-flex; align-items: center; gap: 5px } .vg-quando .icr { width: 12px; height: 12px }
+.rd-ok { display: inline-flex; align-items: center; gap: 5px } .rd-ok .icr { width: 13px; height: 13px }
+.vg-auto { margin: 0; flex-basis: 100% }
+.conta-menu .cm-linha button.btn { width: auto; min-height: 30px; padding: 5px 12px; flex: 0 0 auto; gap: 6px; white-space: nowrap; border-radius: var(--r-sm); font-size: var(--fs-caption); font-weight: var(--fw-semibold); background: var(--glass-2); border: 1px solid var(--edge-2); color: var(--text) } .conta-menu .cm-linha button.btn.accent { background: var(--btn); border-color: transparent; color: #fff } .conta-menu .cm-linha button.btn:hover { filter: brightness(1.1) } .cm-t b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }

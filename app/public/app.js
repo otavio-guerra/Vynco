@@ -738,7 +738,8 @@ function menuOutros(abrir) {
   if (on) $('.menu button', dd)?.focus()
 }
 const FASES = [['instalando', 'Instalar'], ['abrindo', 'Abrir o login no navegador'], ['esperando', 'Entrar na sua conta']]
-function desenharLogin(a, j) {
+function desenharLogin(a, j) { comCodigo(() => desenharLogin0(a, j)) }
+function desenharLogin0(a, j) {
   const card = $('[data-login]'); card.hidden = false
   const ordem = ['conferindo', 'instalando', 'abrindo', 'esperando', 'ok'], fi = ordem.indexOf(j.fase)
   const instalou = j.fase === 'instalando' || LOGIN?.instalou
@@ -750,6 +751,7 @@ function desenharLogin(a, j) {
   if (j.fase !== 'erro' && LOGIN) LOGIN.ultima = Math.max(LOGIN.ultima || 0, fi)
   card.innerHTML = `<header><span class="sso-ic">${glifo(a.id, a.cor)}</span><span><b>${j.fase === 'ok' ? `Conectado ao ${esc(a.nome)}` : j.fase === 'erro' ? 'Não deu certo' : `Entrando no ${esc(a.nome)}`}</b><small>${esc(j.fase === 'ok' ? (j.conta || '') : j.msg || '')}</small></span></header>
     <ol class="mini-steps">${passos.join('')}<li class="${j.fase === 'ok' ? 'ok' : ''}"><span class="ic"></span>Pronto</li></ol>
+    ${j.codigo && j.fase === 'esperando' ? `<span class="res-codigo"><input data-res-codigo placeholder="O navegador mostrou um código? Cole aqui" autocomplete="off" spellcheck="false"><button class="btn sm" data-act="res-codigo" data-res="${a.id}">Enviar</button></span>` : ''}
     ${j.fase === 'ok' ? '' : `<div class="lc-a">${j.fase === 'erro' ? `<button class="link" data-agent="${a.id}">Tentar de novo</button>` : `<button class="link" data-act="login-console">${a.beta ? 'Abrir o terminal de login' : 'Não abriu? Abrir numa janela'}</button>`}<button class="link soft" data-act="login-cancel">${j.fase === 'erro' ? 'Escolher outra' : 'Cancelar'}</button></div>`}`
 }
 async function entrarCom(id, { console: emConsole = false } = {}) {
@@ -1502,6 +1504,31 @@ $('[data-scene=perfil]').addEventListener('click', async e => {
 })
 
 // ---------------------------------------------------------------- rede: conexões e vagas (a IA pesquisa na web; convites e candidaturas são da pessoa)
+// ícones de linha usados em Conexões e Vagas (traço 1.6, cor do texto)
+const ICR = {
+  alvo: '<circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3"/><circle cx="8" cy="8" r=".5" fill="currentColor"/>',
+  pessoas: '<circle cx="6" cy="6" r="2.4"/><circle cx="11.5" cy="6.8" r="1.9"/><path d="M1.8 13.5c.5-2.3 2.2-3.5 4.2-3.5s3.7 1.2 4.2 3.5M10.6 10.3c1.8 0 3.1.9 3.6 2.9"/>',
+  pasta: '<rect x="2" y="5" width="12" height="9" rx="1.8"/><path d="M5.8 5V3.8a.9.9 0 0 1 .9-.9h2.6a.9.9 0 0 1 .9.9V5M2 9h12"/>',
+  busca: '<circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/>',
+  carta: '<rect x="2" y="3.5" width="12" height="9" rx="1.6"/><path d="m2.5 4.5 5.5 4.3 5.5-4.3"/>',
+  copiar: '<rect x="5" y="5" width="8.5" height="8.5" rx="1.6"/><path d="M3 10.5V3.6A1.1 1.1 0 0 1 4.1 2.5H10"/>',
+  local: '<path d="M8 14s4.5-4.2 4.5-7.6A4.5 4.5 0 0 0 3.5 6.4C3.5 9.8 8 14 8 14z"/><circle cx="8" cy="6.4" r="1.6"/>',
+  casa: '<path d="M2.5 7.5 8 3l5.5 4.5V13a.8.8 0 0 1-.8.8H3.3a.8.8 0 0 1-.8-.8z"/><path d="M6.3 13.8V10h3.4v3.8"/>',
+  predio: '<rect x="3" y="2.5" width="7" height="11" rx="1"/><path d="M10 6.5h3v7h-3M5.3 5.2h2.4M5.3 7.8h2.4M5.3 10.4h2.4"/>',
+  hibrido: '<path d="M2 8h12M8 2v12"/><circle cx="8" cy="8" r="6"/>',
+  nivel: '<path d="M3 13V9M8 13V6M13 13V3"/>',
+  contrato: '<path d="M4 2.5h5.5L12.5 5.5V13a.8.8 0 0 1-.8.8H4.3a.8.8 0 0 1-.8-.8V3.3a.8.8 0 0 1 .8-.8z"/><path d="M9.3 2.5v3.2h3.2M6 9h4M6 11.3h3"/>',
+  dinheiro: '<circle cx="8" cy="8" r="6"/><path d="M9.8 6.2c-.3-.7-1-1.1-1.8-1.1-1 0-1.7.6-1.7 1.4s.7 1.1 1.7 1.4 1.8.6 1.8 1.4-.8 1.4-1.8 1.4c-.8 0-1.5-.4-1.8-1.1M8 4v1.1M8 10.9V12"/>',
+  relogio: '<circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.4"/>',
+  externo: '<path d="M9.5 2.5h4v4M13.5 2.5 7.5 8.5"/><path d="M12 9.5V13a.8.8 0 0 1-.8.8H3.3a.8.8 0 0 1-.8-.8V5.3a.8.8 0 0 1 .8-.8H7"/>',
+  escudo: '<path d="M8 2 13 4v4c0 3-2.2 5.2-5 6-2.8-.8-5-3-5-6V4z"/><path d="m5.8 8 1.6 1.6L10.4 6.5"/>',
+  hashtag: '<path d="M6 2.5 4.6 13.5M11.4 2.5 10 13.5M3 6h10.5M2.5 10h10.5"/>',
+  estrela: '<path d="m8 2.3 1.7 3.6 3.9.5-2.9 2.7.8 3.9L8 11.1 4.5 13l.8-3.9-2.9-2.7 3.9-.5z"/>',
+  mao: '<path d="M5 8.5V4a1 1 0 0 1 2 0v3.5M7 7V3a1 1 0 0 1 2 0v4M9 7V4a1 1 0 0 1 2 0v5c0 2.8-1.7 4.5-4.2 4.5-1.6 0-2.7-.8-3.5-2.1L2.2 9.6a1 1 0 0 1 1.6-1.1L5 9.8"/>',
+}
+const icr = (n, cls = 'icr') => `<svg class="${cls}" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICR[n] || ICR.estrela}</svg>`
+const icTipo = t => /hashtag|tema|#/i.test(t || '') ? 'hashtag' : /empresa|marca|compan/i.test(t || '') ? 'predio' : /comunidade|grupo/i.test(t || '') ? 'pessoas' : /newsletter|blog|revista|publica/i.test(t || '') ? 'carta' : /pessoa|criador|perfil|lider|líder/i.test(t || '') ? 'pessoas' : 'estrela'
+const icModo = m => /remoto/i.test(m || '') ? 'casa' : /h[ií]brido/i.test(m || '') ? 'hibrido' : 'predio'
 let RD = null, RD_P = { local: '', modalidade: '', senioridade: '' }, rdT = null, VG_F = 'todas'
 const MODALIDADES = ['Remoto', 'Híbrido', 'Presencial'], NIVEIS = ['Júnior', 'Pleno', 'Sênior', 'Liderança']
 async function carregarRede() {
@@ -1521,32 +1548,33 @@ function desenharRede() {
     : RD.estado?.estado === 'falhou' ? `<p class="ed-erro">${esc(RD.estado.erro || 'A busca não deu certo.')}</p>` : r.quando ? `<p class="fine">Última busca em ${new Date(r.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}${r.descartadas ? ` · ${r.descartadas} ${r.descartadas === 1 ? 'vaga descartada' : 'vagas descartadas'} por link quebrado` : ''}.</p>` : ''
   const ctx = $('[data-rd-ctx]')
   if (ctx) {
-    const chips = (rot, v) => v ? `<div class="rd-ctx-l"><small>${rot}</small><span>${String(v).split(/,\s*/).filter(Boolean).map(x => `<i>${esc(x)}</i>`).join('')}</span></div>` : ''
-    ctx.innerHTML = `<div class="rd-ctx-c">${chips('Seu objetivo', P.objetivo)}${chips('Para quem você escreve', P.publico)}${chips('Sua área', P.area)}${!P.objetivo && !P.publico ? '<p class="fine">Conte o seu objetivo e o seu público em Estratégia: as sugestões ficam mais certeiras.</p>' : ''}</div>
+    const chips = (rot, v, i) => v ? `<div class="rd-ctx-l"><small>${icr(i)}${rot}</small><span>${String(v).split(/,\s*/).filter(Boolean).map(x => `<i>${esc(x)}</i>`).join('')}</span></div>` : ''
+    ctx.innerHTML = `<div class="rd-ctx-c">${chips('Seu objetivo', P.objetivo, 'alvo')}${chips('Para quem você escreve', P.publico, 'pessoas')}${chips('Sua área', P.area, 'pasta')}${!P.objetivo && !P.publico ? '<p class="fine">Conte o seu objetivo e o seu público em Estratégia: as sugestões ficam mais certeiras.</p>' : ''}</div>
       <div class="rd-ctx-a"><button class="btn accent" data-rd-ir="conexoes"${rodando ? ' disabled' : ''}>${r.conexoes.length ? 'Sugerir de novo' : 'Sugerir conexões'}</button><button class="link" type="button" data-view="perfil">Ajustar em Estratégia</button></div>`
   }
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
-  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card cx-card"><header class="cx-h"><span class="cx-av" aria-hidden="true">${inicial(c.perfil)}</span><b>${esc(c.perfil)}</b></header><p>${esc(c.por_que)}</p>
-      ${c.convite ? `<details class="rd-convite"><summary><small>Convite no seu tom</small><span class="cx-cont${c.convite.length > 200 ? ' muito' : ''}">${c.convite.length}/200</span></summary><span>${esc(c.convite)}</span></details>` : ''}
-      <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">Buscar no LinkedIn ↗</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">Copiar o convite</button>` : ''}</div></article>`).join('')
+  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card cx-card" style="--cx:${['var(--sec-rede)', 'var(--sec-agenda)', 'var(--sec-estrategia)', 'var(--sec-criar)', 'var(--sec-inicio)'][i % 5]}"><header class="cx-h"><span class="cx-av" aria-hidden="true">${icr('pessoas')}</span><b>${esc(c.perfil)}</b></header><p>${esc(c.por_que)}</p>
+      ${c.convite ? `<details class="rd-convite"><summary><small>${icr('carta')}Convite no seu tom</small><span class="cx-cont${c.convite.length > 200 ? ' muito' : ''}">${c.convite.length}/200</span></summary><span>${esc(c.convite)}</span></details>` : ''}
+      <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">${icr('busca')}Buscar no LinkedIn</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">${icr('copiar')}Copiar o convite</button>` : ''}</div></article>`).join('')
     : `<div class="es-vazio glass"><h3>Nenhuma sugestão ainda</h3><p>Clique em "Sugerir conexões": a sua IA indica tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e um convite no seu tom.</p></div>`
-  $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<header class="rd-h"><h2>Para seguir</h2><span class="tag">${r.seguir.length}</span></header><div class="cx-seg-grid">${r.seguir.map(s => `<article class="cx-seg glass"><span class="cx-av sm" aria-hidden="true">${inicial(s.nome)}</span><span><b>${esc(s.nome)}</b><small>${esc(s.tipo || '')}</small>${s.por_que ? `<p>${esc(s.por_que)}</p>` : ''}</span></article>`).join('')}</div>` : ''
+  $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<header class="rd-h"><h2>Para seguir</h2><span class="tag">${r.seguir.length}</span></header><div class="cx-seg-grid">${r.seguir.map(s => `<article class="cx-seg glass"><span class="cx-av sm" aria-hidden="true">${icr(icTipo(s.tipo + ' ' + s.nome))}</span><span><b>${esc(s.nome)}</b><small>${esc(s.tipo || '')}</small>${s.por_que ? `<p>${esc(s.por_que)}</p>` : ''}</span></article>`).join('')}</div>` : ''
   $('[data-rd-nv]').textContent = r.vagas.length ? `${r.vagas.length} ${r.vagas.length === 1 ? "vaga" : "vagas"}` : ''
   const mods = [...new Set(r.vagas.map(v => v.modalidade).filter(Boolean))]
   if (VG_F !== 'todas' && !mods.includes(VG_F)) VG_F = 'todas'
   $('[data-vg-filtro]').innerHTML = mods.length > 1 ? ['todas', ...mods].map(m => `<button type="button" data-vg-f="${esc(m)}" class="${VG_F === m ? 'on' : ''}">${m === 'todas' ? 'Todas' : esc(m)}<span class="n">${m === 'todas' ? r.vagas.length : r.vagas.filter(v => v.modalidade === m).length}</span></button>`).join('') : ''
   const vs = r.vagas.filter(v => VG_F === 'todas' || v.modalidade === VG_F)
+  const nota = $('[data-vg-auto]'); if (nota) nota.textContent = r.auto && r.quando ? `Atualizadas sozinhas em ${new Date(r.quando).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}: o Vynco busca vagas da sua área a cada 3 dias.` : 'O Vynco também busca vagas da sua área sozinho, a cada 3 dias.'
   $('[data-rd-vagas]').innerHTML = (vs.length ? vs.map(cartaoVaga).join('')
     : `<div class="es-vazio glass"><h3>${r.quando ? 'Nada com essas preferências' : 'Nenhuma vaga ainda'}</h3><p>${r.quando ? 'A IA não achou vagas recentes assim. Tente outro local, modalidade ou nível.' : 'Diga onde e como quer trabalhar e clique em "Buscar vagas". A sua IA traz vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
     + (r.maisVagas ? `<a class="link" href="${esc(urlOk(r.maisVagas))}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
 }
 // a vaga em duas camadas: o essencial à vista (cargo, empresa, etiquetas, por que combina) e o resto em "Ver detalhes"
 function cartaoVaga(v) {
-  const tags = [v.modalidade, v.nivel, v.contrato].filter(Boolean).map(t => `<span class="vg-tag">${esc(t)}</span>`).join('') + (v.salario ? `<span class="vg-tag money">${esc(v.salario)}</span>` : '')
+  const tags = [[v.modalidade, icModo(v.modalidade)], [v.nivel, 'nivel'], [v.contrato, 'contrato']].filter(x => x[0]).map(([t, i]) => `<span class="vg-tag">${icr(i)}${esc(t)}</span>`).join('') + (v.salario ? `<span class="vg-tag money">${icr('dinheiro')}${esc(v.salario)}</span>` : '')
   const lista = (t, xs, cls = '') => xs && xs.length ? `<div class="vg-bloco${cls}"><small>${t}</small><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''
   const tem = (v.requisitos || []).length || (v.diferenciais || []).length || v.combina || v.falta || v.candidatura
   return `<article class="rd-card vg">
-    <header class="vg-h"><span class="vg-logo" aria-hidden="true">${inicial(v.empresa || v.titulo)}</span><span><b>${esc(v.titulo)}</b><small class="rd-meta">${[v.empresa, v.local].filter(Boolean).map(esc).join(' · ')}</small></span>${v.publicada ? `<small class="vg-quando">${esc(v.publicada)}</small>` : ''}</header>
+    <header class="vg-h"><span class="vg-logo" aria-hidden="true">${inicial(v.empresa || v.titulo)}</span><span><b>${esc(v.titulo)}</b><small class="rd-meta">${v.empresa ? `${icr('predio')}${esc(v.empresa)}` : ''}${v.local ? `<span>${icr('local')}${esc(v.local)}</span>` : ''}</small></span>${v.publicada ? `<small class="vg-quando">${icr('relogio')}${esc(v.publicada)}</small>` : ''}</header>
     ${tags ? `<div class="vg-tags">${tags}</div>` : ''}
     <p>${esc(v.por_que)}</p>
     ${tem ? `<details class="vg-mais"><summary>Ver detalhes</summary>
@@ -1554,7 +1582,7 @@ function cartaoVaga(v) {
       ${v.combina || v.falta ? `<div class="vg-fit">${v.combina ? `<div class="vg-bloco ok"><small>O que você já tem</small><p>${esc(v.combina)}</p></div>` : ''}${v.falta ? `<div class="vg-bloco falta"><small>O que pode faltar</small><p>${esc(v.falta)}</p></div>` : ''}</div>` : ''}
       ${v.candidatura ? `<div class="vg-bloco"><small>Como se candidatar</small><p>${esc(v.candidatura)}</p></div>` : ''}
     </details>` : ''}
-    <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''} ↗</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? 'link conferido' : 'o site não deixa conferir o link'}</span></div></article>`
+    <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">${icr('externo')}Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''}</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? `${icr('escudo')}link conferido` : 'o site não deixa conferir o link'}</span></div></article>`
 }
 async function buscarRede(tipo) {
   RD_P.local = $('[data-rd=local]').value
@@ -1579,9 +1607,9 @@ $('[data-scene=rede]').addEventListener('click', async e => {
 })
 
 // ---------------------------------------------------------------- início: o que vai ao ar, o que espera você e o que a IA vai fazer
-let INI_ROT = [], INI_AUTO = false
+let INI_ROT = [], INI_AUTO = false, INI_FREQ = ''
 async function carregarInicio() {
-  try { const [f, r, au] = await Promise.all([api('/api/queue'), api('/api/runs').catch(() => ({ rotinas: [] })), api('/api/automatico').catch(() => null), ST ? null : status()]); FILA = f; INI_ROT = (r.rotinas || []).filter(x => x.agenda?.ativo); INI_AUTO = !!au?.ativo } catch (e) { return falha(e) }
+  try { const [f, r, au, pf] = await Promise.all([api('/api/queue'), api('/api/runs').catch(() => ({ rotinas: [] })), api('/api/automatico').catch(() => null), api('/api/perfil').then(x => x.perfil).catch(() => null), ST ? null : status()]); INI_FREQ = pf?.frequencia || ''; FILA = f; INI_ROT = (r.rotinas || []).filter(x => x.agenda?.ativo); INI_AUTO = !!au?.ativo } catch (e) { return falha(e) }
   desenharInicio(); contarFila(); atualizarHumor()
 }
 const quandoRel = q => {
@@ -1601,14 +1629,25 @@ function desenharInicio() {
   const sem7 = ag.filter(i => new Date(i.agendado) - Date.now() <= 7 * 864e5).length, semAprov = ag.filter(i => !i.approved).length
   $('[data-ini-s]').textContent = ag.length ? `O próximo post sai ${quandoRel(ag[0].agendado).toLowerCase()}. ${ag.length === 1 ? 'Só ele está na agenda.' : `Há ${ag.length} posts na agenda.`}` : esp.length ? 'Nada agendado ainda. Revise o que está esperando e escolha quando sai.' : 'Nada agendado ainda. Peça um post à sua IA em Criar.'
   const li = ST?.linkedin || {}
-  const chip = (n, rot, view, tom = '') => `<button type="button" class="ini-chip glass${tom}" data-view="${view}"><b>${n}</b><span>${rot}</span></button>`
-  $('[data-ini-resumo]').innerHTML = chip(sem7, sem7 === 1 ? 'agendado nos próximos 7 dias' : 'agendados nos próximos 7 dias', 'calendario')
-    + chip(esp.length, 'esperando você', 'fila', esp.length ? ' warn' : '')
-    + chip(pub.filter(i => String(i.published.quando || '').slice(0, 7) === hoje0().slice(0, 7)).length, 'publicados este mês', 'calendario')
-    + `<button type="button" class="ini-chip glass${li.connected ? '' : ' bad'}" data-view="ajustes"><b>${li.connected ? 'LinkedIn' : '!'}</b><span>${li.connected ? (venceLogo(li) ? `vence ${prazo(li.dias)}` : 'conectado') : 'não conectado'}</span></button>`
+  // números que ajudam a decidir: a semana contra a meta, o que espera você, quando sai o próximo e o que já saiu
+  const ic = d => `<i class="ini-ic" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg></i>`
+  const seg = new Date(); seg.setHours(0, 0, 0, 0); seg.setDate(seg.getDate() - ((seg.getDay() + 6) % 7)); const dom = new Date(seg); dom.setDate(seg.getDate() + 7)
+  const naSemana = q => q && new Date(q) >= seg && new Date(q) < dom
+  const semana = FILA.filter(i => naSemana(i.published?.quando) || (!i.published && naSemana(i.agendado))).length
+  const meta = /todo dia/i.test(INI_FREQ) ? 5 : /1 vez/i.test(INI_FREQ) ? 1 : /2 a 3/i.test(INI_FREQ) ? 3 : 0
+  const mes = pub.filter(i => String(i.published.quando || '').slice(0, 7) === hoje0().slice(0, 7)).length
+  const faltaC = q => { const m = Math.round((new Date(q) - Date.now()) / 60000); return m < 60 ? `${Math.max(1, m)} min` : m < 1440 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${Math.round(m / 1440)} ${Math.round(m / 1440) === 1 ? 'dia' : 'dias'}` }
+  const chip = (icone, n, rot, view, extra = '', tom = '') => `<button type="button" class="ini-chip glass${tom}" data-view="${view}">${ic(icone)}<span class="ini-chip-c"><b>${n}</b><span>${rot}</span>${extra}</span></button>`
+  $('[data-ini-resumo]').innerHTML =
+    chip('<rect x="3" y="4" width="14" height="13" rx="2.5"/><path d="M3 8h14M7 2.5v3M13 2.5v3M7 12l2 2 4-4"/>', meta ? `${semana}<small>/${meta}</small>` : semana, meta ? 'posts nesta semana (meta do seu perfil)' : 'posts nesta semana', 'calendario', meta ? `<i class="ini-meta"><em style="width:${Math.min(100, Math.round(semana / meta * 100))}%"></em></i>` : '', semana >= meta && meta ? ' ok' : '')
+    + chip('<rect x="3" y="3" width="14" height="14" rx="3"/><path d="m7 10 2 2 4-4.5"/>', esp.length, esp.length === 1 ? 'post esperando você' : 'posts esperando você', 'fila', '', esp.length ? ' warn' : '')
+    + chip('<circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2"/>', ag[0] ? faltaC(ag[0].agendado) : '—', ag[0] ? 'para o próximo post' : 'nada agendado', 'calendario')
+    + chip('<path d="M4 15 8 9l3 3 5-7"/><path d="M12 5h4v4"/>', mes, mes === 1 ? 'post no ar este mês' : 'posts no ar este mês', 'calendario')
+  // o LinkedIn só aparece quando precisa de você
+  const liAviso = !li.connected ? `<p class="ini-alerta bad">O LinkedIn não está conectado: nada vai ao ar. <button class="link" data-view="ajustes">Conectar em Ajustes</button></p>` : venceLogo(li) ? `<p class="ini-alerta">O acesso ao LinkedIn vence ${prazo(li.dias)}. Reconecte com um clique para não parar. <button class="link" data-view="ajustes">Reconectar</button></p>` : ''
   if (INI_AUTO) $('[data-ini-s]').textContent += ' Modo automático ligado: a IA cria e o Vynco aprova e agenda.'
-  const sb = ST?.standby, avisoSb = ag.length && sb?.disponivel && !sb.ligado ? `<p class="ini-alerta">O Vynco só publica com o app aberto. Ligue o modo standby: ele abre com o Windows, fica na bandeja e não perde nenhum horário. <button class="btn sm accent" data-act="standby-ligar">Ligar</button></p>` : ''
-  const aviso = avisoSb + (semAprov ? `<p class="ini-alerta">${semAprov === 1 ? '1 post agendado ainda não foi aprovado' : `${semAprov} posts agendados ainda não foram aprovados`} e não vai ao ar assim. <button class="link" data-view="fila">Aprovar em Revisar</button></p>` : '')
+  const sb = ST?.standby, avisoLi = liAviso, avisoSb = ag.length && sb?.disponivel && !sb.ligado ? `<p class="ini-alerta">O Vynco só publica com o app aberto. Ligue o modo standby: ele abre com o Windows, fica na bandeja e não perde nenhum horário. <button class="btn sm accent" data-act="standby-ligar">Ligar</button></p>` : ''
+  const aviso = avisoLi + avisoSb + (semAprov ? `<p class="ini-alerta">${semAprov === 1 ? '1 post agendado ainda não foi aprovado' : `${semAprov} posts agendados ainda não foram aprovados`} e não vai ao ar assim. <button class="link" data-view="fila">Aprovar em Revisar</button></p>` : '')
   const falta = q => { const m = Math.round((new Date(q) - Date.now()) / 60000); return m < 60 ? `em ${Math.max(1, m)} min` : m < 24 * 60 ? `em ${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : `em ${Math.round(m / 1440)} ${Math.round(m / 1440) === 1 ? 'dia' : 'dias'}` }
   const hero = $('[data-ini-hero]'), p0 = ag[0]
   hero.hidden = !p0
@@ -2046,16 +2085,29 @@ cal.addEventListener('drop', e => { const d = e.target.closest('[data-dia]'); if
 // ---------------------------------------------------------------- menu da conta (Ajustes mora aqui)
 function desenharMenuConta() {
   if (!ST) return
-  const l = ST.linkedin, a = ST.agente
-  const P = LIM?.principal, R = LIM?.reserva
-  $('#conta-menu').innerHTML = `<div class="cm-h"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(l.name || 'Você')}</span><span><b>${esc(l.name || 'Você')}</b><small>${l.connected ? (venceLogo(l) ? `LinkedIn vence ${prazo(l.dias)}` : 'LinkedIn conectado') : 'LinkedIn não conectado'} · ${a ? esc(a.nome) + (a.conectado ? '' : ' (falta entrar)') : 'sem IA'}</small></span></div>
-    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm" style="--c:${l.connected && !venceLogo(l) ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)">${GLIFO.linkedin}</span><b>LinkedIn</b><small>${l.connected ? `válido até ${quando(l.expiresAt)}` : 'não conectado: nada vai ao ar'}</small></div></div>
-    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(a ? a.id : '?')}</span><b>${a ? esc(a.nome) : 'Sem IA'}</b><small>${a ? (a.conectado ? 'IA principal' : 'falta entrar na conta') : 'escolha uma em Ajustes'}</small></div>${barrasUso(P)}</div>
-    ${LIM?.imagem ? `<div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm mg-ic" style="--c:${LIM.imagem.temChave ? 'var(--green)' : 'var(--faint)'}">${GLIFO.magnific}</span><b>Magnific</b><small>${LIM.imagem.temChave ? 'imagens com IA' : 'sem chave: ligue em Ajustes'}</small></div>${LIM.imagem.temChave ? barrasUso({ medidor: true, janelas: [{ rotulo: `Operações este mês (${LIM.imagem.operacoes} de ${LIM.imagem.limiteMensal})`, pct: Math.round(100 * LIM.imagem.operacoes / Math.max(1, LIM.imagem.limiteMensal)), renova: null }, { rotulo: `Gasto estimado (€${LIM.imagem.gasto.toFixed(2)} de €${LIM.imagem.orcamentoMensal})`, pct: Math.round(100 * LIM.imagem.gasto / Math.max(0.01, LIM.imagem.orcamentoMensal)), renova: null }] }) + `<p class="uso-nota">Os limites são os que você definiu em Ajustes. A API do Magnific não informa o saldo da conta: ${LIM.imagem.site ? `<a class="link" href="${esc(urlOk(LIM.imagem.site))}" target="_blank" rel="noopener">ver os créditos no site ↗</a>` : 'confira no site'}.</p>` : ''}</div>` : ''}
-    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(ST.reserva ? ST.reserva.id : '?')}</span><b>${ST.reserva ? esc(ST.reserva.nome) : 'Sem IA reserva'}</b><small>${ST.reserva ? 'assume se a principal falhar' : 'ligue em Ajustes: o Antigravity é grátis'}</small></div>${ST.reserva ? barrasUso(R) : ''}</div>
-    <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>
-    <button role="menuitem" data-cm="tour"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m6.2 9.8 1-3 3-1-1 3z" fill="currentColor"/></svg><span>Tour pelo app<small>onde fica cada coisa, em 1 minuto</small></span></button>
-    <button role="menuitem" data-cm="atalhos"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h1M7 7h1M10 7h2M5 9.8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Atalhos de teclado<small>aperte ? em qualquer tela</small></span></button>`
+  const l = ST.linkedin, a = ST.agente, r = ST.reserva
+  const P = LIM?.principal, R = LIM?.reserva, I = LIM?.imagem
+  const liOk = l.connected && !venceLogo(l)
+  // uma barra compacta: rótulo, porcentagem, barra e quando renova
+  const mini = j => `<div class="cm-uso"><span>${esc(j.rotulo.replace(' (5 horas)', ''))}</span><b style="color:${corUso(j.pct)}">${j.pct}%</b><i><em style="width:${Math.min(100, j.pct)}%;background:${corUso(j.pct)}"></em></i>${j.renova ? `<small>${renovaTxt(j.renova)}</small>` : ''}</div>`
+  const usoIA = x => x && x.medidor ? `<div class="cm-usos">${x.janelas.map(mini).join('')}</div>` : x ? `<p class="cm-nota">${esc(x.nota || 'Esta IA não informa o uso.')}</p>` : ''
+  const reserva = !r ? `<div class="cm-linha vazia"><span class="cx-ic sm">${glifo('antigravity')}</span><span class="cm-t"><b>Sem IA reserva</b><small>se a principal chegar ao limite, nada é criado</small></span><button class="btn sm" data-act="res-ligar" data-res="antigravity">Ligar grátis</button></div>`
+    : `<div class="cm-linha"><span class="cx-ic sm" style="--c:${r.conectado ? 'var(--green)' : 'var(--amber)'}">${glifo(r.id)}</span><span class="cm-t"><b>${esc(r.nome)} <span class="cm-papel">reserva</span></b><small>${r.conectado ? 'assume se a principal falhar' : 'falta entrar na conta do Google'}</small></span>${r.conectado ? '' : `<button class="btn sm accent" data-act="res-ligar" data-res="${r.id}">Entrar</button>`}</div>${r.conectado ? usoIA(R) : ''}`
+  $('#conta-menu').innerHTML = `<div class="cm-h"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(l.name || 'Você')}</span><span><b>${esc(l.name || 'Você')}</b><small class="${liOk ? 'ok' : 'warn'}">${GLIFO.linkedin}${l.connected ? (venceLogo(l) ? `o acesso vence ${prazo(l.dias)}` : `conectado até ${quando(l.expiresAt)}`) : 'LinkedIn não conectado: nada vai ao ar'}</small></span></div>
+    <div class="cm-grupo"><span class="cm-k">Uso das IAs</span>
+      <div class="cm-linha"><span class="cx-ic sm" style="--c:${a && a.conectado ? 'var(--green)' : 'var(--amber)'}">${glifo(a ? a.id : '?')}</span><span class="cm-t"><b>${a ? esc(a.nome) : 'Sem IA'} <span class="cm-papel">principal</span></b><small>${a ? (a.conectado ? esc(a.conta || 'conectada') : 'falta entrar na conta') : 'escolha uma em Ajustes'}</small></span></div>
+      ${usoIA(P)}
+      ${reserva}
+    </div>
+    ${I ? `<div class="cm-grupo"><span class="cm-k">Imagens com IA</span>
+      <div class="cm-linha"><span class="cx-ic sm mg-ic" style="--c:${I.temChave ? 'var(--green)' : 'var(--faint)'}">${GLIFO.magnific}</span><span class="cm-t"><b>Magnific</b><small>${I.temChave ? `${I.operacoes} de ${I.limiteMensal} operações · €${I.gasto.toFixed(2)} de €${I.orcamentoMensal}` : 'sem chave: ligue em Ajustes'}</small></span>${I.temChave && I.site ? `<a class="link cm-ext" href="${esc(urlOk(I.site))}" target="_blank" rel="noopener" title="A API não informa o saldo: veja os créditos no site">saldo ↗</a>` : ''}</div>
+      ${I.temChave ? `<div class="cm-usos um">${mini({ rotulo: 'Operações do mês', pct: Math.round(100 * I.operacoes / Math.max(1, I.limiteMensal)) })}</div>` : ''}
+    </div>` : ''}
+    <div class="cm-acoes">
+      <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes</span></button>
+      <button role="menuitem" data-cm="tour"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m6.2 9.8 1-3 3-1-1 3z" fill="currentColor"/></svg><span>Tour</span></button>
+      <button role="menuitem" data-cm="atalhos"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h1M7 7h1M10 7h2M5 9.8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Atalhos</span></button>
+    </div>`
 }
 function menuConta(abrir) {
   const m = $('#conta-menu'), b = $('#conns'), on = abrir ?? m.hidden
@@ -2148,7 +2200,10 @@ function desenharAjustes() {
   const fc = $('[data-form=config]'); if (document.activeElement !== fc.assetsDir) fc.assetsDir.value = config.assetsDir || ''; if (document.activeElement !== fc.dailyUiStart) fc.dailyUiStart.value = config.dailyUiStart || ''
   marcarPrefs()
 }
-function desenharReserva() {
+// o campo do código sobrevive aos redesenhos do login (que acontecem a cada poucos segundos)
+const comCodigo = fn => { const el = $('[data-res-codigo]'), v = el?.value || '', foco = document.activeElement === el; fn(); const n = $('[data-res-codigo]'); if (n && v) n.value = v; if (n && foco) n.focus() }
+function desenharReserva() { comCodigo(desenharReserva0) }
+function desenharReserva0() {
   if (!ST) return
   const r = ST.reserva, x = LIM?.reserva, row = $('[data-conn=reserva]'); if (!row) return
   $('[data-res-ic]', row).innerHTML = glifo(r ? r.id : 'antigravity')
@@ -2159,10 +2214,10 @@ function desenharReserva() {
     : 'Quando a sua IA chega ao limite de uso, o Vynco não cria nada. Com uma reserva, outra IA assume. O Antigravity, do Google, é grátis com uma conta Google (cota semanal).'
   if (velho) $('[data-conn-t]', row).innerHTML = '<span class="res-aviso">O Google desligou o plano grátis do Gemini CLI em junho de 2026, então esta reserva não funciona mais. Troque para o Antigravity, que é o substituto grátis.</span>'
   if (velho && !RES_ON) { $('[data-conn-a]', row).innerHTML = '<button class="btn sm accent" data-act="res-ligar" data-res="antigravity">Trocar para o Antigravity</button><button class="link soft" data-act="res-tirar">Tirar</button>'; return }
-  $('[data-conn-a]', row).innerHTML = RES_ON ? `<span class="soft">${esc(RES_ON)}</span>${RES_JANELA ? `<button class="link" data-act="res-janela" data-res="${RES_JANELA}">Não abriu? Abrir numa janela</button>` : ''}` : r ? `${r.conectado && r.sincronizado ? '' : `<button class="btn sm accent" data-act="res-ligar" data-res="${r.id}">Terminar</button>`}<button class="link soft" data-act="res-tirar">Tirar</button>`
+  $('[data-conn-a]', row).innerHTML = RES_ON ? `<span class="soft">${esc(RES_ON)}</span>${RES_CODIGO ? `<span class="res-codigo"><input data-res-codigo placeholder="O navegador mostrou um código? Cole aqui" autocomplete="off" spellcheck="false"><button class="btn sm" data-act="res-codigo" data-res="${RES_CODIGO}">Enviar</button></span>` : ''}${RES_JANELA ? `<button class="link" data-act="res-janela" data-res="${RES_JANELA}">Não abriu? Abrir numa janela</button>` : ''}` : r ? `${r.conectado && r.sincronizado ? '' : `<button class="btn sm accent" data-act="res-ligar" data-res="${r.id}">Terminar</button>`}<button class="link soft" data-act="res-tirar">Tirar</button>`
     : `<button class="btn sm accent" data-act="res-ligar" data-res="${GRATIS}">Usar o ${GRATIS === 'claude' ? 'Claude' : 'Antigravity'}${ST.agente?.id === 'gemini' ? '' : ' (grátis)'}</button>`
 }
-let RES_ON = '', RES_JANELA = ''
+let RES_ON = '', RES_JANELA = '', RES_CODIGO = ''
 async function ligarReserva(id) {
   const nome = { claude: 'Claude', antigravity: 'Antigravity', gemini: 'Gemini', codex: 'ChatGPT' }[id] || id
   const passo = t => { RES_ON = t; desenharReserva() }
@@ -2170,10 +2225,11 @@ async function ligarReserva(id) {
     passo('Conferindo…')
     let r = await api('/api/agente/reserva', { id })
     if (!r.conectado) {
-      passo(r.instalado ? (id === 'antigravity' ? 'Abri uma janela do Antigravity: entre com a sua conta Google no navegador e feche a janela' : `Abrindo o login do ${nome}…`) : `Instalando o ${nome}…`)
+      passo(r.instalado ? `Abrindo o login do ${nome}…` : `Instalando o ${nome}…`)
       let j = await api('/api/agente/login', { id })
       const t0 = Date.now()
-      while (!['ok', 'erro'].includes(j.fase)) { await espera(DEMO ? 300 : 1500); j = await api('/api/agente/job?id=' + id); if (!j.fase) break; RES_JANELA = Date.now() - t0 > 20000 ? id : ''; passo(j.msg || 'Entrando…') }
+      while (!['ok', 'erro'].includes(j.fase)) { await espera(DEMO ? 300 : 1500); j = await api('/api/agente/job?id=' + id); if (!j.fase) break; RES_JANELA = Date.now() - t0 > 20000 ? id : ''; RES_CODIGO = j.codigo && j.fase === 'esperando' ? id : ''; passo(j.fase === 'esperando' && j.codigo ? 'Entre com a sua conta Google no navegador que abriu' : (j.msg || 'Entrando…')) }
+      RES_CODIGO = ''
       RES_JANELA = ''
       if (j.fase !== 'ok') throw new Error(j.msg || `Não deu para entrar no ${nome}.`)
     }
@@ -2244,6 +2300,7 @@ document.addEventListener('click', async e => {
   const act = t.dataset.act; if (!act) return
   try {
     if (act === 'res-ligar') return ligarReserva(t.dataset.res)
+    if (act === 'res-codigo') { const c = $('[data-res-codigo]')?.value || ''; await api('/api/agente/codigo', { id: t.dataset.res, codigo: c }); Som.tique(); return pill('Código enviado', 'Esperando a confirmação do Google…', 'var(--violet)') }
     if (act === 'res-janela') { await api('/api/agente/login', { id: t.dataset.res, console: true }); return pill('Abri uma janela de login', 'Siga o que aparece nela. O Vynco percebe sozinho quando terminar.', 'var(--violet)') }
     if (act === 'res-tirar') { await api('/api/agente/reserva', { id: null }); ST = null; await status(); Som.desliga(); return pill('Sem IA reserva', 'Se a principal chegar ao limite, nada é criado até ela voltar.', 'var(--amber)') }
     if (act === 'standby-ligar') { const sb = await api('/api/standby', { ligar: true }); if (ST) ST.standby = sb; Som.liga(); pill('O Vynco abre com o Windows', 'Ele fica na bandeja e publica no horário.', 'var(--green)'); return desenharInicio() }

@@ -45,6 +45,8 @@ const publicados = () => readJSON(C.PUBLICADOS, [])
 const agenteId = () => (C.load().agente || {}).id || null
 // IA reserva: quando a principal falha (limite, créditos, login), a mesma tarefa roda uma vez com ela
 const reservaId = () => { const r = (C.load().agenteReserva || {}).id || null; return r && r !== agenteId() && AG.AGENTES[r] ? r : null }
+// o Google desligou o Gemini CLI grátis em junho de 2026: quem tinha o Gemini de reserva passa para o Antigravity (só falta entrar)
+{ const c = C.load(); if ((c.agenteReserva || {}).id === 'gemini' && AG.AGENTES.antigravity) C.save({ agenteReserva: { id: 'antigravity', sincronizado: null, antes: 'gemini' } }) }
 async function perguntarComReserva(id, texto, opts) {
   try { return await AG.perguntar(id, texto, opts) } catch (e) {
     const r = reservaId(); if (!r || r === id) throw e
@@ -307,9 +309,24 @@ function autoAprovar(rid, antes) {
     avisar({ ok: true, titulo: it.title, chave: `${it.kind}:${it.id}`, texto: `Criado, conferido e aprovado pelo modo automático. Sai ${q.toLocaleString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Para vetar, abra o post e tire da agenda.` })
   }
 }
+// vagas da área de tempos em tempos (a cada 3 dias), para a tela nunca ficar vazia; só com folga de uso
+let VAGAS_TENTOU = 0
+function vagasAutomaticas() {
+  if (Date.now() - VAGAS_TENTOU < 6 * 36e5) return
+  const ag = agenteId(); if (!ag) return
+  const pid = perfilAtivo(), p = PERFIS.carregar(pid); if (!p.area) return
+  const r = REDE.carregar(pid), est = REDE.estado()
+  if (est && est.estado === 'rodando') return
+  if (r.quando && Date.now() - Date.parse(r.quando) < 3 * 864e5) return
+  const ses = sessaoPrincipal(), res = reservaId(), usar = ses != null && ses >= 70 ? res : ag
+  if (!usar) return
+  VAGAS_TENTOU = Date.now()
+  try { REDE.buscar(pid, usar, perguntarComReserva, { tipo: 'vagas', ...(r.prefs || {}), auto: true }) } catch { }
+}
 // o plano acompanha o uso: refeito uma vez por dia, depois das 6h
 setInterval(() => {
   lerLimites().catch(() => {})
+  try { vagasAutomaticas() } catch { }
   const c = autoCfg(); if (!c.ativo || new Date().getHours() < 6 || (c.atualizado && c.atualizado.slice(0, 10) === new Date().toISOString().slice(0, 10))) return
   planoAuto().then(p => aplicarPlano(p, { dailyUi: c.dailyUi, veto: c.veto })).catch(() => {})
 }, 180000).unref()
@@ -449,6 +466,7 @@ const server = http.createServer(async (req, res) => {
     switch (u.pathname) {
       // ---- agente de IA
       case '/api/agente/login': return send(res, 200, AG.login(b.id, { console: !!b.console }))
+      case '/api/agente/codigo': try { return send(res, 200, AG.enviarCodigo(b.id, b.codigo)) } catch (e) { return send(res, 400, { erro: e.message }) }
       case '/api/agente/cancelar': AG.cancelar(b.id); return send(res, 200, { ok: true })
       case '/api/agente/escolher': { if (!AG.AGENTES[b.id]) return send(res, 400, { erro: 'agente desconhecido' }); C.save({ agente: { id: b.id } }); return send(res, 200, { ok: true }) }
       case '/api/agente/reserva': {   // escolher (ou tirar) a IA reserva
