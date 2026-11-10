@@ -1027,3 +1027,99 @@ body.com-lado .scene.view { padding-top: 76px }
 .tour-pts { display: flex; gap: 4px; margin-right: 4px } .tour-pts i { width: 6px; height: 6px; border-radius: 50%; background: var(--glass-3) } .tour-pts i.ok { background: var(--soft) } .tour-pts i.on { background: var(--accent); width: 14px; border-radius: 99px }
 @media (max-width: 560px) { .tour-pts { display: none } }
 .tour-a .link { white-space: nowrap } .tour-pts { display: none } .tour-pop { width: min(360px, calc(100vw - 24px)) }
+
+/* ================================================================ fundo: aurora, grade, partículas, grão e vinheta */
+.ambient { isolation: isolate }
+.g1 { animation: deriva1 26s ease-in-out infinite alternate }
+.g2 { animation: deriva2 32s ease-in-out infinite alternate }
+.g3 { width: 55vw; height: 42vw; right: -14vw; bottom: -18vh; left: auto; top: auto; border-radius: 50%; filter: blur(110px); opacity: .55;
+  background: conic-gradient(from 120deg, color-mix(in srgb, var(--mood) 40%, transparent), color-mix(in srgb, var(--mint) 22%, transparent), color-mix(in srgb, #ff7aa8 18%, transparent), color-mix(in srgb, var(--mood) 40%, transparent));
+  animation: aurora 38s linear infinite; transition: opacity 1s }
+@keyframes deriva1 { 0% { transform: translate(0, 0) scale(1) } 50% { transform: translate(-6vw, -5vh) scale(1.08) } 100% { transform: translate(5vw, -9vh) scale(.96) } }
+@keyframes deriva2 { 0% { transform: translate(0, 0) scale(1) } 100% { transform: translate(9vw, 7vh) scale(1.12) } }
+@keyframes aurora { 0% { transform: rotate(0deg) scale(1) } 50% { transform: rotate(180deg) scale(1.15) } 100% { transform: rotate(360deg) scale(1) } }
+.fx-grade { position: absolute; inset: 0; background-image: radial-gradient(color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1.2px); background-size: 26px 26px; -webkit-mask: radial-gradient(ellipse 70% 60% at 50% 35%, #000 0%, transparent 75%); mask: radial-gradient(ellipse 70% 60% at 50% 35%, #000 0%, transparent 75%); opacity: .55 }
+.fx-ceu { position: absolute; inset: 0 }
+.fx-vinheta { position: absolute; inset: 0; background: radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, color-mix(in srgb, var(--bg) 70%, #000) 100%); opacity: .7 }
+[data-theme=light] .fx-vinheta { opacity: .15 } [data-theme=light] .g3 { opacity: .35 }
+/* grão de filme por cima de tudo, bem leve */
+body::after { content: ''; position: fixed; inset: -50%; z-index: 90; pointer-events: none; opacity: .035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grao 1.2s steps(6) infinite }
+[data-theme=light] body::after { opacity: .05; filter: invert(1) }
+@keyframes grao { 0% { transform: translate(0, 0) } 20% { transform: translate(-3%, 2%) } 40% { transform: translate(2%, -3%) } 60% { transform: translate(-2%, -1%) } 80% { transform: translate(3%, 3%) } 100% { transform: translate(0, 0) } }
+.fx-confete { position: fixed; inset: 0; z-index: 120; pointer-events: none }
+
+/* ================================================================ vidro com textura e luz que segue o cursor */
+.glass { background-image: linear-gradient(160deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, 0) 42%) }
+[data-theme=light] .glass { background-image: linear-gradient(160deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .2) 60%) }
+.fx-luz { --luz: 1 }
+.post::before, .ini-chip::before, .rot::before, .cr-acao::before, .midia::before, .ed-box::before, .ini-hero::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s var(--ease); z-index: -1;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%) }
+.fx-luz::before { opacity: 1 }
+.post, .ini-chip, .rot, .cr-acao, .midia, .ed-box, .ini-hero { isolation: isolate }
+.ed-box, .ini-hero, .ini-chip, .rot, .cr-acao { position: relative }
+
+/* ================================================================ microinterações */
+.btn { transition: transform .18s var(--spring), box-shadow .25s var(--ease), background .2s, border-color .2s, color .2s }
+.btn:active:not(:disabled) { transform: scale(.96) }
+.btn.accent:hover:not(:disabled) { box-shadow: 0 8px 26px color-mix(in srgb, var(--btn) 45%, transparent) }
+.fx-tem-onda { overflow: hidden }
+.fx-onda { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 60%); transform: scale(0); animation: onda .6s var(--ease) forwards; z-index: 0 }
+@keyframes onda { to { transform: scale(1); opacity: 0 } }
+.post, .ini-chip, .rot, .cr-acao, .midia { transition: transform .35s var(--spring), border-color .25s, box-shadow .35s var(--ease) }
+.post:hover, .rot:hover, .cr-acao:hover, .ini-chip:hover { transform: translateY(-3px); box-shadow: 0 18px 44px rgba(0, 0, 0, .28) }
+.ini-hero { transition: transform .5s var(--ease), box-shadow .4s; will-change: transform }
+.ini-hero-capa img { transition: transform .8s var(--ease) } .ini-hero:hover .ini-hero-capa img { transform: scale(1.04) }
+.ini-dot { animation: pulsa 2.4s ease-in-out infinite } @keyframes pulsa { 50% { box-shadow: 0 0 0 5px transparent, 0 0 18px var(--green) } }
+.ini-post { animation: entra .6s var(--ease) both } .ini-dia:nth-child(2) .ini-post { animation-delay: .08s } .ini-dia:nth-child(3) .ini-post { animation-delay: .16s }
+
+/* menu lateral: indicador que desliza até o item ativo */
+.lado nav { position: relative }
+.lado-ind { position: absolute; left: 0; right: 0; top: 0; height: 40px; border-radius: 10px; background: var(--glass-3); box-shadow: inset 0 0 0 1px var(--edge), 0 6px 22px color-mix(in srgb, var(--accent) 18%, transparent); transition: transform .45s var(--spring), height .3s var(--ease), opacity .3s; pointer-events: none; z-index: 0 }
+.lado-ind::before { content: ''; position: absolute; left: -12px; top: 50%; width: 3px; height: 60%; transform: translateY(-50%); border-radius: 3px; background: var(--accent); box-shadow: 0 0 12px var(--accent) }
+.lado nav button { position: relative; z-index: 1 } .lado nav button[aria-current] { background: none; box-shadow: none }
+.lado button svg { transition: transform .35s var(--spring), color .2s } .lado button:hover svg { transform: scale(1.12) rotate(-4deg) }
+@media (max-width: 860px) { .lado-ind { display: none } .lado nav button[aria-current] { background: var(--glass-3) } }
+
+/* troca de tela: entra com mola, sai rápido; o título ganha um brilho que passa */
+.scene.on [data-in] { animation: entra2 .62s var(--spring) both; animation-delay: var(--d, 0ms) }
+@keyframes entra2 { from { opacity: 0; transform: translateY(14px) scale(.985); filter: blur(10px) } 60% { filter: blur(0) } to { opacity: 1; transform: none; filter: none } }
+.view-head h1 { background: linear-gradient(100deg, var(--text) 30%, color-mix(in srgb, var(--accent) 70%, var(--text)) 50%, var(--text) 70%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: brilho-t 1.6s var(--ease) .2s both }
+@keyframes brilho-t { from { background-position: 100% 0 } to { background-position: 0 0 } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g1, .g2, .g3, body::after, .ini-dot, .ini-post { animation: none !important }
+  .view-head h1 { animation: none; -webkit-text-fill-color: currentColor; background: none }
+}
+
+/* ================================================================ tour interativo */
+.tour-luz { overflow: visible; animation: luz-in .4s var(--spring) both }
+@keyframes luz-in { from { opacity: 0; transform: scale(1.08) } }
+.tour-luz.apertou { transform: scale(.96); transition: transform .18s var(--ease) }
+.tour-pulso { position: absolute; inset: -2px; border-radius: inherit; border: 2px solid var(--accent); opacity: 0; pointer-events: none }
+.tour.clique .tour-pulso { animation: pulso-t 1.8s var(--ease) infinite } .tour.clique .tour-pulso.p2 { animation-delay: .9s }
+@keyframes pulso-t { 0% { opacity: .9; transform: scale(1) } 100% { opacity: 0; transform: scale(1.35) } }
+.tour-alvo { position: absolute; z-index: 2; border: 0; padding: 0; background: transparent; border-radius: 12px; cursor: pointer }
+.tour-alvo:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px }
+.tour-mao { position: fixed; left: 0; top: 0; z-index: 3; width: 34px; height: 34px; pointer-events: none; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .5)) }
+.tour-mao.vai { animation: mao 2.4s var(--ease) infinite }
+@keyframes mao { 0% { transform: translate(calc(var(--x) + 60px), calc(var(--y) + 46px)) scale(1); opacity: 0 } 18% { opacity: 1 } 45% { transform: translate(calc(var(--x) - 8px), calc(var(--y) - 4px)) scale(1) } 55% { transform: translate(calc(var(--x) - 8px), calc(var(--y) - 4px)) scale(.86) } 65% { transform: translate(calc(var(--x) - 8px), calc(var(--y) - 4px)) scale(1) } 90% { opacity: 1 } 100% { transform: translate(calc(var(--x) - 8px), calc(var(--y) - 4px)) scale(1); opacity: 0 } }
+.tour-pop { overflow: hidden; padding-top: 20px }
+.tour-pop::after { content: ''; position: absolute; width: 14px; height: 14px; background: var(--bg-3); border: 1px solid var(--edge-2); transform: rotate(45deg); z-index: -1 }
+.tour-pop[data-lado=dir]::after { left: -8px; top: calc(50% - 7px); border-top: 0; border-right: 0 }
+.tour-pop[data-lado=baixo]::after { top: -8px; left: calc(50% - 7px); border-bottom: 0; border-right: 0 }
+.tour-pop[data-lado=cima]::after { bottom: -8px; left: calc(50% - 7px); border-top: 0; border-left: 0 }
+.tour.centro .tour-pop::after { display: none }
+.tour-barra { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--glass-2) }
+.tour-barra i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--mint)); box-shadow: 0 0 12px var(--accent); transition: width .5s var(--ease) }
+.tour-corpo { display: grid; gap: 8px }
+.tour-corpo.troca > * { animation: tour-troca .45s var(--ease) both } .tour-corpo.troca > :nth-child(2) { animation-delay: .04s } .tour-corpo.troca > :nth-child(3) { animation-delay: .08s } .tour-corpo.troca > :nth-child(4) { animation-delay: .12s }
+@keyframes tour-troca { from { opacity: 0; transform: translateX(10px); filter: blur(4px) } }
+.tour-n.ic { font-size: 34px; letter-spacing: 0; line-height: 1 }
+.tour-dica { margin: 2px 0 0 !important; display: flex; align-items: center; gap: 8px; font-size: 13px !important; font-weight: 600; color: var(--accent) !important }
+.tour-dica::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 var(--accent); animation: ping 1.4s ease-out infinite }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent) } 100% { box-shadow: 0 0 0 10px transparent } }
+.tour.centro .tour-pop { animation: tour-in .5s var(--spring) both } @keyframes tour-in { from { opacity: 0; transform: translate(-50%, -46%) scale(.94) } }
+.tour.centro .tour-dica { justify-content: center }
+@media (prefers-reduced-motion: reduce) { .tour-mao { display: none } .tour-pulso { display: none } }

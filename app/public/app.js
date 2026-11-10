@@ -935,7 +935,7 @@ async function acao(q) {
       if (!ST?.linkedin?.connected) return pill('Conecte o LinkedIn antes', 'Ajustes → LinkedIn', 'var(--amber)')
       if (!(await confirmar('Publicar no LinkedIn agora?', `"${i.title}" vai para o seu perfil, visível para todo mundo.`, 'Publicar'))) return
       pill('Publicando…', i.formato === 'video' ? 'Vídeos levam um ou dois minutos.' : i.title, 'var(--violet)')
-      const r = await api('/api/publish', item); Som.publica(); humor('live'); pill('No ar', i.title, 'var(--accent)')
+      const r = await api('/api/publish', item); Som.publica(); humor('live'); pill('No ar', i.title, 'var(--accent)'); window.fx?.confete(innerWidth / 2, innerHeight / 3, 120)
       if (r.link && !DEMO) abrirFora(r.link)
     }
     await carregarFila()
@@ -1657,73 +1657,109 @@ $('[data-auto]')?.addEventListener('click', async e => {
 })
 
 // ---------------------------------------------------------------- tour guiado (depois da entrada)
-// A tela escurece, só o item da vez fica aceso, e um balão explica o que é e onde clicar. Nada atrás responde ao clique.
+// A tela escurece e só o item da vez fica aceso. Nos passos "clique", a pessoa clica no próprio item para seguir:
+// um cursor animado mostra onde, e o Vynco abre a tela de verdade por trás. Nada fora do item responde ao clique.
 const TOUR = [
-  { titulo: 'Bem-vindo ao Vynco', texto: 'Em um minuto você vê onde fica cada coisa. Dá para pular quando quiser.' },
-  { sel: '#nav [data-view=inicio]', cena: 'inicio', titulo: 'Início', texto: 'O que vai ao ar, em ordem e do jeito que aparece no LinkedIn. O próximo post fica em destaque.' },
-  { sel: '#nav [data-view=perfil]', titulo: 'Estratégia', texto: 'Quem você é, para quem escreve e com que tom. A sua IA lê isso antes de cada post. Toque na frase para mudar.' },
-  { sel: '#nav [data-view=rotinas]', titulo: 'Criar', texto: 'Escolha um modelo e a sua IA cria o post. Ou escreva você mesmo.' },
-  { sel: '[data-auto]', cena: 'rotinas', titulo: 'Modo automático', texto: 'Ligado, a IA cria nos dias do plano e o Vynco confere, aprova e agenda sozinho, com tempo para você vetar.' },
-  { sel: '#nav [data-view=fila]', cena: 'inicio', titulo: 'Revisar', texto: 'Os posts esperando você, com a prévia do feed. A aprova, P publica. O número mostra quantos esperam.' },
-  { sel: '#nav [data-view=calendario]', titulo: 'Agenda', texto: 'O mês com o que sai e quando, e o que já foi ao ar. Arraste um post para um dia para agendar.' },
-  { sel: '#nav [data-view=conexoes]', titulo: 'Rede', texto: 'Tipos de pessoa para se conectar e vagas para a sua área, sugeridos pela sua IA.' },
-  { sel: '#conns', titulo: 'Sua conta e seus limites', texto: 'LinkedIn, IA e Magnific, com o uso da sessão. Clique para ver a semana e quando renova.' },
-  { sel: '.lado-pe [data-view=ajustes]', titulo: 'Ajustes', texto: 'Ligue uma IA reserva (o Gemini é grátis) e o modo standby, para o Vynco abrir com o Windows e não perder horário.' },
-  { titulo: 'Tudo pronto', texto: 'O Vynco só publica o que está aprovado. Quando quiser ver este tour de novo, ele fica no menu da sua conta.', fim: true },
+  { titulo: 'Bem-vindo ao Vynco', texto: 'Em um minuto você conhece o app clicando nele mesmo. Dá para pular quando quiser.', icone: '👋' },
+  { sel: '#nav [data-view=inicio]', clique: 'inicio', titulo: 'Comece pelo Início', texto: 'Clique em Início. É aqui que você vê o que vai ao ar.' },
+  { sel: '[data-ini-hero]:not([hidden]), [data-ini-resumo]', titulo: 'O que vai ao ar', texto: 'O próximo post fica em destaque, do jeito que aparece no LinkedIn, com quanto falta para sair. Embaixo, o resto da agenda, dia por dia.' },
+  { sel: '#nav [data-view=perfil]', clique: 'perfil', titulo: 'Sua estratégia', texto: 'Clique em Estratégia.' },
+  { sel: '[data-pf-resumo]', titulo: 'Você, em uma frase', texto: 'A sua IA lê isto antes de cada post. Toque em qualquer parte da frase para mudar, com os mesmos cartões da entrada.' },
+  { sel: '#nav [data-view=rotinas]', clique: 'rotinas', titulo: 'Criar', texto: 'Clique em Criar.' },
+  { sel: '[data-auto]', titulo: 'Modo automático', texto: 'Ligado, a sua IA cria nos dias do plano e o Vynco confere, aprova e agenda sozinho, com tempo para você vetar. O plano acompanha os seus créditos.' },
+  { sel: '#nav [data-view=fila]', clique: 'fila', titulo: 'Revisar', texto: 'Clique em Revisar. O número mostra quantos posts esperam você.' },
+  { sel: '.fila-grid', titulo: 'Olhe antes de ir ao ar', texto: 'Cada post ao lado da prévia do feed. A aprova, P publica e as setas trocam de post.' },
+  { sel: '#nav [data-view=calendario]', clique: 'calendario', titulo: 'Agenda', texto: 'Clique em Agenda.' },
+  { sel: '.cal-grid:not([hidden]), [data-ag-abas]', titulo: 'O mês inteiro', texto: 'O que sai e quando. Arraste um post para um dia para agendar. Em "No ar" fica o que já saiu, com o link.' },
+  { sel: '#nav [data-view=conexoes]', clique: 'conexoes', titulo: 'Rede', texto: 'Clique em Conexões. A sua IA sugere pessoas e vagas para a sua área.' },
+  { sel: '#conns', titulo: 'Sua conta e seus limites', texto: 'LinkedIn, IA e Magnific, com o uso da sessão. Clique nele quando quiser ver a semana e quando renova.' },
+  { sel: '.lado-pe [data-view=ajustes]', clique: 'ajustes', titulo: 'Ajustes', texto: 'Clique em Ajustes.' },
+  { sel: '[data-conn=reserva]', titulo: 'IA reserva', texto: 'Ligue o Gemini (grátis) para o Vynco seguir criando quando a sua IA chegar ao limite. Em Preferências, "Abrir com o Windows" garante que nenhum horário se perde.' },
+  { titulo: 'Tudo pronto!', texto: 'O Vynco só publica o que você aprovou, ou o que o modo automático conferiu. Este tour fica no menu da sua conta.', fim: true, icone: '🎉' },
 ]
-let TOUR_I = -1
+let TOUR_I = -1, TOUR_ANDANDO = false
 function tourIniciar() {
   if ($('#tour')) return
   menuConta(false)
-  document.body.insertAdjacentHTML('beforeend', `<div id="tour" class="tour" role="dialog" aria-modal="true" aria-labelledby="tour-t"><div class="tour-bloq"></div><div class="tour-luz" hidden></div><div class="tour-pop glass"><span class="tour-n" data-tour-n></span><h3 id="tour-t" data-tour-t></h3><p data-tour-p></p><div class="tour-a"><button class="link soft" type="button" data-tour="pular">Pular o tour</button><span class="tour-pts" data-tour-pts></span><button class="btn sm" type="button" data-tour="voltar">Voltar</button><button class="btn sm accent" type="button" data-tour="prox">Próximo</button></div></div></div>`)
-  $('#tour').addEventListener('click', e => { const b = e.target.closest('[data-tour]'); if (!b) return; const a = b.dataset.tour; a === 'pular' ? tourFim() : a === 'voltar' ? tourIr(TOUR_I - 1) : TOUR[TOUR_I].fim ? tourFim() : tourIr(TOUR_I + 1) })
+  document.body.insertAdjacentHTML('beforeend', `<div id="tour" class="tour" role="dialog" aria-modal="true" aria-labelledby="tour-t">
+    <div class="tour-bloq"></div><div class="tour-luz" hidden><i class="tour-pulso"></i><i class="tour-pulso p2"></i></div><button class="tour-alvo" type="button" hidden aria-label="Continuar"></button>
+    <div class="tour-mao" hidden aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M11 4.5c1.2 0 2.2 1 2.2 2.2v8.1l1.2-.5c1.1-.4 2.3.1 2.8 1.1l.2.4 1.4-.4c1.1-.3 2.3.3 2.7 1.4l1.6-.2c1.3-.1 2.4.9 2.4 2.2v4.7c0 3.6-2.9 6.5-6.5 6.5h-3.4c-2.1 0-4-1-5.2-2.7l-4.2-6c-.7-1-.5-2.4.5-3.1.9-.6 2.1-.5 2.8.3l1.3 1.4V6.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#0C1220" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+    <div class="tour-pop glass"><div class="tour-barra"><i data-tour-barra></i></div><div class="tour-corpo" data-tour-corpo><span class="tour-n" data-tour-n></span><h3 id="tour-t" data-tour-t></h3><p data-tour-p></p><p class="tour-dica" data-tour-dica hidden></p></div>
+      <div class="tour-a"><button class="link soft" type="button" data-tour="pular">Pular o tour</button><button class="btn sm" type="button" data-tour="voltar">Voltar</button><button class="btn sm accent" type="button" data-tour="prox">Próximo</button></div></div></div>`)
+  $('#tour').addEventListener('click', e => {
+    if (e.target.closest('.tour-alvo')) return tourClicouAlvo()
+    const b = e.target.closest('[data-tour]'); if (!b) return
+    const a = b.dataset.tour; a === 'pular' ? tourFim() : a === 'voltar' ? tourIr(TOUR_I - 1) : TOUR[TOUR_I].fim ? tourFim(true) : TOUR[TOUR_I].clique ? tourClicouAlvo() : tourIr(TOUR_I + 1)
+  })
   addEventListener('resize', tourPosicionar); addEventListener('keydown', tourTecla, true)
   tourIr(0)
 }
 function tourTecla(e) {
   if (!$('#tour')) return
   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return tourFim() }
-  if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); return TOUR[TOUR_I].fim ? tourFim() : tourIr(TOUR_I + 1) }
+  if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); return TOUR[TOUR_I].fim ? tourFim(true) : TOUR[TOUR_I].clique ? tourClicouAlvo() : tourIr(TOUR_I + 1) }
   if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); return tourIr(TOUR_I - 1) }
-  if (!['Tab'].includes(e.key)) { e.stopPropagation() }
+  if (e.key !== 'Tab') e.stopPropagation()
+}
+// clicar no item aceso faz o que ele faria de verdade (abre a tela) e segue o tour
+function tourClicouAlvo() {
+  const p = TOUR[TOUR_I]; if (!p || TOUR_ANDANDO) return
+  Som.liga(); $('.tour-luz')?.classList.add('apertou')
+  if (p.clique) { voltarPara = null; cena(p.clique, { som: false }) }
+  setTimeout(() => tourIr(TOUR_I + 1), reduced ? 0 : 380)
 }
 async function tourIr(i) {
-  if (i < 0 || i >= TOUR.length) return
-  TOUR_I = i; const p = TOUR[i]
-  if (p.cena && atual?.dataset.scene !== p.cena) { voltarPara = null; cena(p.cena, { som: false }); await espera(reduced ? 60 : 420) }
-  const alvo = p.sel && $(p.sel)
+  if (i < 0 || i >= TOUR.length || TOUR_ANDANDO) return
+  TOUR_ANDANDO = true
+  const ant = TOUR_I; TOUR_I = i; const p = TOUR[i], t = $('#tour')
+  // volta para um passo que estava em outra tela: reabre a tela certa
+  // a tela por trás é a do último passo de clique antes deste (vale para avançar, voltar ou pular)
+  { const c = [...TOUR.slice(0, i)].reverse().find(x => x.clique), tela = c ? c.clique : 'inicio', real = tela === 'conexoes' || tela === 'vagas' ? 'rede' : tela; if (atual?.dataset.scene !== real || (real === 'rede' && RD_FOCO !== tela)) { voltarPara = null; cena(tela, { som: false }) } }
+  await espera(reduced ? 0 : 280)
+  const alvo = p.sel && [...$$(p.sel)].find(el => el.getClientRects().length)
   if (alvo) alvo.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
-  $('[data-tour-n]').textContent = `${i + 1} de ${TOUR.length}`
+  const corpo = $('[data-tour-corpo]'); corpo.classList.remove('troca'); void corpo.offsetWidth; corpo.classList.add('troca')
+  $('[data-tour-n]').classList.toggle('ic', !!p.icone)
+  $('[data-tour-n]').textContent = p.icone ? p.icone : `Passo ${i} de ${TOUR.length - 2}`
   $('[data-tour-t]').textContent = p.titulo
   $('[data-tour-p]').textContent = p.texto
-  $('[data-tour-pts]').innerHTML = TOUR.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'ok' : ''}"></i>`).join('')
+  const dica = $('[data-tour-dica]'); dica.hidden = !(p.clique && alvo); dica.textContent = 'Clique no item aceso para continuar'
+  $('[data-tour-barra]').style.width = Math.round(i / (TOUR.length - 1) * 100) + '%'
   $('[data-tour=voltar]').hidden = i === 0
-  $('[data-tour=prox]').textContent = p.fim ? 'Começar' : i === 0 ? 'Mostrar' : 'Próximo'
+  $('[data-tour=prox]').textContent = p.fim ? 'Começar a usar' : i === 0 ? 'Começar o tour' : p.clique && alvo ? 'Pular este' : 'Próximo'
+  $('[data-tour=prox]').classList.toggle('accent', !(p.clique && alvo))
   $('[data-tour=pular]').hidden = !!p.fim
+  t.classList.toggle('clique', !!(p.clique && alvo)); t.dataset.alvo = alvo ? '1' : ''
+  $('.tour-luz')?.classList.remove('apertou')
   Som.tique()
-  setTimeout(tourPosicionar, reduced ? 0 : 260)
-  $('[data-tour=prox]').focus({ preventScroll: true })
+  TOUR_ANDANDO = false
+  setTimeout(() => { tourPosicionar(); (p.clique && alvo ? null : $('[data-tour=prox]'))?.focus({ preventScroll: true }) }, reduced ? 0 : 320)
+  if (p.fim && window.fx) setTimeout(() => fx.confete(innerWidth / 2, innerHeight / 2 - 40, 140), 250)
 }
 function tourPosicionar() {
   const t = $('#tour'); if (!t) return
-  const p = TOUR[TOUR_I], alvo = p.sel && $(p.sel), luz = $('.tour-luz', t), pop = $('.tour-pop', t)
-  const r = alvo && alvo.getClientRects().length ? alvo.getBoundingClientRect() : null
+  const p = TOUR[TOUR_I], alvo = p.sel && [...$$(p.sel)].find(el => el.getClientRects().length), luz = $('.tour-luz', t), pop = $('.tour-pop', t), hit = $('.tour-alvo', t), mao = $('.tour-mao', t)
+  const r = alvo ? alvo.getBoundingClientRect() : null
   t.classList.toggle('centro', !r)
-  luz.hidden = !r
+  luz.hidden = !r; hit.hidden = !(r && p.clique); mao.hidden = !(r && p.clique)
   if (!r) { pop.style.left = pop.style.top = ''; return }
-  const pad = 6
-  Object.assign(luz.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' })
-  const pw = pop.offsetWidth, ph = pop.offsetHeight, m = 14, W = innerWidth, H = innerHeight
-  let x, y
-  if (r.right + m + pw < W) { x = r.right + m + pad; y = r.top + r.height / 2 - ph / 2 }          // à direita
-  else if (r.bottom + m + ph < H) { x = r.left + r.width / 2 - pw / 2; y = r.bottom + m + pad }  // embaixo
-  else { x = r.left + r.width / 2 - pw / 2; y = r.top - ph - m - pad }                            // em cima
+  const pad = 6, box = { left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }
+  for (const el of [luz, hit]) Object.assign(el.style, { left: box.left + 'px', top: box.top + 'px', width: box.width + 'px', height: box.height + 'px' })
+  const pw = pop.offsetWidth, ph = pop.offsetHeight, m = 18, W = innerWidth, H = innerHeight
+  let x, y, lado
+  if (r.right + m + pw < W) { x = r.right + m + pad; y = r.top + r.height / 2 - ph / 2; lado = 'dir' }
+  else if (r.bottom + m + ph < H) { x = r.left + r.width / 2 - pw / 2; y = r.bottom + m + pad; lado = 'baixo' }
+  else { x = r.left + r.width / 2 - pw / 2; y = r.top - ph - m - pad; lado = 'cima' }
   pop.style.left = Math.max(12, Math.min(W - pw - 12, x)) + 'px'
   pop.style.top = Math.max(12, Math.min(H - ph - 12, y)) + 'px'
+  pop.dataset.lado = lado
+  // a mãozinha sai do balão e "toca" no centro do item
+  if (p.clique) { mao.style.setProperty('--x', (r.left + r.width / 2) + 'px'); mao.style.setProperty('--y', (r.top + r.height / 2) + 'px'); mao.classList.remove('vai'); void mao.offsetWidth; mao.classList.add('vai') }
 }
-function tourFim() {
+function tourFim(concluiu) {
   $('#tour')?.remove(); removeEventListener('resize', tourPosicionar); removeEventListener('keydown', tourTecla, true)
-  store.set('tour', '1'); Som.liga()
+  store.set('tour', '1'); Som.liga(); TOUR_ANDANDO = false
+  if (concluiu) pill('Você já conhece o Vynco', 'O tour fica no menu da sua conta, se quiser ver de novo.', 'var(--green)')
   if (atual?.dataset.scene !== 'inicio') { voltarPara = null; cena('inicio') }
 }
 // começa sozinho na primeira vez que a pessoa chega ao app depois da entrada
