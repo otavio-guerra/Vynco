@@ -981,3 +981,8 @@ body.com-lado .scene.view { padding-top: 76px }
 .auto-opc { display: flex; flex-wrap: wrap; align-items: center; gap: 16px }
 .auto-veto { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--soft) }
 @media (max-width: 900px) { .auto-grid { grid-template-columns: minmax(0, 1fr) } }
+/* editor: os três jeitos de pôr mídia lado a lado, ocupando a linha inteira do grid */
+.ed-midias > .ed-add { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); min-height: 0 }
+.ed-midias > .ed-add .ed-add-b { flex-direction: row; min-height: 64px; gap: 10px; font-size: 13.5px }
+.ed-midias > .ed-add .ed-add-b svg { flex: 0 0 18px; width: 18px; height: 18px }
+@media (max-width: 560px) { .ed-midias > .ed-add { grid-template-columns: 1fr } }
