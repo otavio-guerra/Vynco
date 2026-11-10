@@ -27,6 +27,7 @@
     pts = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, z: [0.35, 0.6, 1][Math.floor(Math.random() * 3)], r: 0.5 + Math.random() * 0.9, vx: (Math.random() - 0.5) * 0.12, vy: -0.05 - Math.random() * 0.18, f: Math.random() * Math.PI * 2 }))
     estrelas = []
   }
+  let CONF = []   // confete (declarado antes do primeiro quadro)
   let mx = 0.5, my = 0.5, smx = 0.5, smy = 0.5, t0 = performance.now(), vivo = true
   addEventListener('pointermove', e => { mx = e.clientX / W; my = e.clientY / H }, { passive: true })
   function quadro(t) {
@@ -60,14 +61,14 @@
     if (CONF.length) desenharConfete(dt)
     requestAnimationFrame(quadro)
   }
-  lerCor(); medir(); addEventListener('resize', () => { medir(); lerConf() })
+  lerCor(); medir(); addEventListener('resize', () => { medir(); if (fc) lerConf() })
   new MutationObserver(lerCor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-mood', 'data-theme'] })
   document.addEventListener('visibilitychange', () => { vivo = !document.hidden; if (vivo && !reduzido) { t0 = performance.now(); requestAnimationFrame(quadro) } })
   if (reduzido || captura) { quadro(performance.now()); vivo = false } else requestAnimationFrame(quadro)
 
   // ---------------------------------------------------------------- confete (aprovar, publicar, terminar o tour)
   const fc = document.createElement('canvas'); fc.className = 'fx-confete'; fc.setAttribute('aria-hidden', 'true'); document.body.appendChild(fc)
-  const fctx = fc.getContext('2d'); let CONF = []
+  const fctx = fc.getContext('2d')
   function lerConf() { fc.width = W * dpr; fc.height = H * dpr; fc.style.width = W + 'px'; fc.style.height = H + 'px'; fctx.setTransform(dpr, 0, 0, dpr, 0, 0) }
   lerConf()
   function desenharConfete(dt) {

@@ -3,7 +3,7 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.8.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.17.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
@@ -22,12 +22,24 @@ O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 | Revisar | Agenda |
 |---|---|
 | ![Revisar: esperando você, aprovados e rascunhos](docs/img/vynco-fila.png) | ![Agenda do mês com o que sai e quando](docs/img/vynco-calendario.png) |
-| **Criar** | **Estratégia** |
-| ![Criar: modo automático e modelos de post](docs/img/vynco-criar.png) | ![Estratégia em uma frase](docs/img/vynco-estrategia.png) |
-| **Conexões** | **Design system** |
-| ![Conexões para a sua área](docs/img/vynco-rede.png) | ![Vynco Design System 1.0](docs/img/design-system.png) |
+| **Criar e modo automático** | **Estratégia** |
+| ![Criar: modo automático com o plano da semana e a folga das IAs](docs/img/vynco-criar.png) | ![Estratégia em uma frase](docs/img/vynco-estrategia.png) |
+| **Conexões** | **Vagas** |
+| ![Conexões: tipos de pessoa, convite no seu tom e o que seguir](docs/img/vynco-rede.png) | ![Vagas com o link conferido e filtros por modalidade](docs/img/vynco-vagas.png) |
+| **Menu da conta** | **Ajustes** |
+| ![Menu da conta: uso das IAs, IA reserva e Magnific](docs/img/vynco-conta.png) | ![Ajustes: conexões, IA reserva e preferências](docs/img/vynco-ajustes.png) |
 
-<sub>Capturas da demonstração, com dados de exemplo.</sub>
+![Vynco Design System 1.0](docs/img/design-system.png)
+
+<sub>Capturas da demonstração (versão 0.17), com dados de exemplo.</sub>
+
+## Novidades da 0.17
+- **Antigravity no lugar do Gemini.** O Google encerrou o plano grátis do Gemini CLI. O Antigravity CLI (grátis com uma conta Google) virou a IA reserva padrão, e quem usava o Gemini como reserva passa para ele sozinho. Se o navegador mostrar um código no login, há um campo para colar no próprio Vynco. A conta é conferida sem abrir nada (`agy models`).
+- **Menu da conta novo.** O seu nome e o LinkedIn no topo, o uso de cada IA (sessão e semana, com a hora em que renovam), a IA reserva, o Magnific e atalhos para Ajustes, Tour e Atalhos de teclado.
+- **Início com números úteis.** Posts da semana contra a meta do seu perfil, o que espera você, quanto falta para o próximo post e o que saiu no mês. O LinkedIn só aparece quando precisa de você.
+- **Rede com a sua cara.** Conexões e Vagas ganharam ícones por tipo, modalidade e nível, e filtros por modalidade. O Vynco também busca vagas da sua área sozinho, a cada 3 dias, sem pesar no uso da sua IA.
+- **Agenda:** passar o mouse num post do calendário mostra a prévia, o horário e o estado. A foto do LinkedIn aparece na barra de cima.
+- **Correções:** a linha que aparecia embaixo dos títulos sumiu, e os efeitos de fundo não quebram mais para quem usa "menos movimento".
 
 ![Como um post nasce](docs/img/fluxo.png)
 
@@ -58,7 +70,13 @@ Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum
 4. **Sincronização:** uma tela de carregamento mostra cada passo (dá para cancelar e escolher outra IA) enquanto o Vynco entrega à IA as regras (`agent/AGENTS.md`), as skills (`agent/skills`), os prompts das rotinas, o plugin do Desigma (MCP, se estiver instalado) e a trava que impede a IA de publicar. No fim, um teste rápido confere se ela responde.
 5. **Estratégia:** enquanto a IA lê as suas respostas e os seus links, a tela mostra o andamento. Quando ela termina, aparece a estratégia sugerida (resumo, área, público, objetivo, tom, temas, cores e pilares de conteúdo). Você marca o que quer usar e clica em "Usar esta estratégia", e então escolhe entre criar o primeiro post ou ir para a Fila. Sem IA, ou se a análise falhar, a tela mostra o ponto de partida que você respondeu.
 
-Depois disso, o app abre no **Início** e tem um menu lateral (no celular, uma barra embaixo) com quatro áreas, na ordem do trabalho: **Estratégia · Criar · Revisar · Agenda**. Estratégia junta o posicionamento (o antigo Perfil) e a **Rede**; Criar junta os **Modelos** e as **Mídias** (a antiga Biblioteca); Revisar é a fila; Agenda junta o **Calendário** e o que já está **No ar**. **Ajustes** fica no menu da sua conta, no canto de cima: conexões (LinkedIn e IA), imagens com IA e preferências à vista, e **Avançado** (Desigma, pastas e o dia 1 do Daily UI) fechado até você abrir. Ao lado de "Revisar", um número mostra quantos posts esperam você.
+Depois disso, o app abre no **Início** e tem um menu lateral (no celular, uma barra embaixo):
+- **Início**, o feed do que vai ao ar;
+- **Seu ciclo**, na ordem do trabalho: **Estratégia · Criar · Revisar · Agenda**. Criar junta os **Modelos** e as **Mídias**; Revisar é a fila; Agenda junta o **Calendário** e o que já está **No ar**;
+- **Rede**: **Conexões** e **Vagas**;
+- no rodapé, **Atalhos** e **Ajustes**: conexões (LinkedIn e IA), IA reserva, imagens com IA e preferências à vista, e **Avançado** (Desigma, pastas e o dia 1 do Daily UI) fechado até você abrir.
+
+Ao lado de "Revisar" e "Agenda", um número mostra quantos posts esperam você e quantos estão agendados. No canto de cima, à direita, ficam o LinkedIn (com a sua foto), a sua IA e o Magnific; clicar abre o **menu da conta**.
 
 - **Design system:** tokens de cor (com uma cor por seção), tipografia em 8 degraus, espaçamento de 4 px, raios, elevação e movimento, documentados em [docs/design-system.md](docs/design-system.md), com as pranchas editáveis geradas por `docs/design-system/gerar.js`.
 - **Cada área com a sua cara:** Início, Estratégia, Criar, Revisar, Agenda, Rede e Ajustes têm cor e ícone próprios no sobretítulo, no menu e no brilho do fundo. Revisar separa "Esperando você", "Aprovados" e "Rascunhos" com cores e explicações próprias.
@@ -67,19 +85,19 @@ Depois disso, o app abre no **Início** e tem um menu lateral (no celular, uma b
 - **Avisos que somem sozinhos:** 7 segundos (erros, 14), com uma barrinha do tempo; o mouse em cima pausa.
 - **Tour guiado e interativo:** depois da entrada, a tela escurece e só o item da vez fica aceso. Nos passos de clique, um cursor animado mostra onde clicar, a pessoa clica no próprio item e a tela de verdade abre por trás. Tem barra de progresso, voltar (←), avançar (Enter), pular (Esc) e confete no fim; fica no menu da conta para rever.
 - **Fundo e movimento:** partículas que seguem a cor do estado e reagem ao mouse (a 30 quadros por segundo), aurora e brilhos que derivam devagar, grade de pontos, grão de filme e vinheta. Nos cartões, uma luz acompanha o cursor; os botões fazem ondinha; o indicador do menu desliza até a área ativa; os números do Início contam; publicar solta confete. Com "menos movimento" ligado no sistema, o fundo fica parado.
-- **Início:** um feed do que vai ao ar, em ordem, com cada post do jeito que vai aparecer no LinkedIn (imagem, GIF, carrossel e legenda), o dia e a hora, e se já está aprovado. Ao lado: o que espera você, o que a sua IA vai criar e o que saiu por último. Publicar o que já está aprovado e agendado não usa a sua IA: só precisa do Vynco aberto.
+- **Início:** quatro números no topo (posts da semana contra a meta do seu perfil, posts esperando você, quanto falta para o próximo e posts no ar no mês) e um feed do que vai ao ar, em ordem, com cada post do jeito que vai aparecer no LinkedIn (imagem, GIF, carrossel e legenda), o dia e a hora, e se já está aprovado. Ao lado: o que espera você, o que a sua IA vai criar e o que saiu por último. Publicar o que já está aprovado e agendado não usa a sua IA: só precisa do Vynco aberto.
 - **Modo automático (Criar):** a sua IA cria nos dias do plano, o Vynco confere cada post (arquivo gerado, tamanho da legenda, trechos por preencher e o que está em "Evitar" no seu perfil) e aprova sozinho, com a chave dele: a IA continua sem acesso à aprovação. Cada post entra na agenda com uma folga para você vetar (1, 2, 4 ou 12 horas); o que não passa na conferência fica em Revisar. O plano sai da frequência e do objetivo do seu perfil e da folga das suas IAs, e é refeito todo dia: com a semana pela metade, carrossel (o mais pesado) cai para 1 por semana e a reserva divide o resto; com a semana no fim, só a reserva cria. Se a sessão da principal passar de 90% na hora de criar, a reserva assume (ou a criação espera 1 hora). Quem é de design pode incluir o Daily UI (cria às 7h30 e publica às 10h).
 - **Magnific na barra:** as operações do mês e o gasto estimado, contra os limites que você definiu em Ajustes. A API do Magnific não informa o saldo da conta; o menu leva ao site.
 - **IA reserva:** em Ajustes, escolha uma segunda IA (o Antigravity, do Google, é grátis com uma conta Google, com uma cota semanal). Se a principal chegar ao limite de uso ou falhar, a mesma tarefa roda de novo com a reserva, e o post vai para Revisar como sempre.
-- **Medidor de uso:** no canto de cima, à direita, ficam o LinkedIn e a sua IA com o uso da sessão. Clicando, aparecem a sessão de 5 horas e a semana, com a hora em que renovam (Claude e ChatGPT). O Gemini não informa o uso para outros apps; o Vynco mostra a cota conhecida.
+- **Medidor de uso:** no canto de cima, à direita, ficam o LinkedIn e a sua IA com o uso da sessão. Clicando, aparecem a sessão de 5 horas e a semana, com a hora em que renovam (Claude e ChatGPT). O Antigravity não informa o uso para outros apps; o Vynco mostra a cota conhecida (semanal).
 - **Modo standby (Windows):** fechar a janela esconde o Vynco na bandeja, perto do relógio, e ele continua publicando no horário. Em Ajustes → Preferências, "Abrir com o Windows" faz ele começar escondido quando o computador liga. Para sair de verdade: botão direito no ícone da bandeja → Sair.
 - **O que a sua IA está fazendo:** enquanto ela cria um post, lê o seu perfil ou busca conexões e vagas, a barra do topo mostra "A sua IA está…", em qualquer tela. Quando termina, aparece um aviso com o próximo passo (por exemplo, "Pronto: Dicas práticas · Revisar agora").
-- **Avisos que ficam:** erros e avisos importantes ficam no canto da tela até você fechar ou clicar na ação. Os avisos da agenda (publicado no horário, ou não publicado porque o post não estava aprovado) aparecem também na Calendário e no próprio post, na Fila.
+- **Avisos que ficam:** erros e avisos importantes ficam no canto da tela até você fechar ou clicar na ação. Os avisos da agenda (publicado no horário, ou não publicado porque o post não estava aprovado) aparecem também na Agenda e no próprio post, em Revisar.
 - **Aprovação que expirou:** se um post mudou depois de aprovado, ou foi aprovado antes da aprovação assinada, ele volta para "esperando você" com a explicação no próprio post.
 
 - **Primeiro post:** no fim da entrada, "Criar meu primeiro post" já pede à sua IA o modelo mais indicado para o seu objetivo e leva você para Revisar, onde o post chega pronto.
 - **Revisar:** agendar aqui funciona como na Agenda: dia e hora, sugerindo o próximo dia útil livre no horário que você costuma usar, com "Ver na Agenda". Mostra os posts esperando você, os aprovados e os rascunhos (o que já foi ao ar fica em Agenda → No ar). Cada peça ao lado de uma prévia de como ela fica no feed. Aprovar (`A`), publicar agora (`P`) ou **Agendar** para um dia e hora. Agendar um post que ainda não foi aprovado pede a aprovação junto.
-- **Agenda → Calendário:** o mês com o que já foi ao ar, o que está agendado e o que as rotinas vão criar. Clique num dia para ver a lista, mudar o horário, tirar da agenda ou agendar um post ali. Os posts sem data ficam ao lado e podem ser arrastados para um dia. As setas do teclado andam pelos dias.
+- **Agenda → Calendário:** o mês com o que já foi ao ar, o que está agendado e o que as rotinas vão criar. Passar o mouse num post mostra a miniatura, o horário e o estado. Clique num dia para ver a lista, mudar o horário, tirar da agenda ou agendar um post ali. Os posts sem data ficam ao lado e podem ser arrastados para um dia. As setas do teclado andam pelos dias.
 - **Agenda → No ar:** o que saiu, quando e o link para ver no LinkedIn. A API do LinkedIn não libera curtidas nem alcance para apps comuns, então o Vynco não inventa métricas.
 - **Publicação agendada:** o Vynco publica no horário só o que está aprovado, e só enquanto estiver aberto. Se estiver fechado na hora, publica assim que você abrir. Se o post não estiver aprovado quando der a hora, ele sai da agenda e o app avisa.
 - **Criar → Modelos:** "Escrever você mesmo" (o editor), três modelos **recomendados para você** (pelo seu objetivo e pela sua área) e os outros modelos. "Criar agora" pede a peça para a sua IA. "Repetir" escolhe os dias da semana e a hora em que ela cria sozinha, enquanto o app estiver aberto. Cada peça chega em Revisar esperando você.
@@ -97,10 +115,10 @@ Depois disso, o app abre no **Início** e tem um menu lateral (no celular, uma b
   - **Análise com a IA:** a sua IA lê o que você preencheu e os seus links, só leitura e pesquisa na web, sem mexer em arquivo nenhum. Ela sugere área, público, tom, temas, pilares de conteúdo e as cores do site. Cada sugestão tem "Aplicar", e nada muda sem você.
   - **Pilares de conteúdo:** os assuntos em que você quer ser lembrado, com ideias de post. Clicar numa ideia abre o editor com ela, e o editor lembra para quem e em que tom escrever.
   - **Como o perfil é usado:** a IA lê `workspace/perfil.md` antes de escrever cada post. O Estúdio usa as cores, o estilo e a primeira referência, e dá para desligar na hora. Com "Usar nas peças das rotinas" ligado, o Daily UI, a série e os carrosséis saem com as suas cores e fontes; desligado, nada muda.
-- **Estratégia → Rede:** conexões e vagas para a sua área. A API do LinkedIn não deixa apps verem pessoas, conexões ou vagas, e automatizar isso viola os termos dele. Por isso a sua IA pesquisa na web, só leitura, a partir do seu perfil e das suas preferências (local, modalidade, nível).
+- **Rede (Conexões e Vagas):** conexões e vagas para a sua área. A API do LinkedIn não deixa apps verem pessoas, conexões ou vagas, e automatizar isso viola os termos dele. Por isso a sua IA pesquisa na web, só leitura, a partir do seu perfil e das suas preferências (local, modalidade, nível).
   - **Conexões:** sugere tipos de pessoa (nunca nomes inventados), com o motivo, a busca pronta para abrir no próprio LinkedIn e uma mensagem de convite no seu tom.
   - **Para seguir:** comunidades, eventos e hashtags da área.
-  - **Vagas:** só vagas públicas recentes cujo link a IA abriu. O Vynco confere cada link e descarta os quebrados. Cada vaga mostra modalidade, nível, tipo de contrato e salário (só quando a vaga mostra). Em "Ver detalhes" aparecem os requisitos, os diferenciais e benefícios, o que você já tem, o que pode faltar e como se candidatar.
+  - **Vagas:** só vagas públicas recentes cujo link a IA abriu. A cada 3 dias o Vynco busca vagas da sua área sozinho (com a IA reserva, se a principal estiver com mais de 70% da sessão), e dá para filtrar por modalidade. O Vynco confere cada link e descarta os quebrados. Cada vaga mostra modalidade, nível, tipo de contrato e salário (só quando a vaga mostra). Em "Ver detalhes" aparecem os requisitos, os diferenciais e benefícios, o que você já tem, o que pode faltar e como se candidatar.
   - Convites e candidaturas são sempre feitos por você.
 - **Conexão com o LinkedIn sem a ponte:** quando a ponte de um clique não está ligada, o Vynco abre um passo a passo de 5 passos: Página, app, 2 produtos, endereço de retorno e chaves. Cada passo tem uma ilustração simplificada da tela do LinkedIn, com os campos destacados e numerados e um exemplo preenchido, além de botão para a página certa, "Copiar" e validação. O Vynco lembra onde você parou.
 - **Rascunhos:** salvar (`Ctrl S`) guarda um rascunho, que fica na fila em "Rascunhos" até você mandar para aprovação. Sair do editor com algo escrito salva sozinho. Editar um post que já estava aprovado pede a aprovação de novo.
@@ -138,8 +156,6 @@ O script manda as chaves do cofre direto para a Vercel (sem mostrar na tela), pu
 
 Enquanto a ponte não estiver ligada, o botão avisa e oferece "Usar meu próprio app do LinkedIn", o jeito antigo, com as suas chaves.
 
-![Fila](docs/img/vynco-fila.png)
-
 ## Começar
 Precisa de:
 - **Node 20+** (só para rodar pelo terminal; o `Vynco.exe` já traz o Node dentro);
@@ -150,11 +166,11 @@ Precisa de:
 As fontes do design system de exemplo (Space Grotesk, IBM Plex Sans, Press Start 2P, VT323 e DM Serif Display, todas do Google Fonts) precisam estar instaladas para as exportações saírem iguais.
 
 **Jeito fácil (Windows):**
-1. Baixe o `Vynco-windows.zip` na [página de releases](https://github.com/otavio-guerra/Vynco/releases).
-2. Extraia a pasta inteira e dê dois cliques em `Vynco.exe`.
-3. O app abre na janela dele, sem barra de navegador. Fechar a janela encerra o Vynco.
+1. Baixe o `Vynco_<versão>_x64-setup.exe` da [versão mais nova](https://github.com/otavio-guerra/Vynco/releases/latest).
+2. Dê dois cliques. A instalação é só para o seu usuário e não pede administrador.
+3. O app abre na janela dele, sem barra de navegador. Fechar a janela esconde o Vynco na bandeja, perto do relógio, e ele continua publicando no horário. Para sair de verdade: botão direito no ícone da bandeja → Sair.
 
-O Windows pode mostrar o aviso "O Windows protegeu o computador", porque o exe ainda não tem assinatura digital. Clique em **Mais informações → Executar assim mesmo**.
+O Windows pode mostrar o aviso "O Windows protegeu o computador", porque o instalador ainda não tem assinatura digital. Clique em **Mais informações → Executar assim mesmo**. Para atualizar, é só instalar a versão nova por cima: os seus posts e ajustes ficam em `Documentos\Vynco`.
 
 Para gerar o exe você mesmo: `npm run exe` (precisa do Node 25.5+; o ícone sai se a variável `RCEDIT` apontar para o `rcedit-x64.exe`).
 
@@ -178,12 +194,13 @@ Como o app funciona por dentro:
 2. Esse Node roda `app/desktop/backend.js`, que copia o motor para a pasta de trabalho `Documentos\Vynco`. Ali ficam também a configuração, o cofre e os posts. Uma atualização troca o motor, mas nunca apaga o seu conteúdo nem o que a IA escreveu em `dias/` e `pautas/`.
 3. O painel sobe em `127.0.0.1:4800` (ou outra porta livre, se a 4800 estiver ocupada) e a janela vai para lá.
 4. As rotinas encontram um `node` mesmo sem Node instalado no computador, e a caixa de permissões continua valendo.
-5. Links abrem no navegador padrão e arquivos no programa padrão. Abrir o app de novo traz a janela que já existe. Fechar a janela encerra o backend.
+5. Links abrem no navegador padrão e arquivos no programa padrão. Abrir o app de novo traz a janela que já existe. Fechar a janela esconde o app na bandeja; o backend só encerra em "Sair".
+6. A barra da janela é do próprio Vynco. Por segurança, a janela começa com a barra do Windows, e a página só a troca depois que os botões dela funcionam.
 
 O `Vynco.exe` portátil (`npm run exe`) continua existindo, para quem prefere não instalar.
 
 ## Segurança
-> O Vynco está em beta test. As proteções abaixo foram revisadas na versão 0.7.0. Achou um problema de segurança? Veja como avisar em [SECURITY.md](SECURITY.md).
+> O Vynco está em beta test. As proteções abaixo foram revisadas na versão 0.17. Achou um problema de segurança? Veja como avisar em [SECURITY.md](SECURITY.md).
 
 **Nada vai ao ar sem você**
 - **Aprovação assinada** (`engine/aprovacao.js`): ao aprovar, o Vynco grava a "impressão" do post (SHA-256 da legenda e de cada arquivo) e uma assinatura HMAC feita com uma chave que fica só no cofre. Só conta como aprovado, e só é publicado, o post cuja assinatura confere e que não mudou desde a aprovação. Antes de publicar (na hora ou pela agenda), o Vynco confere o SHA-256 de todos os arquivos de novo. Assim, uma IA induzida por uma página da web não consegue se autoaprovar, e um post mexido depois da aprovação volta a esperar você. Isso vale para todos os tipos, inclusive a série.
@@ -194,7 +211,8 @@ O `Vynco.exe` portátil (`npm run exe`) continua existindo, para quem prefere n�
 - O painel só responde ao endereço local exato (`127.0.0.1:<porta>` ou `localhost:<porta>`). Isso barra o "DNS rebinding", em que um site aponta o próprio domínio para o seu computador.
 - **Nada de moldura de outro site:** `X-Frame-Options: DENY` e uma CSP com `frame-ancestors 'none'`. Nenhum site consegue carregar o Vynco escondido num quadro para fazer você clicar em "Publicar". A CSP também só deixa rodar os arquivos do próprio Vynco e falar com ele mesmo.
 - **Arquivos do workspace** (`/files/`) só abrem para o próprio painel (`Cross-Origin-Resource-Policy` e `Sec-Fetch-Site`) e nunca fora da pasta `workspace`.
-- **Versão desktop:** a janela não tem acesso às funções do sistema (só a permissão `core:default` do Tauri); tudo passa pelo painel local, com as mesmas proteções.
+- **Versão desktop:** a janela não tem acesso às funções do sistema. Ela só pode arrastar, minimizar, maximizar e fechar a si mesma (permissões do Tauri em `src-tauri/capabilities/default.json`); tudo o mais passa pelo painel local, com as mesmas proteções. O botão direito não abre o menu do navegador e os atalhos de navegador (ferramentas de desenvolvedor, recarregar, imprimir) ficam desligados.
+- **Modo automático:** quem aprova é o Vynco, com a chave dele, e só depois de conferir o post. A IA continua sem acesso à aprovação, e cada post fica um tempo na agenda para você vetar.
 
 **Segredos**
 - **Cofre** (`engine/segredos.js`): o token e as chaves do LinkedIn, a chave do Magnific e a chave das aprovações ficam em `config/segredos.dat`, cifrado com a DPAPI do Windows. Só o seu usuário, neste computador, consegue abrir. O app nunca devolve segredos para a tela, e o campo da chave é limpo assim que ela é salva.
@@ -207,6 +225,7 @@ O `Vynco.exe` portátil (`npm run exe`) continua existindo, para quem prefere n�
 - **Caixa de permissões** (`engine/caixa.js`): o código que a IA escreve (um dia do Daily UI, uma pauta) roda dentro do modelo de permissões do Node, sem abrir processos, sem rede e lendo só o motor, as imagens e a configuração. Precisa do Node 22.13 ou mais novo (no Node 25+ a rede também fica bloqueada).
 - **Análises só de leitura:** a análise do perfil e a busca da Rede rodam numa pasta vazia, só com leitura e pesquisa na web. O que a IA sugere só muda o seu perfil quando você clica em "Aplicar".
 - **Links que vêm da IA:** o painel só aceita `http` e `https`. Na Rede, antes de conferir o link de uma vaga, o Vynco recusa endereços da rede de casa, do roteador ou deste computador, inclusive quando um site redireciona para eles.
+- **Antigravity:** o Vynco marca a pasta como confiável e grava `permissions.allow` só com os scripts das rotinas e `permissions.deny` para o script de publicação e para os tokens do LinkedIn.
 - **Limite conhecido:** o Claude tem o isolamento mais forte (a lista fechada impede editar o resto do motor). As outras IAs podem editar qualquer arquivo do projeto; para elas, a aprovação assinada e a caixa continuam valendo, mas uma IA mal-intencionada poderia, em tese, mexer no próprio motor. Use o Claude se puder, e o OmniRoute com cuidado (os modelos são de terceiros).
 
 **LinkedIn**

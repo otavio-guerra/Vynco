@@ -6,7 +6,7 @@ O Vynco está em **beta test**. Ele roda no seu computador, guarda os seus segre
 
 | Versão | Recebe correções de segurança |
 |---|---|
-| 0.7.x (beta) | Sim |
+| 0.17.x (beta) | Sim |
 | Anteriores | Não. Atualize para a versão mais nova em [Releases](https://github.com/otavio-guerra/Vynco/releases) |
 
 ## Como avisar sobre um problema
@@ -26,6 +26,7 @@ Você recebe uma resposta em até 7 dias. Quando a correção sair, o aviso é p
 - Publicar no LinkedIn sem a aprovação da pessoa, ou com um conteúdo diferente do aprovado.
 - Ler ou alterar o cofre (`config/segredos.dat`), tokens ou chaves.
 - Um site, uma página lida pela IA ou outro programa conseguir agir pelo painel local.
+- O modo automático aprovar um post que não passou na conferência, ou a IA conseguir aprovar sozinha.
 - Dados da pessoa saindo do computador sem ela pedir.
 
 ## O que não conta
