@@ -1012,3 +1012,18 @@ body.com-lado .scene.view { padding-top: 76px }
 .ini-dia-t::first-letter { text-transform: uppercase } .ini-dia-t small { color: var(--faint); font-weight: 500; font-size: 12.5px }
 @media (max-width: 640px) { .ini-hero { grid-template-columns: 96px minmax(0, 1fr); gap: 14px; padding: 14px } .ini-hero-c p { display: none } }
 .ini-mini-it { position: relative } .ini-mini-it .wf-badge { display: none }
+
+/* tour guiado: tudo escurece, só o item da vez fica aceso */
+.tour { position: fixed; inset: 0; z-index: 100 }
+.tour-bloq { position: absolute; inset: 0; background: transparent }
+.tour.centro .tour-bloq { background: rgba(6, 8, 18, .72) }
+.tour-luz { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(6, 8, 18, .72), 0 0 0 2px var(--accent), 0 0 28px color-mix(in srgb, var(--accent) 60%, transparent); pointer-events: none; transition: left .28s var(--ease), top .28s var(--ease), width .28s var(--ease), height .28s var(--ease) }
+.tour-pop { position: absolute; width: min(340px, calc(100vw - 24px)); padding: 16px 18px; border-radius: 16px; display: grid; gap: 8px; background: var(--bg-3); border: 1px solid var(--edge-2); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); transition: left .28s var(--ease), top .28s var(--ease); animation: entra .3s var(--ease) both }
+.tour.centro .tour-pop { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); width: min(400px, calc(100vw - 24px)); text-align: center }
+.tour-n { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent) }
+.tour-pop h3 { margin: 0; font-size: 19px } .tour-pop p { margin: 0; color: var(--soft); font-size: 14.5px; line-height: 1.5 }
+.tour-a { display: flex; align-items: center; gap: 8px; margin-top: 6px }
+.tour-a .link { margin-right: auto } .tour.centro .tour-a { justify-content: center }
+.tour-pts { display: flex; gap: 4px; margin-right: 4px } .tour-pts i { width: 6px; height: 6px; border-radius: 50%; background: var(--glass-3) } .tour-pts i.ok { background: var(--soft) } .tour-pts i.on { background: var(--accent); width: 14px; border-radius: 99px }
+@media (max-width: 560px) { .tour-pts { display: none } }
+.tour-a .link { white-space: nowrap } .tour-pts { display: none } .tour-pop { width: min(360px, calc(100vw - 24px)) }

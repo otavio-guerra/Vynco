@@ -294,7 +294,7 @@ function voltar() {
   if (voltarPara) { const v = voltarPara; voltarPara = null; return cena(v) }
   const i = ONB.indexOf(n); if (i > 0) cena(ONB[i - 1])
 }
-function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('inicio') }
+function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('inicio'); tourSeNovo() }
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), estrategia: () => entrarEstrategia(),
   inicio: () => carregarInicio(), fila: () => carregarFila(), rotinas: () => { carregarRotinas(); carregarAuto() }, calendario: () => carregarCalendario(), ajustes: () => { status(); carregarImgAjustes() },
@@ -1656,6 +1656,80 @@ $('[data-auto]')?.addEventListener('click', async e => {
   } catch (err) { falha(err) }
 })
 
+// ---------------------------------------------------------------- tour guiado (depois da entrada)
+// A tela escurece, só o item da vez fica aceso, e um balão explica o que é e onde clicar. Nada atrás responde ao clique.
+const TOUR = [
+  { titulo: 'Bem-vindo ao Vynco', texto: 'Em um minuto você vê onde fica cada coisa. Dá para pular quando quiser.' },
+  { sel: '#nav [data-view=inicio]', cena: 'inicio', titulo: 'Início', texto: 'O que vai ao ar, em ordem e do jeito que aparece no LinkedIn. O próximo post fica em destaque.' },
+  { sel: '#nav [data-view=perfil]', titulo: 'Estratégia', texto: 'Quem você é, para quem escreve e com que tom. A sua IA lê isso antes de cada post. Toque na frase para mudar.' },
+  { sel: '#nav [data-view=rotinas]', titulo: 'Criar', texto: 'Escolha um modelo e a sua IA cria o post. Ou escreva você mesmo.' },
+  { sel: '[data-auto]', cena: 'rotinas', titulo: 'Modo automático', texto: 'Ligado, a IA cria nos dias do plano e o Vynco confere, aprova e agenda sozinho, com tempo para você vetar.' },
+  { sel: '#nav [data-view=fila]', cena: 'inicio', titulo: 'Revisar', texto: 'Os posts esperando você, com a prévia do feed. A aprova, P publica. O número mostra quantos esperam.' },
+  { sel: '#nav [data-view=calendario]', titulo: 'Agenda', texto: 'O mês com o que sai e quando, e o que já foi ao ar. Arraste um post para um dia para agendar.' },
+  { sel: '#nav [data-view=conexoes]', titulo: 'Rede', texto: 'Tipos de pessoa para se conectar e vagas para a sua área, sugeridos pela sua IA.' },
+  { sel: '#conns', titulo: 'Sua conta e seus limites', texto: 'LinkedIn, IA e Magnific, com o uso da sessão. Clique para ver a semana e quando renova.' },
+  { sel: '.lado-pe [data-view=ajustes]', titulo: 'Ajustes', texto: 'Ligue uma IA reserva (o Gemini é grátis) e o modo standby, para o Vynco abrir com o Windows e não perder horário.' },
+  { titulo: 'Tudo pronto', texto: 'O Vynco só publica o que está aprovado. Quando quiser ver este tour de novo, ele fica no menu da sua conta.', fim: true },
+]
+let TOUR_I = -1
+function tourIniciar() {
+  if ($('#tour')) return
+  menuConta(false)
+  document.body.insertAdjacentHTML('beforeend', `<div id="tour" class="tour" role="dialog" aria-modal="true" aria-labelledby="tour-t"><div class="tour-bloq"></div><div class="tour-luz" hidden></div><div class="tour-pop glass"><span class="tour-n" data-tour-n></span><h3 id="tour-t" data-tour-t></h3><p data-tour-p></p><div class="tour-a"><button class="link soft" type="button" data-tour="pular">Pular o tour</button><span class="tour-pts" data-tour-pts></span><button class="btn sm" type="button" data-tour="voltar">Voltar</button><button class="btn sm accent" type="button" data-tour="prox">Próximo</button></div></div></div>`)
+  $('#tour').addEventListener('click', e => { const b = e.target.closest('[data-tour]'); if (!b) return; const a = b.dataset.tour; a === 'pular' ? tourFim() : a === 'voltar' ? tourIr(TOUR_I - 1) : TOUR[TOUR_I].fim ? tourFim() : tourIr(TOUR_I + 1) })
+  addEventListener('resize', tourPosicionar); addEventListener('keydown', tourTecla, true)
+  tourIr(0)
+}
+function tourTecla(e) {
+  if (!$('#tour')) return
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return tourFim() }
+  if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); return TOUR[TOUR_I].fim ? tourFim() : tourIr(TOUR_I + 1) }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); return tourIr(TOUR_I - 1) }
+  if (!['Tab'].includes(e.key)) { e.stopPropagation() }
+}
+async function tourIr(i) {
+  if (i < 0 || i >= TOUR.length) return
+  TOUR_I = i; const p = TOUR[i]
+  if (p.cena && atual?.dataset.scene !== p.cena) { voltarPara = null; cena(p.cena, { som: false }); await espera(reduced ? 60 : 420) }
+  const alvo = p.sel && $(p.sel)
+  if (alvo) alvo.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
+  $('[data-tour-n]').textContent = `${i + 1} de ${TOUR.length}`
+  $('[data-tour-t]').textContent = p.titulo
+  $('[data-tour-p]').textContent = p.texto
+  $('[data-tour-pts]').innerHTML = TOUR.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'ok' : ''}"></i>`).join('')
+  $('[data-tour=voltar]').hidden = i === 0
+  $('[data-tour=prox]').textContent = p.fim ? 'Começar' : i === 0 ? 'Mostrar' : 'Próximo'
+  $('[data-tour=pular]').hidden = !!p.fim
+  Som.tique()
+  setTimeout(tourPosicionar, reduced ? 0 : 260)
+  $('[data-tour=prox]').focus({ preventScroll: true })
+}
+function tourPosicionar() {
+  const t = $('#tour'); if (!t) return
+  const p = TOUR[TOUR_I], alvo = p.sel && $(p.sel), luz = $('.tour-luz', t), pop = $('.tour-pop', t)
+  const r = alvo && alvo.getClientRects().length ? alvo.getBoundingClientRect() : null
+  t.classList.toggle('centro', !r)
+  luz.hidden = !r
+  if (!r) { pop.style.left = pop.style.top = ''; return }
+  const pad = 6
+  Object.assign(luz.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' })
+  const pw = pop.offsetWidth, ph = pop.offsetHeight, m = 14, W = innerWidth, H = innerHeight
+  let x, y
+  if (r.right + m + pw < W) { x = r.right + m + pad; y = r.top + r.height / 2 - ph / 2 }          // à direita
+  else if (r.bottom + m + ph < H) { x = r.left + r.width / 2 - pw / 2; y = r.bottom + m + pad }  // embaixo
+  else { x = r.left + r.width / 2 - pw / 2; y = r.top - ph - m - pad }                            // em cima
+  pop.style.left = Math.max(12, Math.min(W - pw - 12, x)) + 'px'
+  pop.style.top = Math.max(12, Math.min(H - ph - 12, y)) + 'px'
+}
+function tourFim() {
+  $('#tour')?.remove(); removeEventListener('resize', tourPosicionar); removeEventListener('keydown', tourTecla, true)
+  store.set('tour', '1'); Som.liga()
+  if (atual?.dataset.scene !== 'inicio') { voltarPara = null; cena('inicio') }
+}
+// começa sozinho na primeira vez que a pessoa chega ao app depois da entrada
+function tourSeNovo() { if (store.get('tour') !== '1' && !DEMO_CAPTURA()) setTimeout(() => { if (!$('#tour') && !ONB.includes(atual?.dataset.scene)) tourIniciar() }, 900) }
+const DEMO_CAPTURA = () => document.documentElement.classList.contains('static')
+
 // ---------------------------------------------------------------- criar: modelos de post (rotinas) para qualquer área
 let ROT = null, ROT_F = 'todos', ROT_AB = null, ROT_FORM = null, PERF_CR = null
 const DIAS_C = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'], DIAS_N = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
@@ -1876,6 +1950,7 @@ function desenharMenuConta() {
     ${LIM?.imagem ? `<div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm mg-ic" style="--c:${LIM.imagem.temChave ? 'var(--green)' : 'var(--faint)'}">M</span><b>Magnific</b><small>${LIM.imagem.temChave ? 'imagens com IA' : 'sem chave: ligue em Ajustes'}</small></div>${LIM.imagem.temChave ? barrasUso({ medidor: true, janelas: [{ rotulo: `Operações este mês (${LIM.imagem.operacoes} de ${LIM.imagem.limiteMensal})`, pct: Math.round(100 * LIM.imagem.operacoes / Math.max(1, LIM.imagem.limiteMensal)), renova: null }, { rotulo: `Gasto estimado (€${LIM.imagem.gasto.toFixed(2)} de €${LIM.imagem.orcamentoMensal})`, pct: Math.round(100 * LIM.imagem.gasto / Math.max(0.01, LIM.imagem.orcamentoMensal)), renova: null }] }) + `<p class="uso-nota">Os limites são os que você definiu em Ajustes. A API do Magnific não informa o saldo da conta: ${LIM.imagem.site ? `<a class="link" href="${esc(urlOk(LIM.imagem.site))}" target="_blank" rel="noopener">ver os créditos no site ↗</a>` : 'confira no site'}.</p>` : ''}</div>` : ''}
     <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(ST.reserva ? ST.reserva.id : '?')}</span><b>${ST.reserva ? esc(ST.reserva.nome) : 'Sem IA reserva'}</b><small>${ST.reserva ? 'assume se a principal falhar' : 'ligue em Ajustes: o Gemini é grátis'}</small></div>${ST.reserva ? barrasUso(R) : ''}</div>
     <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>
+    <button role="menuitem" data-cm="tour"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m6.2 9.8 1-3 3-1-1 3z" fill="currentColor"/></svg><span>Tour pelo app<small>onde fica cada coisa, em 1 minuto</small></span></button>
     <button role="menuitem" data-cm="atalhos"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h1M7 7h1M10 7h2M5 9.8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Atalhos de teclado<small>aperte ? em qualquer tela</small></span></button>`
 }
 function menuConta(abrir) {
@@ -1884,7 +1959,7 @@ function menuConta(abrir) {
   m.hidden = !on; b.setAttribute('aria-expanded', on)
   if (on) $('button', m)?.focus()
 }
-$('#conta-menu').addEventListener('click', e => { const b = e.target.closest('[data-cm]'); if (!b) return; menuConta(false); if (b.dataset.cm === 'atalhos') return $('#atalhos').showModal(); voltarPara = null; cena(b.dataset.cm) })
+$('#conta-menu').addEventListener('click', e => { const b = e.target.closest('[data-cm]'); if (!b) return; menuConta(false); if (b.dataset.cm === 'atalhos') return $('#atalhos').showModal(); if (b.dataset.cm === 'tour') return tourIniciar(); voltarPara = null; cena(b.dataset.cm) })
 document.addEventListener('click', e => { if (!e.target.closest('#conta')) menuConta(false) })
 $('#conta-menu').addEventListener('keydown', e => {
   const bs = $$('#conta-menu button'), k = bs.indexOf(document.activeElement)
@@ -2034,7 +2109,6 @@ document.addEventListener('click', async e => {
   if (t.matches('[data-finish]')) return terminar()
   if (t.matches('[data-view]')) { voltarPara = null; return cena(t.dataset.view) }
   if (t.matches('[data-goscene]')) { const de = atual.dataset.scene; voltarPara = ['fila', 'rotinas', 'ajustes', 'perfil', 'calendario', 'rede', 'biblioteca'].includes(de) ? de : voltarPara; return cena(t.dataset.goscene) }
-  if (t.matches('[data-restart]')) { voltarPara = null; return cena('ola') }
   if (t.matches('[data-run]')) return rodar(t.dataset.run)
   if (t.matches('[data-agent]')) return entrarCom(t.dataset.agent)
   if (t.matches('[data-novo-post]')) return abrirEditor({})
@@ -2270,7 +2344,7 @@ $('[data-scene=estrategia]')?.addEventListener('click', async e => {
       if (!id) return cena('rotinas')
       await api('/api/run', { id }); Som.liga()
       avisoFixo({ tipo: 'info', titulo: 'A sua IA começou o seu primeiro post', texto: `Modelo "${(mod.find(m => m.id === id) || {}).titulo || id}". Leva de 2 a 10 minutos; o aviso aparece quando ficar pronto.` })
-      vigiar(); cena('fila')
+      vigiar(); cena('inicio'); tourSeNovo()
     } catch (err) { falha(err); cena('rotinas') }
   }
 })
