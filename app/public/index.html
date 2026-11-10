@@ -35,6 +35,9 @@
     <button data-view="rotinas"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3c.5 3.6 2.9 6 6.5 6.5-3.6.5-6 2.9-6.5 6.5-.5-3.6-2.9-6-6.5-6.5C7.1 9 9.5 6.6 10 3Z"/></svg><span>Criar</span></button>
     <button data-view="fila"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="3"/><path d="m7 10 2 2 4-4.5"/></svg><span>Revisar</span><span class="nav-n" data-nav-n="fila" hidden></span></button>
     <button data-view="calendario"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2.5"/><path d="M3 8h14M7 2.5v3M13 2.5v3"/></svg><span>Agenda</span><span class="nav-n soft" data-nav-n="agenda" hidden></span></button>
+    <span class="lado-sep">Rede</span>
+    <button data-view="conexoes"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7" r="2.8"/><circle cx="14" cy="8" r="2.2"/><path d="M2.5 16c.6-2.8 2.6-4.2 5-4.2s4.4 1.4 5 4.2M13 12c2 0 3.8 1.1 4.4 3.4"/></svg><span>Conexões</span></button>
+    <button data-view="vagas"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="10.5" rx="2"/><path d="M7.5 6V4.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V6M3 11h14"/></svg><span>Vagas</span></button>
   </nav>
   <div class="lado-pe">
     <button type="button" data-atalhos><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="15" height="10" rx="2"/><path d="M5.5 8.5h1M9 8.5h1M12.5 8.5h2M6.5 11.8h7"/></svg><span>Atalhos</span><kbd>?</kbd></button>
@@ -141,10 +144,11 @@
     <div class="view-head ini-head" data-in>
       <div><h1 data-ini-t>Olá.</h1><p class="sub" data-ini-s>Carregando…</p></div>
     </div>
+    <section class="ini-hero glass" data-in data-ini-hero hidden></section>
     <div class="ini-resumo" data-in data-ini-resumo></div>
     <div class="ini-grid" data-in>
       <section class="ini-feed" aria-label="O que vai ao ar">
-        <header class="ini-h"><h2>Vai ao ar</h2><button class="link" type="button" data-view="calendario">Ver a agenda</button></header>
+        <header class="ini-h"><h2 data-ini-feed-t>Vai ao ar</h2><button class="link" type="button" data-view="calendario">Ver a agenda</button></header>
         <div data-ini-feed></div>
       </section>
       <aside class="ini-lado">
@@ -222,7 +226,6 @@
   </section>
 
   <section class="scene view" data-scene="perfil" hidden>
-    <nav class="subnav" data-in aria-label="Estratégia"><button type="button" data-view="perfil">Posicionamento</button><button type="button" data-view="rede">Rede</button></nav>
     <div class="view-head" data-in>
       <div><h1>Estratégia.</h1><p class="sub">Quem você é no LinkedIn, para quem escreve, com que tom e sobre o quê. A sua IA lê isso antes de cada post.</p></div>
       <div class="head-a"><span class="ed-salvo" data-pf-salvo></span><select class="sel" data-pf-sel aria-label="Perfil em edição"></select></div>
@@ -277,9 +280,8 @@
   </section>
 
   <section class="scene view" data-scene="rede" hidden>
-    <nav class="subnav" data-in aria-label="Estratégia"><button type="button" data-view="perfil">Posicionamento</button><button type="button" data-view="rede">Rede</button></nav>
     <div class="view-head" data-in>
-      <div><h1>Rede.</h1><p class="sub" data-rd-sub>Pessoas para se conectar e vagas que combinam com você, sugeridas pela sua IA a partir do seu perfil.</p></div>
+      <div><h1 data-rd-t>Rede.</h1><p class="sub" data-rd-sub>Pessoas para se conectar e vagas que combinam com você, sugeridas pela sua IA a partir do seu perfil.</p></div>
     </div>
     <section class="glass ed-box rd-prefs" data-in>
       <div class="fields two">
@@ -292,8 +294,8 @@
     </section>
     <div class="rd-estado" data-in data-rd-estado></div>
     <div class="rd-grid" data-in>
-      <section class="glass ed-box"><header class="ed-box-h"><h3>Conexões para a sua área</h3><span class="tag" data-rd-nc></span></header><div class="rd-lista" data-rd-conexoes></div><div data-rd-seguir></div></section>
-      <section class="glass ed-box"><header class="ed-box-h"><h3>Vagas interessantes</h3><span class="tag" data-rd-nv></span></header><div class="rd-lista" data-rd-vagas></div></section>
+      <section class="glass ed-box" data-rd-col="conexoes"><header class="ed-box-h"><h3>Conexões para a sua área</h3><span class="tag" data-rd-nc></span></header><div class="rd-lista" data-rd-conexoes></div><div data-rd-seguir></div></section>
+      <section class="glass ed-box" data-rd-col="vagas"><header class="ed-box-h"><h3>Vagas interessantes</h3><span class="tag" data-rd-nv></span></header><div class="rd-lista" data-rd-vagas></div></section>
     </div>
   </section>
 

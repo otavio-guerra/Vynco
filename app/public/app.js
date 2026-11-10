@@ -247,9 +247,19 @@ aplicarTema()
 // ---------------------------------------------------------------- cenas
 const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'estrategia']
 // áreas da navegação: Estratégia (perfil, rede) · Criar (modelos, mídias, editor) · Revisar (fila) · Agenda (calendário)
-const AREA = { inicio: 'inicio', ajustes: 'ajustes', voce: 'perfil', perfil: 'perfil', rede: 'perfil', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
+const AREA = { inicio: 'inicio', ajustes: 'ajustes', voce: 'perfil', perfil: 'perfil', rede: 'rede', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
 let atual = null, voltarPara = null
+let RD_FOCO = 'conexoes'
+function focoRede(foco) {
+  RD_FOCO = foco
+  $$('[data-rd-col]').forEach(c => { c.hidden = c.dataset.rdCol !== foco })
+  $('.rd-grid')?.classList.add('um')
+  const t = $('[data-rd-t]'); if (t) t.textContent = foco === 'vagas' ? 'Vagas.' : 'Conexões.'
+  $$('[data-rd-ir]').forEach(b => { b.hidden = !['ambos', foco].includes(b.dataset.rdIr); b.classList.toggle('accent', b.dataset.rdIr === foco); if (b.dataset.rdIr === foco) b.textContent = foco === 'vagas' ? 'Buscar vagas' : 'Buscar conexões'; if (b.dataset.rdIr === 'ambos') b.textContent = 'Buscar as duas' })
+  $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === foco))
+}
 function cena(nome, { som = true } = {}) {
+  if (nome === 'conexoes' || nome === 'vagas') { focoRede(nome); nome = 'rede'; if (atual?.dataset.scene === 'rede') return }
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
   if (atual?.dataset.scene === 'editor') guardarAoSair()
   if (atual?.dataset.scene === 'perfil' && pfSujo) salvarPerfil({ quieto: true }).then(() => pill('Perfil salvo', '', 'var(--green)'))
@@ -264,7 +274,8 @@ function cena(nome, { som = true } = {}) {
     $('#lado').hidden = naEntrada; document.body.classList.toggle('com-lado', !naEntrada); $('#conns').hidden = naEntrada
     $('#back').hidden = !(ob > 0 || voltarPara)
     const area = AREA[nome] || nome
-    $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === area))
+    $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === (nome === 'rede' ? RD_FOCO : area)))
+    if (nome === 'rede') focoRede(RD_FOCO)
     $$('.subnav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === nome))
     $('#conns').classList.toggle('on', nome === 'ajustes'); menuConta(false)
     if (som) Som.pad()
@@ -1485,7 +1496,7 @@ function desenharRede() {
   const r = RD.rede, rodando = RD.estado?.estado === 'rodando'
   for (const [k, ops] of [['modalidade', MODALIDADES], ['senioridade', NIVEIS]]) $(`[data-rd-chips="${k}"]`).innerHTML = ops.map(o => `<button type="button" data-v="${o}" class="${RD_P[k] === o ? 'on' : ''}">${o}</button>`).join('')
   $$('[data-rd-ir]').forEach(b => (b.disabled = rodando))
-  $('[data-rd-sub]').textContent = RD.perfil.area ? `Sugestões para ${RD.perfil.area}${RD.perfil.objetivo ? `, com foco em: ${RD.perfil.objetivo.toLowerCase()}` : ''}. Feitas pela sua IA a partir do seu perfil.` : 'Preencha a sua área em Perfil (menu da sua conta, no alto): é dela que saem as sugestões de conexões e vagas.'
+  $('[data-rd-sub]').textContent = RD.perfil.area ? `Sugestões para ${RD.perfil.area}${RD.perfil.objetivo ? `, com foco em: ${RD.perfil.objetivo.toLowerCase()}` : ''}. Feitas pela sua IA a partir do seu perfil.` : 'Preencha a sua área em Estratégia: é dela que saem as sugestões de conexões e vagas.'
   $('[data-rd-estado]').innerHTML = rodando ? `<div class="steps glass"><li class="run"><span class="ic"></span><span><b>${esc(RD.agente ? `A sua IA (${RD.agente})` : 'A sua IA')} está pesquisando ${RD.estado.tipo === 'vagas' ? 'vagas' : RD.estado.tipo === 'conexoes' ? 'conexões' : 'conexões e vagas'}</b><small>Leva de 1 a 4 minutos. Os links das vagas são conferidos antes de aparecer.</small></span></li></div>`
     : RD.estado?.estado === 'falhou' ? `<p class="ed-erro">${esc(RD.estado.erro || 'A busca não deu certo.')}</p>` : r.quando ? `<p class="fine">Última busca em ${new Date(r.quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}${r.descartadas ? ` · ${r.descartadas} ${r.descartadas === 1 ? 'vaga descartada' : 'vagas descartadas'} por link quebrado` : ''}.</p>` : ''
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
@@ -1567,12 +1578,28 @@ function desenharInicio() {
   if (INI_AUTO) $('[data-ini-s]').textContent += ' Modo automático ligado: a IA cria e o Vynco aprova e agenda.'
   const sb = ST?.standby, avisoSb = ag.length && sb?.disponivel && !sb.ligado ? `<p class="ini-alerta">O Vynco só publica com o app aberto. Ligue o modo standby: ele abre com o Windows, fica na bandeja e não perde nenhum horário. <button class="btn sm accent" data-act="standby-ligar">Ligar</button></p>` : ''
   const aviso = avisoSb + (semAprov ? `<p class="ini-alerta">${semAprov === 1 ? '1 post agendado ainda não foi aprovado' : `${semAprov} posts agendados ainda não foram aprovados`} e não vai ao ar assim. <button class="link" data-view="fila">Aprovar em Revisar</button></p>` : '')
-  $('[data-ini-feed]').innerHTML = ag.length ? aviso + ag.slice(0, 12).map(i => `<div class="ini-post">
-      <div class="ini-quando"><span class="ini-dot${i.approved ? '' : ' warn'}"></span><b>${quandoRel(i.agendado)}</b><small>${esc(i.title)} · ${i.approved ? 'aprovado, sai sozinho' : 'falta aprovar'}</small></div>
+  const falta = q => { const m = Math.round((new Date(q) - Date.now()) / 60000); return m < 60 ? `em ${Math.max(1, m)} min` : m < 24 * 60 ? `em ${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : `em ${Math.round(m / 1440)} ${Math.round(m / 1440) === 1 ? 'dia' : 'dias'}` }
+  const hero = $('[data-ini-hero]'), p0 = ag[0]
+  hero.hidden = !p0
+  if (p0) {
+    const leg = (p0.caption || '').split('\n').filter(l => l.trim())
+    hero.innerHTML = `<div class="ini-hero-capa">${capa(p0)}</div>
+      <div class="ini-hero-c"><span class="ini-hero-k">PRÓXIMO POST · ${esc(falta(p0.agendado))}</span>
+        <h2>${esc(leg[0] || p0.title)}</h2>
+        <p>${esc(leg.slice(1).join(' ').slice(0, 180))}${leg.slice(1).join(' ').length > 180 ? '…' : ''}</p>
+        <div class="ini-hero-m"><span class="ini-hero-q"><b>${quandoRel(p0.agendado)}</b></span><span class="ini-tag">${esc(FMT_TXT[p0.formato] || p0.formato || '')}</span><span class="ini-tag ${p0.approved ? 'ok' : 'warn'}">${p0.approved ? 'aprovado · sai sozinho' : 'falta aprovar'}</span></div>
+        <div class="ini-acoes"><button class="btn sm accent" data-ini-abrir="${esc(chaveIt(p0))}">Ver a prévia</button><button class="link" data-ini-dia="${ymd(new Date(p0.agendado))}">Mudar o horário</button></div></div>`
+  }
+  const resto = ag.slice(1, 13), dias = []
+  for (const i of resto) { const d = ymd(new Date(i.agendado)); let g = dias.find(x => x.d === d); if (!g) dias.push(g = { d, itens: [] }); g.itens.push(i) }
+  const diaTxt = d => { const n = Math.round((new Date(d + 'T12:00') - new Date(hoje0() + 'T12:00')) / 864e5), dt = new Date(d + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' }); return n === 0 ? `Hoje · ${dt}` : n === 1 ? `Amanhã · ${dt}` : dt }
+  $('[data-ini-feed-t]').textContent = p0 ? 'Depois dele' : 'Vai ao ar'
+  $('[data-ini-feed]').innerHTML = ag.length ? aviso + (resto.length ? dias.map(g => `<div class="ini-dia"><h3 class="ini-dia-t">${esc(diaTxt(g.d))}<small>${g.itens.length} ${g.itens.length === 1 ? 'post' : 'posts'}</small></h3>${g.itens.map(i => `<div class="ini-post">
+      <div class="ini-quando"><span class="ini-dot${i.approved ? '' : ' warn'}"></span><b>${new Date(i.agendado).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</b><small>${esc(i.title)} · ${i.approved ? 'aprovado, sai sozinho' : 'falta aprovar'}</small></div>
       ${cartaoFeed(i, { quandoTxt: quandoCurto(i.agendado) })}
-      <div class="ini-acoes"><button class="btn sm" data-ini-abrir="${esc(chaveIt(i))}">Abrir em Revisar</button><button class="link" data-ini-dia="${ymd(new Date(i.agendado))}">Mudar o horário na Agenda</button></div>
-    </div>`).join('') + (ag.length > 12 ? `<p class="fine ini-mais">E mais ${ag.length - 12} depois desses. <button class="link" data-view="calendario">Ver tudo na Agenda</button></p>` : '')
-    : `<div class="empty glass"><h3>Nada agendado.</h3><p>${esp.length ? 'Você tem posts esperando. Aprove e escolha o dia: eles aparecem aqui como vão ficar no feed.' : 'Quando você agendar um post, ele aparece aqui exatamente como vai ficar no feed.'}</p><div class="cta small">${esp.length ? '<button class="btn sm accent" data-view="fila">Revisar agora</button>' : '<button class="btn sm accent" data-view="rotinas">Criar um post</button>'}</div></div>`
+      <div class="ini-acoes"><button class="btn sm" data-ini-abrir="${esc(chaveIt(i))}">Abrir em Revisar</button><button class="link" data-ini-dia="${ymd(new Date(i.agendado))}">Mudar o horário</button></div>
+    </div>`).join('')}</div>`).join('') : '<p class="fine">Só o post acima está na agenda por enquanto.</p>') + (ag.length > 13 ? `<p class="fine ini-mais">E mais ${ag.length - 13} depois desses. <button class="link" data-view="calendario">Ver tudo na Agenda</button></p>` : '') : ''
+  if (!ag.length) $('[data-ini-feed]').innerHTML = `<div class="empty glass"><h3>Nada agendado.</h3><p>${esp.length ? 'Você tem posts esperando. Aprove e escolha o dia: eles aparecem aqui como vão ficar no feed.' : 'Quando você agendar um post, ele aparece aqui exatamente como vai ficar no feed.'}</p><div class="cta small">${esp.length ? '<button class="btn sm accent" data-view="fila">Revisar agora</button>' : '<button class="btn sm accent" data-view="rotinas">Criar um post</button>'}</div></div>`
   $('[data-ini-esperando]').innerHTML = `<header class="ed-box-h"><h3>Esperando você</h3><span class="tag">${esp.length}</span></header>${esp.length ? `<div class="ini-mini">${esp.slice(0, 4).map(i => `<button type="button" class="ini-mini-it" data-ini-abrir="${esc(chaveIt(i))}" title="${esc(i.title)}">${capa(i)}</button>`).join('')}</div><button class="btn sm accent" data-view="fila">Revisar agora</button>` : '<p class="fine">Nada para revisar. Quando a sua IA terminar um post, ele aparece aqui.</p>'}`
   const rots = INI_ROT.map(r => ({ r, q: proximaRotina(r) })).filter(x => x.q).sort((a, b) => a.q - b.q)
   $('[data-ini-rotinas]').innerHTML = `<header class="ed-box-h"><h3>A sua IA vai criar</h3><button class="link" type="button" data-view="rotinas">Criar</button></header>${rots.length ? `<ul class="ini-lista">${rots.slice(0, 4).map(x => `<li><b>${esc(x.r.titulo)}</b><small>${quandoRel(x.q)} · vai para Revisar</small></li>`).join('')}</ul>` : '<p class="fine">Nenhum modelo se repete sozinho. Em Criar, "Repetir" escolhe os dias e a hora.</p>'}<p class="fine">Criar usa a sua IA (e os créditos dela). Publicar o que já está aprovado e agendado não usa: só precisa do Vynco aberto.</p>`
@@ -1648,7 +1675,7 @@ async function carregarRotinas() {
 }
 function desenharRotinas() {
   const d = ROT, temDesign = d.rotinas.some(r => r.design)
-  $('[data-rot-sub]').textContent = !d.agente ? 'Conecte uma IA (menu da conta → Ajustes) para criar peças.' : `A sua IA (${d.agente}) cria a peça a partir do seu perfil${d.perfil?.area ? ` (${d.perfil.area})` : ''} e para antes de publicar. Nada vai ao ar sem você aprovar.`
+  $('[data-rot-sub]').textContent = !d.agente ? 'Conecte uma IA em Ajustes (no pé do menu) para criar peças.' : `A sua IA (${d.agente}) cria a peça a partir do seu perfil${d.perfil?.area ? ` (${d.perfil.area})` : ''} e para antes de publicar. Nada vai ao ar sem você aprovar.`
   const f = $('[data-rot-filtro]')
   if (temDesign && !$('[data-v=design]', f)) f.insertAdjacentHTML('beforeend', '<button data-v="design">Design</button>')
   $$('button', f).forEach(b => b.classList.toggle('on', b.dataset.v === ROT_F))
@@ -1693,7 +1720,7 @@ function recomendados(p, modelos) {
 }
 async function rodar(id) {
   if (!ST) await status()
-  if (!ST?.agente?.conectado) return falha(new Error('Conecte uma IA primeiro (menu da conta → Ajustes).'))
+  if (!ST?.agente?.conectado) return falha(new Error('Conecte uma IA primeiro em Ajustes.'))
   try { await api('/api/run', { id }); Som.liga(); pill('Criando o seu post', 'Ele aparece em Revisar quando ficar pronto (de 2 a 10 minutos).', 'var(--violet)'); if (atual?.dataset.scene === 'rotinas') carregarRotinas() } catch (e) { falha(e) }
 }
 $('[data-rot-filtro]').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ROT_F = b.dataset.v; Som.tique(); desenharRotinas() })
