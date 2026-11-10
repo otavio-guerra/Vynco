@@ -98,6 +98,7 @@
   new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) { if (n.tagName === 'SELECT') melhorar(n); else varrer(n) } }).observe(document.body, { childList: true, subtree: true })
 
   // ---------------------------------------------------------------- barra da janela (só na versão desktop)
+  const avisar = ok => { const tk = document.querySelector('meta[name=engine-token]')?.content; if (tk) fetch('/api/janela', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Engine-Token': tk }, body: JSON.stringify({ propria: ok }) }).catch(() => {}) }
   const T = window.__TAURI__
   if (T && T.window) {
     const jan = T.window.getCurrentWindow()
@@ -116,6 +117,8 @@
       const a = b.dataset.jan
       ;(a === 'min' ? jan.minimize() : a === 'max' ? jan.toggleMaximize() : jan.close()).catch(() => {})
     })
+    // só agora a barra do Windows sai; e o servidor fica sabendo que a janela própria está de pé
+    jan.setDecorations(false).then(() => avisar(true)).catch(() => { box.remove(); document.documentElement.classList.remove('desktop'); avisar(false) })
     bar.addEventListener('dblclick', e => { if (e.target.hasAttribute('data-tauri-drag-region')) jan.toggleMaximize().catch(() => {}) })
   }
 })()

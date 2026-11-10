@@ -270,7 +270,7 @@ function startRun(rid, { agente = null, reservaDe = null, auto = false, antes = 
 
 // ---------------------------------------------------------------- modo automático
 const autoCfg = () => C.load().automatico || {}
-let ULTIMO_LIM = null   // o último uso lido das IAs (para decidir sem esperar a rede)
+let ULTIMO_LIM = null, JANELA = null   // JANELA: a página avisa se a barra própria da janela subiu   // o último uso lido das IAs (para decidir sem esperar a rede)
 async function lerLimites() {
   const pr = agenteId(), rs = reservaId()
   const um = async id => id ? { id, ...(await LIMITES.limites(id).catch(() => ({ medidor: false }))) } : null
@@ -397,6 +397,7 @@ const server = http.createServer(async (req, res) => {
           try { plano = await planoAuto() } catch (e) { plano = { erro: e.message } }
           return send(res, 200, { ativo: !!c.ativo, dailyUi: !!c.dailyUi, veto: c.veto == null ? 2 : c.veto, aplicado: c.ativo ? { slots: c.slots, nivel: c.nivel, motivo: c.motivo, atualizado: c.atualizado } : null, plano, temReserva: !!reservaId(), design: MODELOS.MODELOS.some(m => m.id === 'daily-ui') && /design|ux|ui\b|produto/i.test(PERFIS.carregar(perfilAtivo()).area || '') })
         }
+        case '/api/janela': return send(res, 200, JANELA || { propria: null })
         case '/api/limites': {   // o medidor de uso da IA principal e da reserva
           if (process.env.ENGINE_DEMO) return send(res, 200, { principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia.' } })
           const pr = agenteId(), rs = reservaId(), hoje = new Date().toDateString()
@@ -464,6 +465,7 @@ const server = http.createServer(async (req, res) => {
         const plano = await planoAuto(extra); aplicarPlano(plano, extra)
         return send(res, 200, { ativo: true, plano })
       }
+      case '/api/janela': JANELA = { propria: !!b.propria, quando: new Date().toISOString() }; return send(res, 200, { ok: true })
       case '/api/standby': {   // abrir com o Windows, escondido na bandeja
         try { return send(res, 200, standbyLigar(!!b.ligar)) } catch (e) { return send(res, 400, { erro: e.message }) }
       }
