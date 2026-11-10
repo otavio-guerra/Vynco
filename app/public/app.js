@@ -13,6 +13,7 @@ const espera = ms => new Promise(r => setTimeout(r, ms))
 
 // ---------------------------------------------------------------- marcas (desenhos simples, só para reconhecer o serviço)
 const GLIFO = {
+  antigravity: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 12 4l8 15" fill="none" stroke="#3B82F6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="15" r="2.2" fill="#7FFFD4"/></svg>',
   linkedin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3zm6.5 0h3.8v1.6h.06c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.77 2.6 4.77 6v5.46h-4v-4.84c0-1.16-.02-2.64-1.6-2.64-1.62 0-1.86 1.25-1.86 2.55v4.93h-4z"/></svg>',
   claude: '<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="#D97757" stroke-width="2.3" stroke-linecap="round">' + [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((a, i) => { const r = a * Math.PI / 180, l = i % 2 ? 6.5 : 9; return `<line x1="${(12 + Math.cos(r) * 2.2).toFixed(2)}" y1="${(12 + Math.sin(r) * 2.2).toFixed(2)}" x2="${(12 + Math.cos(r) * l).toFixed(2)}" y2="${(12 + Math.sin(r) * l).toFixed(2)}"/>` }).join('') + '</g></svg>',
   codex: '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8">' + [0, 60, 120].map(a => `<ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(${a} 12 12)"/>`).join('') + '</g><circle cx="12" cy="12" r="1.8" fill="currentColor"/></svg>',
@@ -51,9 +52,9 @@ const D = DEMO && (() => {
   const ja = store.get('onboarded') === '1' || ['fila', 'rotinas', 'ajustes', 'calendario', 'rede', 'biblioteca', 'perfil'].includes(new URLSearchParams(location.search).get('tela'))
   return {
     linkedin: { proprio: false, connected: ja, name: ja ? 'Seu Nome' : null, expiresAt: Date.now() + 59 * 864e5, via: 'vynco', redirectUri: 'http://localhost:8765/callback' },
-    agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
+    agentes: { claude: { instalado: true, conectado: false }, codex: { instalado: false, conectado: false }, antigravity: { instalado: false, conectado: false }, gemini: { instalado: false, conectado: false }, copilot: {}, qwen: {}, opencode: {} },
     escolhido: ja ? 'claude' : null, sincronizado: ja,
-    lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
+    lista: [['claude', 'Claude', 'Claude Code', '#D97757'], ['codex', 'ChatGPT', 'Codex', '#10A37F'], ['antigravity', 'Antigravity', 'Antigravity CLI', '#3B82F6'], ['gemini', 'Gemini', 'Gemini CLI', '#4285F4'], ['copilot', 'GitHub Copilot', 'Copilot CLI', '#8957E5', 1], ['qwen', 'Qwen Code', 'Qwen Code', '#615CED', 1], ['opencode', 'OpenCode', 'OpenCode', '#9BA7BF', 1]].map(([id, nome, via, cor, beta]) => ({ id, nome, via, cor, beta: !!beta })),
     jobs: {}, sync: null, posts: {}, rotinas: { dicas: { ativo: true, dias: [2], hora: '08:00' }, pergunta: { ativo: true, dias: [5], hora: '09:00' } }, tarefas: [], ops: 0, gasto: 0, analise: null, rede: { conexoes: [], seguir: [], vagas: [], prefs: {} }, redeEstado: null,
     perfil: { id: 'principal', nome: 'Seu Nome', area: '', publico: '', objetivo: '', tom: '', temas: [], evitar: [], links: { site: '', portfolio: '' }, sobre: '', pilares: [], marca: { cores: { principal: '', secundaria: '', acento: '', fundo: '', texto: '' }, fontes: { titulo: '', texto: '' }, estilo: '', referencias: [], aplicarNoMotor: false, usarNoEstudio: true }, analise: null, atualizado: null },
     // biblioteca de exemplo: imagens desenhadas aqui mesmo (wireframes), nenhuma peça real
@@ -117,7 +118,7 @@ async function apiDemo(path, data) {
     case '/api/linkedin/connect': D.liTimer = setTimeout(() => Object.assign(D.linkedin, { connected: true, name: 'Seu Nome', expiresAt: Date.now() + 60 * 864e5 }), 2400); return { ok: true, modo: 'ponte', msg: 'Demonstração: o login é simulado.' }
     case '/api/linkedin/cancelar': clearTimeout(D.liTimer); return { ok: true }
     case '/api/linkedin/disconnect': Object.assign(D.linkedin, { connected: false, name: null }); return { ok: true }
-    case '/api/limites': return { imagem: { nome: 'Magnific', temChave: true, site: 'https://www.magnific.com', operacoes: D.ops, gasto: D.gasto, limiteMensal: 30, orcamentoMensal: 10 }, principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: D.reserva ? { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia. O Gemini não informa o uso para outros apps.' } : null }
+    case '/api/limites': return { imagem: { nome: 'Magnific', temChave: true, site: 'https://www.magnific.com', operacoes: D.ops, gasto: D.gasto, limiteMensal: 30, orcamentoMensal: 10 }, principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: D.reserva ? { id: 'antigravity', nome: 'Antigravity', medidor: false, nota: 'Conta Google gratuita: uma cota semanal (o Google não publica o número).' } : null }
     case '/api/agente/reserva': D.reserva = data.id ? { id: data.id, nome: ag(data.id).nome, via: ag(data.id).via, conectado: true, sincronizado: null } : null; return { ok: true, instalado: true, conectado: true }
     case '/api/automatico': if (data) { D.auto = !!data.ativo; D.autoDui = !!data.dailyUi } return { ativo: !!D.auto, dailyUi: !!D.autoDui, veto: 2, design: true, temReserva: !!D.reserva, aplicado: D.auto ? PLANO_DEMO() : null, plano: PLANO_DEMO() }
     case '/api/standby': D.standby = { disponivel: true, ligado: !!data.ligar }; return D.standby
@@ -249,6 +250,18 @@ const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'estrategia']
 // áreas da navegação: Estratégia (perfil, rede) · Criar (modelos, mídias, editor) · Revisar (fila) · Agenda (calendário)
 const AREA = { inicio: 'inicio', ajustes: 'ajustes', voce: 'perfil', perfil: 'perfil', rede: 'rede', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
 let atual = null, voltarPara = null
+// cada tela pertence a uma área do app, com cor e ícone próprios (design system: --sec-*)
+const AREA_DE = { inicio: 'inicio', perfil: 'estrategia', voce: 'estrategia', rotinas: 'criar', biblioteca: 'criar', editor: 'criar', fila: 'revisar', calendario: 'agenda', rede: 'rede', ajustes: 'ajustes' }
+const AREA_NOME = { inicio: 'Início', estrategia: 'Estratégia', criar: 'Criar', revisar: 'Revisar', agenda: 'Agenda', rede: 'Rede', ajustes: 'Ajustes' }
+const AREA_VIEW = { inicio: 'inicio', estrategia: 'perfil', criar: 'rotinas', revisar: 'fila', agenda: 'calendario', rede: 'conexoes', ajustes: 'ajustes' }
+function marcarAreas() {
+  for (const sc of $$('.scene.view')) {
+    const area = AREA_DE[sc.dataset.scene]; if (!area) continue
+    const head = $('.view-head > div', sc); if (!head || $('.area-k', head)) continue
+    const svg = $(`.lado [data-view="${AREA_VIEW[area]}"] svg`)?.outerHTML || ''
+    head.insertAdjacentHTML('afterbegin', `<span class="area-k"><i>${svg}</i>${AREA_NOME[area]}</span>`)
+  }
+}
 let RD_FOCO = 'conexoes'
 function focoRede(foco) {
   RD_FOCO = foco
@@ -273,6 +286,7 @@ function cena(nome, { som = true } = {}) {
     $('#lado').hidden = naEntrada; document.body.classList.toggle('com-lado', !naEntrada); $('#conns').hidden = naEntrada
     $('#back').hidden = !(ob > 0 || voltarPara)
     const area = AREA[nome] || nome
+    document.body.dataset.area = AREA_DE[nome] || ''
     $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === (nome === 'rede' ? RD_FOCO : area)))
     if (nome === 'rede') focoRede(RD_FOCO)
     $$('.subnav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === nome))
@@ -776,7 +790,7 @@ $('[data-sync-cancelar]').addEventListener('click', async () => {
 async function entrarSync() {
   const aId = AGS?.escolhido || ST?.agente?.id || (DEMO ? 'claude' : null)
   if (!aId) return cena('agente')
-  const NOMES = { claude: 'Claude', codex: 'ChatGPT', gemini: 'Gemini', copilot: 'GitHub Copilot', qwen: 'Qwen Code', opencode: 'OpenCode' }
+  const NOMES = { claude: 'Claude', codex: 'ChatGPT', antigravity: 'Antigravity', gemini: 'Gemini', copilot: 'GitHub Copilot', qwen: 'Qwen Code', opencode: 'OpenCode' }
   const a = AGS?.agentes.find(x => x.id === aId) || { id: aId, nome: ST?.agente?.nome || NOMES[aId] || 'agente', cor: null }
   $('[data-sync-glyph]').innerHTML = glifo(a.id, a.cor); $('[data-sync-orb]').style.setProperty('--c', a.cor || 'var(--accent)')
   $('[data-sync-t]').textContent = `Preparando o ${a.nome}…`
@@ -874,8 +888,13 @@ function cartaoFeed(i, { aberto = false, quandoTxt = 'agora' } = {}) {
 function desenharFila() {
   const v = visiveis(), pend = FILA.filter(CONTA.pendente).length, prontos = FILA.filter(CONTA.pronto).length
   $$('[data-filter] button').forEach(b => { b.classList.toggle('on', b.dataset.v === FILTRO); const n = FILA.filter(CONTA[b.dataset.v]).length; b.innerHTML = `${b.textContent.replace(/\d+$/, '').trim()}<span class="n">${n}</span>` })
-  $('[data-fila-title]').textContent = pend ? `${pend} ${pend === 1 ? 'post esperando' : 'posts esperando'} você.` : prontos ? 'Tudo aprovado.' : FILA.length ? 'Nada para revisar.' : 'Nada para revisar ainda.'
-  $('[data-fila-sub]').innerHTML = pend ? 'Olhe a prévia, aperte <kbd class="sm">A</kbd> para aprovar e <kbd class="sm">P</kbd> para publicar.' : prontos ? `${prontos} ${prontos === 1 ? 'pronto' : 'prontos'} para ir ao ar quando você quiser (<kbd class="sm">P</kbd>).` : 'Peça um post novo para a sua IA em Criar. Quando ficar pronto, ele aparece aqui.'
+  const MODO = {
+    pendente: { t: pend ? `${pend} ${pend === 1 ? 'post esperando' : 'posts esperando'} você.` : 'Nada esperando você.', d: 'Leia a prévia e aprove. Nada vai ao ar sem isso. <kbd class="sm">A</kbd> aprova, <kbd class="sm">P</kbd> publica.' },
+    pronto: { t: prontos ? `${prontos} ${prontos === 1 ? 'post aprovado' : 'posts aprovados'}.` : 'Nenhum aprovado ainda.', d: 'Prontos para sair: publique agora (<kbd class="sm">P</kbd>) ou escolha o dia e a hora. Mudou algo? Desfaça a aprovação.' },
+    rascunho: { t: FILA.filter(CONTA.rascunho).length ? 'Rascunhos.' : 'Nenhum rascunho.', d: 'Posts que você começou e ainda não enviou para aprovação. Termine no editor e envie quando quiser.' },
+  }[FILTRO]
+  $('[data-scene=fila]').dataset.modo = FILTRO
+  if (MODO) { $('[data-fila-title]').textContent = MODO.t; $('[data-fila-sub]').innerHTML = MODO.d }
   foco = Math.max(0, Math.min(foco, v.length - 1))
   $('[data-strip]').innerHTML = v.length ? v.map((i, n) => `<button class="post${n === foco ? ' focus' : ''}" data-n="${n}" aria-pressed="${n === foco}">
     <div class="shot">${capa(i)}</div>
@@ -1643,7 +1662,7 @@ function desenharAuto() {
     ${p?.erro ? `<p class="ini-alerta">${esc(p.erro)}</p>` : `<div class="auto-grid">
       <div class="auto-plano"><div class="auto-plano-h"><b>${nivelTxt}${p?.slots ? ` · ${p.slots.length} ${p.slots.length === 1 ? 'post' : 'posts'} por semana` : ''}</b><small>${esc(p?.motivo || '')}</small></div>
         <table class="auto-tab">${linhas}</table></div>
-      <aside class="auto-folga"><b>Folga das suas IAs</b>${LIM?.principal ? `<div class="auto-ia-b"><small>${esc(LIM.principal.nome)} (principal)</small>${barrasUso(LIM.principal)}</div>` : ''}${LIM?.reserva ? `<div class="auto-ia-b"><small>${esc(LIM.reserva.nome)} (reserva)</small>${barrasUso(LIM.reserva)}</div>` : `<p class="uso-nota">Sem IA reserva. <button class="link" type="button" data-view="ajustes">Ligar o Gemini (grátis)</button> para o plano não parar quando a principal chegar ao limite.</p>`}
+      <aside class="auto-folga"><b>Folga das suas IAs</b>${LIM?.principal ? `<div class="auto-ia-b"><small>${esc(LIM.principal.nome)} (principal)</small>${barrasUso(LIM.principal)}</div>` : ''}${LIM?.reserva ? `<div class="auto-ia-b"><small>${esc(LIM.reserva.nome)} (reserva)</small>${barrasUso(LIM.reserva)}</div>` : `<p class="uso-nota">Sem IA reserva. <button class="link" type="button" data-view="ajustes">Ligar o Antigravity (grátis)</button> para o plano não parar quando a principal chegar ao limite.</p>`}
         <p class="uso-nota">O plano é refeito todo dia com o uso de hoje. Com a semana pela metade, ele troca carrossel por texto e passa parte para a reserva.</p></aside>
     </div>`}
     ${on ? '' : `<div class="auto-opc">${AUTO_D.design ? `<label class="ed-switch"><input type="checkbox" data-auto-dui${AUTO_OPC.dailyUi ? ' checked' : ''}><span><b>Incluir o Daily UI</b><small>uma tela por dia útil, criada às 7h30 e publicada às 10h</small></span></label>` : ''}
@@ -1671,7 +1690,7 @@ $('[data-auto]')?.addEventListener('click', async e => {
 // A tela escurece e só o item da vez fica aceso. Nos passos "clique", a pessoa clica no próprio item para seguir:
 // um cursor animado mostra onde, e o Vynco abre a tela de verdade por trás. Nada fora do item responde ao clique.
 const TOUR = [
-  { titulo: 'Bem-vindo ao Vynco', texto: 'Em um minuto você conhece o app clicando nele mesmo. Dá para pular quando quiser.', icone: '👋' },
+  { titulo: 'Bem-vindo ao Vynco', texto: 'Em um minuto você conhece o app clicando nele mesmo. Dá para pular quando quiser.', icone: 'logo' },
   { sel: '#nav [data-view=inicio]', clique: 'inicio', titulo: 'Comece pelo Início', texto: 'Clique em Início. É aqui que você vê o que vai ao ar.' },
   { sel: '[data-ini-hero]:not([hidden]), [data-ini-resumo]', titulo: 'O que vai ao ar', texto: 'O próximo post fica em destaque, do jeito que aparece no LinkedIn, com quanto falta para sair. Embaixo, o resto da agenda, dia por dia.' },
   { sel: '#nav [data-view=perfil]', clique: 'perfil', titulo: 'Sua estratégia', texto: 'Clique em Estratégia.' },
@@ -1685,8 +1704,8 @@ const TOUR = [
   { sel: '#nav [data-view=conexoes]', clique: 'conexoes', titulo: 'Rede', texto: 'Clique em Conexões. A sua IA sugere pessoas e vagas para a sua área.' },
   { sel: '#conns', titulo: 'Sua conta e seus limites', texto: 'LinkedIn, IA e Magnific, com o uso da sessão. Clique nele quando quiser ver a semana e quando renova.' },
   { sel: '.lado-pe [data-view=ajustes]', clique: 'ajustes', titulo: 'Ajustes', texto: 'Clique em Ajustes.' },
-  { sel: '[data-conn=reserva]', titulo: 'IA reserva', texto: 'Ligue o Gemini (grátis) para o Vynco seguir criando quando a sua IA chegar ao limite. Em Preferências, "Abrir com o Windows" garante que nenhum horário se perde.' },
-  { titulo: 'Tudo pronto!', texto: 'O Vynco só publica o que você aprovou, ou o que o modo automático conferiu. Este tour fica no menu da sua conta.', fim: true, icone: '🎉' },
+  { sel: '[data-conn=reserva]', titulo: 'IA reserva', texto: 'Ligue o Antigravity (grátis) para o Vynco seguir criando quando a sua IA chegar ao limite. Em Preferências, "Abrir com o Windows" garante que nenhum horário se perde.' },
+  { titulo: 'Tudo pronto!', texto: 'O Vynco só publica o que você aprovou, ou o que o modo automático conferiu. Este tour fica no menu da sua conta.', fim: true, icone: 'logo' },
 ]
 let TOUR_I = -1, TOUR_ANDANDO = false
 function tourIniciar() {
@@ -1730,14 +1749,17 @@ async function tourIr(i) {
   const alvo = p.sel && [...$$(p.sel)].find(el => el.getClientRects().length)
   if (alvo) alvo.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
   const corpo = $('[data-tour-corpo]'); corpo.classList.remove('troca'); void corpo.offsetWidth; corpo.classList.add('troca')
+  // cabeçalho do balão: a marca do Vynco nos passos de abertura e fim; nos outros, o ícone da própria seção
+  const ico = p.icone ? ($('#wordmark svg')?.outerHTML || '') : (alvo?.querySelector('svg') || $(`#nav [data-view=${p.clique || ''}] svg`))?.outerHTML || ''
   $('[data-tour-n]').classList.toggle('ic', !!p.icone)
-  $('[data-tour-n]').textContent = p.icone ? p.icone : `Passo ${i} de ${TOUR.length - 2}`
+  $('[data-tour-n]').innerHTML = `${ico ? `<span class="tour-ico">${ico}</span>` : ''}<span>${p.icone ? (p.fim ? 'Tour concluído' : 'Tour do Vynco') : `Passo ${i} de ${TOUR.length - 2}`}</span>`
   $('[data-tour-t]').textContent = p.titulo
   $('[data-tour-p]').textContent = p.texto
-  const dica = $('[data-tour-dica]'); dica.hidden = !(p.clique && alvo); dica.textContent = 'Clique no item aceso para continuar'
+  const dica = $('[data-tour-dica]'); dica.hidden = !(p.clique && alvo); dica.textContent = 'Clique no item aceso para continuar (ou aperte Enter)'
   $('[data-tour-barra]').style.width = Math.round(i / (TOUR.length - 1) * 100) + '%'
   $('[data-tour=voltar]').hidden = i === 0
-  $('[data-tour=prox]').textContent = p.fim ? 'Começar a usar' : i === 0 ? 'Começar o tour' : p.clique && alvo ? 'Pular este' : 'Próximo'
+  $('[data-tour=prox]').textContent = p.fim ? 'Começar a usar' : i === 0 ? 'Começar o tour' : 'Próximo'
+  $('[data-tour=prox]').hidden = !!(p.clique && alvo)   // nos passos de clique, quem avança é o próprio item (ou Enter)
   $('[data-tour=prox]').classList.toggle('accent', !(p.clique && alvo))
   $('[data-tour=pular]').hidden = !!p.fim
   t.classList.toggle('clique', !!(p.clique && alvo)); t.dataset.alvo = alvo ? '1' : ''
@@ -1801,11 +1823,23 @@ function desenharRotinas() {
   if (temDesign && !$('[data-v=design]', f)) f.insertAdjacentHTML('beforeend', '<button data-v="design">Design</button>')
   $$('button', f).forEach(b => b.classList.toggle('on', b.dataset.v === ROT_F))
   $('[data-rot-avisos]').innerHTML = ''
+  // o que o registro da IA quer dizer, em português, com o próximo passo
+  const explicar = t => {
+    t = String(t || '')
+    if (/no longer supported for Gemini Code Assist|IneligibleTier/i.test(t)) return { t: 'O Gemini grátis foi desligado', d: 'O Google encerrou o plano grátis do Gemini CLI em junho de 2026. Troque a IA reserva para o Antigravity, o substituto grátis.', a: 'ajustes' }
+    if (/trusted (directory|folder)|workspace trust/i.test(t)) return { t: 'A IA recusou a pasta do Vynco', d: 'Ela pede para confiar na pasta antes de trabalhar. Sincronize de novo em Ajustes para liberar.', a: 'ajustes' }
+    if (/(hit your|usage|weekly|session|daily).{0,24}limit|rate.?limit|\b429\b|quota|exceeded|resource.?exhausted/i.test(t)) return { t: 'A sua IA chegou ao limite de uso', d: 'Ela volta quando a cota renovar. Com uma IA reserva ligada, o Vynco não para.', a: 'ajustes' }
+    if (/authenticat|not logged|log ?in required|sign ?in|credential|\b401\b|unauthori[sz]ed/i.test(t)) return { t: 'A sua IA pediu login de novo', d: 'O acesso dela venceu. Entre de novo na conta em Ajustes.', a: 'ajustes' }
+    if (/ENOENT|not recognized|não é reconhecido|command not found|não encontrado/i.test(t)) return { t: 'Faltou um programa', d: 'A IA não achou uma ferramenta de que precisa. Sincronize de novo em Ajustes.', a: 'ajustes' }
+    if (/timed? ?out|tempo esgotado|ETIMEDOUT|deadline/i.test(t)) return { t: 'Demorou demais', d: 'A criação passou do tempo. Tente de novo; costuma ser instabilidade da IA.', a: 'tentar' }
+    return { t: 'A IA parou antes de terminar', d: 'Tente de novo. Se acontecer outra vez, o registro técnico abaixo mostra o motivo.', a: 'tentar' }
+  }
   const card = r => {
     const u = d.runs.find(x => x.id === r.id), rodando = u && u.status === 'rodando', ag = agendaTxt(r.agenda)
     const est = !u ? '' : rodando ? `<span class="rot-st run"><span class="spin"></span>Criando… começou às ${new Date(u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })}</span>`
       : u.status === 'concluída' ? `<span class="rot-st ok">Pronto às ${new Date(u.fim || u.inicio).toLocaleTimeString('pt-BR', { timeStyle: 'short' })} · <button class="link" data-view="fila">revisar</button></span>`
-      : `<span class="rot-st bad">Não deu certo. Veja o registro abaixo e tente de novo.</span>`
+      : u.status === 'passou para a reserva' ? `<span class="rot-st run"><span class="spin"></span>A principal não conseguiu; a IA reserva está criando</span>`
+      : (() => { const x = explicar(u.tail); return `<div class="rot-erro" role="status"><b>${esc(x.t)}</b><span>${esc(x.d)}${u.agente ? ` <small>(${esc(u.agente)}${u.reserva ? ', IA reserva' : ''})</small>` : ''}</span>${x.a === 'ajustes' ? '<button class="link" type="button" data-view="ajustes">Abrir Ajustes</button>' : ''}</div>` })()
     const form = ROT_AB === r.id ? `<div class="rot-form">
         <span class="fine">Em quais dias a IA cria este post?</span>
         <div class="dias" role="group" aria-label="Dias da semana">${DIAS_C.map((c, k) => `<button type="button" data-rot-dia="${k}" class="${ROT_FORM.dias.includes(k) ? 'on' : ''}" aria-pressed="${ROT_FORM.dias.includes(k)}" title="${DIAS_N[k]}">${c}</button>`).join('')}</div>
@@ -1821,7 +1855,7 @@ function desenharRotinas() {
         ${est}
         <div class="row"><button class="btn sm${rodando ? '' : ' accent'}" data-run="${r.id}" ${rodando || !d.agente ? 'disabled' : ''}>${rodando ? 'Criando…' : 'Criar agora'}</button><button class="btn sm" data-rot-rep="${r.id}" aria-expanded="${ROT_AB === r.id}">${ag ? 'Mudar a repetição' : 'Repetir'}</button></div>
         ${form}
-        ${u ? `<details class="more"><summary>O que a IA fez</summary><pre class="log">${esc(u.tail || '…')}</pre></details>` : ''}
+        ${u ? `<details class="more"><summary>${u.status === 'falhou' ? 'Registro técnico' : 'O que a IA fez'}</summary><pre class="log">${esc(u.tail || '…')}</pre></details>` : ''}
       </div></article>`
   }
   const rec = recomendados(PERF_CR || {}, d.rotinas)
@@ -1907,7 +1941,7 @@ function desenharCalendario() {
   for (let k = 0; k < 42; k++) {
     const d = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + k), ds = ymd(d), ev = eventos(ds), fora = d.getMonth() !== mes
     if (k === 35 && fora) break   // não desenha a 6ª semana quando ela é toda do mês seguinte
-    h += `<div class="cal-d${fora ? ' fora' : ''}${ds === hoje ? ' hoje' : ''}${ds === CAL.dia ? ' sel' : ''}${ds < hoje ? ' passado' : ''}" role="gridcell" tabindex="${ds === CAL.dia ? 0 : -1}" data-dia="${ds}" aria-label="${d.getDate()} de ${MESES[d.getMonth()]}: ${ev.length ? ev.length + (ev.length === 1 ? ' item' : ' itens') : 'vazio'}">
+    h += `<div class="cal-d${[0, 6].includes(d.getDay()) ? ' fds' : ''}${ev.length ? ' tem' : ''}${fora ? ' fora' : ''}${ds === hoje ? ' hoje' : ''}${ds === CAL.dia ? ' sel' : ''}${ds < hoje ? ' passado' : ''}" role="gridcell" tabindex="${ds === CAL.dia ? 0 : -1}" data-dia="${ds}" aria-label="${d.getDate()} de ${MESES[d.getMonth()]}: ${ev.length ? ev.length + (ev.length === 1 ? ' item' : ' itens') : 'vazio'}">
       <span class="cal-n">${d.getDate()}</span>
       ${ev.slice(0, 3).map(e => `<span class="cal-ev ${e.t}"${e.t === 'ag' ? ` draggable="true" data-arrasta="${esc(chaveIt(e.i))}"` : ''} title="${esc(e.hora + ' · ' + (e.i ? e.i.title : 'Rotina: ' + e.r.titulo))}"><i>${e.hora}</i>${esc(e.i ? e.i.title : e.r.titulo)}</span>`).join('')}
       ${ev.length > 3 ? `<span class="cal-mais">+${ev.length - 3}</span>` : ''}</div>`
@@ -1995,7 +2029,7 @@ function desenharMenuConta() {
     <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm" style="--c:${l.connected && !venceLogo(l) ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)">${GLIFO.linkedin}</span><b>LinkedIn</b><small>${l.connected ? `válido até ${quando(l.expiresAt)}` : 'não conectado: nada vai ao ar'}</small></div></div>
     <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(a ? a.id : '?')}</span><b>${a ? esc(a.nome) : 'Sem IA'}</b><small>${a ? (a.conectado ? 'IA principal' : 'falta entrar na conta') : 'escolha uma em Ajustes'}</small></div>${barrasUso(P)}</div>
     ${LIM?.imagem ? `<div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm mg-ic" style="--c:${LIM.imagem.temChave ? 'var(--green)' : 'var(--faint)'}">M</span><b>Magnific</b><small>${LIM.imagem.temChave ? 'imagens com IA' : 'sem chave: ligue em Ajustes'}</small></div>${LIM.imagem.temChave ? barrasUso({ medidor: true, janelas: [{ rotulo: `Operações este mês (${LIM.imagem.operacoes} de ${LIM.imagem.limiteMensal})`, pct: Math.round(100 * LIM.imagem.operacoes / Math.max(1, LIM.imagem.limiteMensal)), renova: null }, { rotulo: `Gasto estimado (€${LIM.imagem.gasto.toFixed(2)} de €${LIM.imagem.orcamentoMensal})`, pct: Math.round(100 * LIM.imagem.gasto / Math.max(0.01, LIM.imagem.orcamentoMensal)), renova: null }] }) + `<p class="uso-nota">Os limites são os que você definiu em Ajustes. A API do Magnific não informa o saldo da conta: ${LIM.imagem.site ? `<a class="link" href="${esc(urlOk(LIM.imagem.site))}" target="_blank" rel="noopener">ver os créditos no site ↗</a>` : 'confira no site'}.</p>` : ''}</div>` : ''}
-    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(ST.reserva ? ST.reserva.id : '?')}</span><b>${ST.reserva ? esc(ST.reserva.nome) : 'Sem IA reserva'}</b><small>${ST.reserva ? 'assume se a principal falhar' : 'ligue em Ajustes: o Gemini é grátis'}</small></div>${ST.reserva ? barrasUso(R) : ''}</div>
+    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(ST.reserva ? ST.reserva.id : '?')}</span><b>${ST.reserva ? esc(ST.reserva.nome) : 'Sem IA reserva'}</b><small>${ST.reserva ? 'assume se a principal falhar' : 'ligue em Ajustes: o Antigravity é grátis'}</small></div>${ST.reserva ? barrasUso(R) : ''}</div>
     <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>
     <button role="menuitem" data-cm="tour"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m6.2 9.8 1-3 3-1-1 3z" fill="currentColor"/></svg><span>Tour pelo app<small>onde fica cada coisa, em 1 minuto</small></span></button>
     <button role="menuitem" data-cm="atalhos"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h1M7 7h1M10 7h2M5 9.8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Atalhos de teclado<small>aperte ? em qualquer tela</small></span></button>`
@@ -2094,23 +2128,26 @@ function desenharAjustes() {
 function desenharReserva() {
   if (!ST) return
   const r = ST.reserva, x = LIM?.reserva, row = $('[data-conn=reserva]'); if (!row) return
-  $('[data-res-ic]', row).innerHTML = glifo(r ? r.id : 'gemini')
+  $('[data-res-ic]', row).innerHTML = glifo(r ? r.id : 'antigravity')
+  const GRATIS = ST.agente?.id === 'antigravity' ? 'claude' : 'antigravity', velho = r && r.id === 'gemini'
   $('[data-res-n]', row).innerHTML = r ? `IA reserva · ${esc(r.nome)}` : 'IA reserva <small class="opt">recomendado</small>'
   $('.c-ic', row).style.setProperty('--c', r ? (r.conectado ? 'var(--green)' : 'var(--amber)') : 'var(--faint)')
   $('[data-conn-t]', row).innerHTML = r ? (r.conectado ? `Se a principal chegar ao limite ou falhar, o ${esc(r.nome)} cria no lugar. O post vai para Revisar como sempre.${r.sincronizado ? '' : ' Falta sincronizar.'}` : `Falta entrar na conta do ${esc(r.nome)}.`) + (x ? `<span class="uso-mini">${barrasUso(x)}</span>` : '')
-    : 'Quando a sua IA chega ao limite de uso, o Vynco não cria nada. Com uma reserva, outra IA assume. O Gemini é grátis com uma conta Google (cerca de 1.000 pedidos por dia).'
+    : 'Quando a sua IA chega ao limite de uso, o Vynco não cria nada. Com uma reserva, outra IA assume. O Antigravity, do Google, é grátis com uma conta Google (cota semanal).'
+  if (velho) $('[data-conn-t]', row).innerHTML = '<span class="res-aviso">O Google desligou o plano grátis do Gemini CLI em junho de 2026, então esta reserva não funciona mais. Troque para o Antigravity, que é o substituto grátis.</span>'
+  if (velho && !RES_ON) { $('[data-conn-a]', row).innerHTML = '<button class="btn sm accent" data-act="res-ligar" data-res="antigravity">Trocar para o Antigravity</button><button class="link soft" data-act="res-tirar">Tirar</button>'; return }
   $('[data-conn-a]', row).innerHTML = RES_ON ? `<span class="soft">${esc(RES_ON)}</span>${RES_JANELA ? `<button class="link" data-act="res-janela" data-res="${RES_JANELA}">Não abriu? Abrir numa janela</button>` : ''}` : r ? `${r.conectado && r.sincronizado ? '' : `<button class="btn sm accent" data-act="res-ligar" data-res="${r.id}">Terminar</button>`}<button class="link soft" data-act="res-tirar">Tirar</button>`
-    : `<button class="btn sm accent" data-act="res-ligar" data-res="${ST.agente?.id === 'gemini' ? 'claude' : 'gemini'}">Usar o ${ST.agente?.id === 'gemini' ? 'Claude' : 'Gemini'}${ST.agente?.id === 'gemini' ? '' : ' (grátis)'}</button>`
+    : `<button class="btn sm accent" data-act="res-ligar" data-res="${GRATIS}">Usar o ${GRATIS === 'claude' ? 'Claude' : 'Antigravity'}${ST.agente?.id === 'gemini' ? '' : ' (grátis)'}</button>`
 }
 let RES_ON = '', RES_JANELA = ''
 async function ligarReserva(id) {
-  const nome = { claude: 'Claude', gemini: 'Gemini', codex: 'ChatGPT' }[id] || id
+  const nome = { claude: 'Claude', antigravity: 'Antigravity', gemini: 'Gemini', codex: 'ChatGPT' }[id] || id
   const passo = t => { RES_ON = t; desenharReserva() }
   try {
     passo('Conferindo…')
     let r = await api('/api/agente/reserva', { id })
     if (!r.conectado) {
-      passo(r.instalado ? `Abrindo o login do ${nome}…` : `Instalando o ${nome}…`)
+      passo(r.instalado ? (id === 'antigravity' ? 'Abri uma janela do Antigravity: entre com a sua conta Google no navegador e feche a janela' : `Abrindo o login do ${nome}…`) : `Instalando o ${nome}…`)
       let j = await api('/api/agente/login', { id })
       const t0 = Date.now()
       while (!['ok', 'erro'].includes(j.fase)) { await espera(DEMO ? 300 : 1500); j = await api('/api/agente/job?id=' + id); if (!j.fase) break; RES_JANELA = Date.now() - t0 > 20000 ? id : ''; passo(j.msg || 'Entrando…') }
@@ -2253,7 +2290,12 @@ function avisoFixo({ tipo = 'info', titulo, texto = '', acao = null }) {
   if (acao) el.querySelector('[data-af-acao]').onclick = () => { el.remove(); acao.fn() }
   box.prepend(el)
   while (box.children.length > 4) box.lastElementChild.remove()
-  if (tipo === 'info') setTimeout(() => el.remove(), 10000)
+  // some sozinho (o mouse em cima pausa); erro fica um pouco mais, para dar tempo de ler
+  const dur = tipo === 'erro' ? 14000 : 7000, sair = () => { el.classList.add('saindo'); setTimeout(() => el.remove(), 260) }
+  el.style.setProperty('--dur', dur + 'ms'); el.insertAdjacentHTML('beforeend', '<i class="af-tempo" aria-hidden="true"></i>')
+  let resta = dur, ini = Date.now(), t = setTimeout(sair, dur)
+  el.addEventListener('mouseenter', () => { clearTimeout(t); resta -= Date.now() - ini; el.classList.add('pausa') })
+  el.addEventListener('mouseleave', () => { ini = Date.now(); t = setTimeout(sair, Math.max(1500, resta)); el.classList.remove('pausa') })
 }
 
 // ---------------------------------------------------------------- o que a sua IA está fazendo (de qualquer tela)
@@ -2411,3 +2453,4 @@ else {
   else status().then(s => { if (!DEMO && s && (s.linkedin?.contas || []).length && s.agente?.sincronizado) { store.set('onboarded', '1'); abrirApp() } else cena('ola', { som: false }) })
 }
 vigiar()
+marcarAreas()

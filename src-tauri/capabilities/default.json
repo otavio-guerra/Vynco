@@ -1,7 +1,22 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "A tela de espera não usa nenhuma API do Tauri; o painel roda no servidor local, sem acesso ao Tauri.",
-  "windows": ["main"],
-  "permissions": ["core:default"]
+  "description": "A barra da janela é do Vynco: o painel (servidor local em 127.0.0.1) só pode arrastar, minimizar, maximizar e fechar a janela. Nenhuma outra API do Tauri fica disponível para a página.",
+  "windows": [
+    "main"
+  ],
+  "remote": {
+    "urls": [
+      "http://127.0.0.1:*/*",
+      "http://localhost:*/*"
+    ]
+  },
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
+    "core:window:allow-is-maximized"
+  ]
 }

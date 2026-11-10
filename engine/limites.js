@@ -54,7 +54,8 @@ function codex() {
 }
 
 const SEM_MEDIDOR = {
-  gemini: 'Conta Google gratuita: cerca de 1.000 pedidos por dia. O Gemini não informa o uso para outros apps.',
+  antigravity: 'Conta Google gratuita: uma cota semanal (o Google não publica o número). O Antigravity não informa o uso para outros apps.',
+  gemini: 'O plano grátis do Gemini CLI foi desligado pelo Google em junho de 2026. Só funciona com chave paga.',
   copilot: 'O GitHub Copilot não informa o uso para outros apps.',
   qwen: 'O Qwen Code não informa o uso para outros apps.',
   opencode: 'O OpenCode depende do modelo escolhido nele.',

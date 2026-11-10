@@ -68,6 +68,10 @@ fn main() {
                 .inner_size(1240.0, 840.0)
                 .min_inner_size(900.0, 640.0)
                 .center()
+                // a barra da janela é desenhada pelo próprio Vynco (app/public/controles.js)
+                .decorations(false)
+                .shadow(true)
+                .background_color(tauri::window::Color(12, 18, 32, 255))
                 .visible(!escondido)
                 .build()?;
             if cfg!(debug_assertions) {

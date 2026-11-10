@@ -258,7 +258,7 @@ function startRun(rid, { agente = null, reservaDe = null, auto = false, antes = 
     if (item.status === 'concluída' && auto && autoCfg().ativo) { try { autoAprovar(rid, fotoAntes) } catch (e) { avisar({ ok: false, titulo: r.titulo, texto: `O modo automático não conseguiu aprovar: ${e.message}` }) } }
     // falhou com a principal: tenta uma vez com a reserva (o post vai para Revisar como sempre)
     const res = !reservaDe && item.status === 'falhou' ? reservaId() : null
-    if (res) {
+    if (res && res !== ag) {
       item.status = 'passou para a reserva'
       try { startRun(rid, { agente: res, reservaDe: ag, auto, antes: fotoAntes }); avisar({ ok: true, titulo: r.titulo, texto: `O ${AG.AGENTES[ag].nome} não conseguiu criar (limite, créditos ou login). A sua IA reserva, o ${AG.AGENTES[res].nome}, está criando no lugar.` }) }
       catch (e) { item.status = 'falhou'; avisar({ ok: false, titulo: r.titulo, texto: `Nem a IA principal nem a reserva conseguiram: ${e.message}` }) }
@@ -388,7 +388,7 @@ const server = http.createServer(async (req, res) => {
           return send(res, 200, { agente, reserva, standby: standbyStatus(), linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() }, desktop: !!process.env.VYNCO_DESKTOP })
         }
         case '/api/agentes': {
-          const principais = ['claude', 'codex', 'gemini']
+          const principais = ['claude', 'codex', 'antigravity']
           const st = Object.fromEntries(await Promise.all(principais.map(async id => [id, await AG.status(id).catch(() => ({}))])))
           return send(res, 200, { escolhido: agenteId(), agentes: AG.lista().map(a => ({ ...a, ...(st[a.id] || {}) })) })
         }

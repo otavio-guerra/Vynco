@@ -1159,3 +1159,168 @@ body::after { content: ''; position: fixed; inset: -50%; z-index: 90; pointer-ev
 .rd-pag .es-vazio { padding: 22px; border-radius: 16px; border: 1px dashed var(--edge-2); text-align: center } .rd-pag .es-vazio h3 { margin: 0 0 6px; font-size: 16px } .rd-pag .es-vazio p { margin: 0 auto; max-width: 520px; color: var(--soft) }
 @media (max-width: 1000px) { .cx-grid { grid-template-columns: minmax(0, 1fr) } .cx-dicas { position: static } }
 .vg-barra { max-width: 900px }
+
+.res-aviso { color: var(--amber) }
+
+/* criar: cartão que não vaza e erro explicado */
+.rot { overflow: hidden; min-width: 0 }
+.log { overflow-wrap: anywhere; word-break: break-word; max-height: 150px }
+.rot-erro { display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--amber) 9%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 32%, transparent) }
+.rot-erro b { font-size: 13.5px; color: var(--amber) } .rot-erro span { font-size: 13px; color: var(--soft); line-height: 1.45 } .rot-erro small { color: var(--faint) }
+.rot-erro .link { justify-self: start; font-size: 13px; padding: 2px 0 }
+
+/* avisos: somem sozinhos, com uma barrinha do tempo que falta */
+.aviso-fixo { position: relative; overflow: hidden; transition: opacity .25s var(--ease), transform .25s var(--ease) }
+.aviso-fixo.saindo { opacity: 0; transform: translateX(16px) }
+.af-tempo { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--c, var(--accent)); opacity: .6; transform-origin: left; animation: af-tempo var(--dur, 7000ms) linear forwards }
+.aviso-fixo.pausa .af-tempo { animation-play-state: paused }
+@keyframes af-tempo { to { transform: scaleX(0) } }
+/* atalho no pé do menu: discreto */
+.lado-pe kbd { min-width: 20px; height: 20px; padding: 0 6px; font-size: 11px; font-weight: 600; border-radius: 6px; color: var(--faint); background: var(--glass); border: 1px solid var(--edge); box-shadow: none }
+
+/* tour: cabeçalho com o ícone da seção, sem emoji */
+.tour-n { display: flex; align-items: center; gap: 8px }
+.tour-n.ic { font-size: 11.5px; letter-spacing: .1em; line-height: 1.2 }
+.tour-ico { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent) }
+.tour-ico svg { width: 16px; height: 16px }
+.tour.centro .tour-n { justify-content: center } .tour.centro .tour-ico { width: 44px; height: 44px; border-radius: 14px; color: var(--text); background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--mint) 55%, var(--brand))) } .tour.centro .tour-ico svg { width: 24px; height: 24px }
+.tour.centro .tour-n { flex-direction: column; gap: 10px }
+
+/* =====================================================================================================
+   Vynco Design System 1.0 (docs/design-system.md) · camada de tokens e normalização
+   Esta camada vem por último: ela alinha tipografia, espaçamento, raios e cores ao sistema.
+   ===================================================================================================== */
+:root {
+  /* tipografia: 8 degraus (Segoe UI Variable) */
+  --fs-display: 34px; --fs-title: 22px; --fs-heading: 17px; --fs-body-lg: 15px; --fs-body: 14px; --fs-small: 13px; --fs-caption: 12px; --fs-overline: 11px;
+  --lh-tight: 1.15; --lh-snug: 1.3; --lh-body: 1.5;
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+  --ls-overline: .08em;
+  /* espaçamento: escala de 4 px */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-14: 56px;
+  /* raios */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px; --r-pill: 999px;
+  /* elevação */
+  --e-1: 0 6px 20px rgba(0, 0, 0, .18); --e-2: 0 16px 40px rgba(0, 0, 0, .28); --e-3: 0 28px 70px rgba(0, 0, 0, .45);
+  /* movimento */
+  --t-fast: .15s; --t-base: .25s; --t-slow: .45s;
+  /* cores por seção (personalidade de cada área) */
+  --sec-inicio: #8C85FF; --sec-estrategia: #34D3C2; --sec-criar: #FF8A65; --sec-revisar: #FFB547; --sec-agenda: #5AA9FF; --sec-rede: #F472B6; --sec-ajustes: #A3AEC6;
+  --area: var(--sec-inicio);
+}
+[data-theme=light] { --sec-inicio: #5a51f0; --sec-estrategia: #0f9b8e; --sec-criar: #d9572f; --sec-revisar: #b8730f; --sec-agenda: #1f6fd1; --sec-rede: #c2307a; --sec-ajustes: #5b6680; --e-1: 0 6px 20px rgba(19, 32, 58, .08); --e-2: 0 16px 40px rgba(19, 32, 58, .12) }
+body[data-area=inicio] { --area: var(--sec-inicio) } body[data-area=estrategia] { --area: var(--sec-estrategia) } body[data-area=criar] { --area: var(--sec-criar) }
+body[data-area=revisar] { --area: var(--sec-revisar) } body[data-area=agenda] { --area: var(--sec-agenda) } body[data-area=rede] { --area: var(--sec-rede) } body[data-area=ajustes] { --area: var(--sec-ajustes) }
+
+/* ---------------------------------------------------------------- tipografia */
+.view h1 { font-size: var(--fs-display); line-height: var(--lh-tight); font-weight: var(--fw-bold); letter-spacing: -.02em }
+.view h2, .ini-h h2, .rd-h h2 { font-size: var(--fs-heading); line-height: var(--lh-snug); font-weight: var(--fw-semibold) }
+.view h3, .ed-box-h h3 { font-size: var(--fs-body-lg); line-height: var(--lh-snug); font-weight: var(--fw-semibold) }
+.view .sub { font-size: var(--fs-body-lg); line-height: var(--lh-body) }
+.fine { font-size: var(--fs-small); line-height: var(--lh-body) }
+/* maiúsculas só em sobretítulos (overline): grupos do menu, rótulos e etiquetas, sempre no mesmo estilo */
+.tag, .lado-sep, .ini-hero-k, .tour-n.ic, .tour-n:not(.ic), .rd-ctx-l small, .auto-tab td:first-child, .fp-label, .vg-bloco small, .cal-dow, .est-h small, .sm-t, .beta, .selo-beta, .area-k {
+  font-size: var(--fs-overline); font-weight: var(--fw-semibold); letter-spacing: var(--ls-overline); text-transform: uppercase }
+/* pesos fora da escala viram os mais próximos */
+.cx-t b, .wordmark { font-weight: var(--fw-semibold) }
+
+/* ---------------------------------------------------------------- raios e elevação dos componentes */
+.btn { border-radius: var(--r-md) } .btn.sm { border-radius: var(--r-sm) }
+.chips button, .filters button, .subnav, .subnav button, .ini-tag, .vg-tag, .auto-ia, .nav-n, .conns { border-radius: var(--r-pill) }
+.glass, .ed-box, .set { border-radius: var(--r-lg) }
+.ini-hero, .tour-pop, dialog > .glass, .sheet { border-radius: var(--r-xl) }
+.post, .rot, .cr-acao, .midia, .ini-chip, .rd-card, .cx-seg { border-radius: var(--r-lg) }
+.conta-menu, .vsel-lista, .ctx-menu, .aviso-fixo { border-radius: var(--r-md); box-shadow: var(--e-2) }
+input, textarea, .sel, .vsel-b { border-radius: var(--r-sm) }
+
+/* ---------------------------------------------------------------- personalidade de cada seção */
+.view-head h1 { background: linear-gradient(100deg, var(--text) 30%, color-mix(in srgb, var(--area) 75%, var(--text)) 50%, var(--text) 70%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text }
+.area-k { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--area); margin-bottom: var(--sp-2) }
+.area-k i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--area) 16%, transparent); border: 1px solid color-mix(in srgb, var(--area) 35%, transparent) }
+.area-k i svg { width: 15px; height: 15px }
+.g1 { background: radial-gradient(closest-side, color-mix(in srgb, var(--area) 26%, color-mix(in srgb, var(--mood) 12%, transparent)), transparent) }
+.lado-ind::before { background: var(--area) }
+.lado nav button[aria-current] svg { color: var(--area) }
+.subnav button[aria-current] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--area) 45%, var(--edge)) }
+.btn.accent { background: var(--btn) }
+.view-head::after { content: ''; display: block; width: 44px; height: 3px; border-radius: 3px; margin: var(--sp-3) auto 0; background: linear-gradient(90deg, var(--area), transparent) }
+.ini-head::after { margin-left: 0 }
+
+/* ---------------------------------------------------------------- barras de rolagem do app */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text) 18%, transparent) transparent }
+::-webkit-scrollbar { width: 10px; height: 10px } ::-webkit-scrollbar-track { background: transparent }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 16%, transparent); border-radius: 99px; border: 3px solid transparent; background-clip: padding-box }
+::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--area) 55%, transparent) }
+::-webkit-scrollbar-corner { background: transparent }
+input[type=date], input[type=time], input[type=datetime-local] { color-scheme: dark } [data-theme=light] input[type=date], [data-theme=light] input[type=time] { color-scheme: light }
+::-webkit-calendar-picker-indicator { opacity: .6; cursor: pointer } ::-webkit-calendar-picker-indicator:hover { opacity: 1 }
+
+/* ---------------------------------------------------------------- lista de escolha do app */
+.vsel { position: relative; display: inline-flex; min-width: 0 } .vsel-nativo { position: absolute !important; opacity: 0; pointer-events: none; width: 1px; height: 1px }
+.vsel-b { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--sp-2); min-height: 36px; padding: 6px 10px 6px 12px; width: 100%; font: var(--fw-medium) var(--fs-body)/1.2 var(--font); color: var(--text); background: var(--glass-2); border: 1px solid var(--edge-2); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast) }
+.vsel-b:hover { border-color: color-mix(in srgb, var(--area) 50%, var(--edge-2)) } .vsel-b:focus-visible { outline: 2px solid var(--area); outline-offset: 2px }
+.vsel-b svg { width: 14px; height: 14px; color: var(--soft); transition: transform var(--t-base) var(--ease) } .vsel.aberto .vsel-b svg { transform: rotate(180deg) }
+.vsel-b span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap } .vsel-b:disabled { opacity: .5; cursor: default }
+label .vsel { width: 100% }
+.vsel-lista { position: fixed; z-index: 140; margin: 0; padding: var(--sp-1); list-style: none; overflow: auto; background: var(--bg-3); border: 1px solid var(--edge-2); animation: vsel-in .16s var(--ease) both }
+@keyframes vsel-in { from { opacity: 0; transform: translateY(-4px) } }
+.vsel-lista li { padding: 8px 12px; border-radius: var(--r-sm); font-size: var(--fs-body); color: var(--soft); cursor: pointer; white-space: nowrap }
+.vsel-lista li.foco { background: var(--glass-2); color: var(--text) } .vsel-lista li[aria-selected=true] { color: var(--text); font-weight: var(--fw-semibold) }
+.vsel-lista li[aria-selected=true]::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 10px; border-radius: 50%; background: var(--area); vertical-align: middle }
+.vsel-lista li[aria-disabled=true] { opacity: .4; cursor: default }
+
+/* ---------------------------------------------------------------- menu do botão direito (só em campos de texto) */
+.ctx-menu { position: fixed; z-index: 150; min-width: 180px; padding: var(--sp-1); display: grid; background: var(--bg-3); border: 1px solid var(--edge-2); animation: vsel-in .14s var(--ease) both }
+.ctx-menu button { text-align: left; padding: 8px 12px; border: 0; border-radius: var(--r-sm); background: none; color: var(--text); font: var(--fw-medium) var(--fs-small) var(--font); cursor: pointer }
+.ctx-menu button:hover:not(:disabled) { background: var(--glass-2) } .ctx-menu button:disabled { color: var(--faint); cursor: default }
+.ctx-menu hr { border: 0; border-top: 1px solid var(--edge); margin: var(--sp-1) 6px }
+
+/* ---------------------------------------------------------------- barra da janela (desktop) */
+.desktop .bar { padding-right: 0; padding-top: 0; min-height: 52px; user-select: none; -webkit-user-select: none }
+.desktop .bar > * { align-self: center }
+.jan-ctrl { position: fixed; top: 0; right: 0; z-index: 7; display: flex; height: 34px }
+.jan-ctrl button { width: 46px; height: 34px; display: grid; place-items: center; border: 0; background: none; color: var(--soft); cursor: default; transition: background var(--t-fast), color var(--t-fast) }
+.jan-ctrl button svg { width: 11px; height: 11px }
+.jan-ctrl button:hover { background: var(--glass-2); color: var(--text) } .jan-ctrl button.x:hover { background: #c42b1c; color: #fff }
+.desktop .bar-r { margin-right: 150px; margin-top: 6px }
+.desktop .lado { padding-top: 64px }
+
+/* revisar: três modos com cor e explicação próprias */
+[data-scene=fila] { --modo: var(--sec-revisar) } [data-scene=fila][data-modo=pronto] { --modo: var(--green) } [data-scene=fila][data-modo=rascunho] { --modo: var(--sec-ajustes) }
+.modos button { gap: var(--sp-2) } .modos button::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c) }
+.modos .m-pend { --c: var(--sec-revisar) } .modos .m-ok { --c: var(--green) } .modos .m-ras { --c: var(--sec-ajustes) }
+.modos button.on { color: var(--text); background: color-mix(in srgb, var(--c) 16%, transparent); border-color: color-mix(in srgb, var(--c) 55%, transparent) }
+[data-scene=fila] .view-head { padding: var(--sp-5) var(--sp-6); border-radius: var(--r-xl); background: linear-gradient(135deg, color-mix(in srgb, var(--modo) 12%, transparent), transparent 70%); border: 1px solid color-mix(in srgb, var(--modo) 28%, var(--edge)) }
+[data-scene=fila] .view-head::after { background: linear-gradient(90deg, var(--modo), transparent) }
+[data-scene=fila] .post.focus { border-color: var(--modo); box-shadow: 0 0 0 1px var(--modo), var(--e-2) }
+[data-scene=fila][data-modo=pronto] .post .shot::after { content: 'APROVADO'; position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: var(--r-pill); font-size: 10px; font-weight: 700; letter-spacing: var(--ls-overline); color: #0C1220; background: var(--green) }
+[data-scene=fila][data-modo=rascunho] .post .shot { filter: saturate(.4) } [data-scene=fila][data-modo=rascunho] .post .shot::after { content: 'RASCUNHO'; position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: var(--r-pill); font-size: 10px; font-weight: 700; letter-spacing: var(--ls-overline); color: var(--text); background: var(--glass-3); border: 1px dashed var(--edge-2) }
+[data-scene=fila][data-modo=rascunho] .post { border-style: dashed }
+
+/* agenda: cabeçalho numa linha, legenda compacta e dias mais legíveis */
+[data-scene=calendario] .view-head { flex-direction: row; align-items: flex-end; justify-content: space-between; text-align: left; gap: var(--sp-6); flex-wrap: wrap; margin-bottom: var(--sp-4) }
+[data-scene=calendario] .view-head .sub { margin: var(--sp-1) 0 0 } [data-scene=calendario] .view-head::after { display: none }
+[data-scene=calendario] .cal-nav { display: flex; gap: var(--sp-2); align-items: center }
+[data-scene=calendario] .cal-legenda { justify-content: flex-start; gap: var(--sp-4); margin-bottom: var(--sp-3); font-size: var(--fs-caption) }
+.cal-legenda .cl { display: inline-flex; align-items: center; gap: 6px } .cal-legenda .cl::before { content: ''; width: 10px; height: 10px; border-radius: 3px; background: var(--c) }
+.cal-legenda .cl.pub { --c: var(--green) } .cal-legenda .cl.ag { --c: var(--sec-agenda) } .cal-legenda .cl.rot { --c: var(--sec-criar) }
+.cal-legenda .fine { margin-left: auto }
+[data-scene=calendario] [data-ag-abas] { margin: 0 0 var(--sp-3) }
+.cal { gap: 6px; padding: var(--sp-3) }
+.cal-dow { font-size: var(--fs-overline); letter-spacing: var(--ls-overline); padding: 2px 0 8px }
+.cal-d { min-height: 108px; padding: var(--sp-2); border-radius: var(--r-md); gap: 4px; border: 1px solid transparent; transition: background var(--t-fast), border-color var(--t-fast) }
+.cal-d.fds { background: color-mix(in srgb, var(--glass) 45%, transparent) }
+.cal-d.passado:not(.hoje) { opacity: .62 }
+.cal-d.tem .cal-n { color: var(--text) }
+.cal-d.hoje { border-color: color-mix(in srgb, var(--area) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--area) 40%, transparent) }
+.cal-d.hoje .cal-n { color: #0C1220; background: var(--area) }
+.cal-d.sel { border-color: var(--area); background: color-mix(in srgb, var(--area) 10%, var(--glass)) }
+.cal-n { font-size: var(--fs-small); font-weight: var(--fw-semibold) }
+.cal-ev { font-size: 11.5px; padding: 3px 6px 3px 7px; border-radius: 6px; border-left: 3px solid var(--c); background: color-mix(in srgb, var(--c) 15%, transparent) }
+.cal-ev.ag { --c: var(--sec-agenda) } .cal-ev.pub { --c: var(--green) }
+.cal-ev.rot { --c: var(--sec-criar); background: transparent; border: 1px dashed color-mix(in srgb, var(--sec-criar) 55%, transparent); border-left: 3px solid var(--sec-criar) }
+.cal-ev i { color: color-mix(in srgb, var(--c) 70%, var(--text)); font-weight: var(--fw-semibold) }
+.cal-li.ag { --c: var(--sec-agenda) } .cal-li.rot { --c: var(--sec-criar) } .cal-li.pub { --c: var(--green) }
+.cal-lado .ed-box { border-radius: var(--r-lg) }
+@media (max-width: 1100px) { .cal-grid { grid-template-columns: minmax(0, 1fr) } }
+.cal-legenda .cl.rot::before { background: transparent !important; border: 1.5px dashed var(--sec-criar) !important; width: 8px; height: 8px }

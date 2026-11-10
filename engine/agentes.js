@@ -23,6 +23,8 @@ const PASTAS = () => (process.env.PATH || '').split(path.delimiter).concat([
   path.join(HOME, '.local', 'bin'),
   process.env.APPDATA && path.join(process.env.APPDATA, 'npm'),
   process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'GitHubCopilotCLI'),
+  process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'agy', 'bin'),
+  path.join(HOME, '.local', 'share', 'agy', 'bin'),
   process.env.ProgramFiles && path.join(process.env.ProgramFiles, 'nodejs'),
 ].filter(Boolean))
 function achar(nome) {
@@ -56,6 +58,16 @@ const lerTexto = t => { try { return JSON.parse(t.slice(t.indexOf('{'), t.lastIn
 const escrever = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s, 'utf8') }
 const fundir = (p, patch) => { const cur = lerJSON(p, {}); const deep = (a, b) => { const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = v && typeof v === 'object' && !Array.isArray(v) ? deep(a[k] || {}, v) : v; return o }; escrever(p, JSON.stringify(deep(cur, patch), null, 2) + '\n') }
 
+let CONTA_AGY = null
+function confiarAgy() {
+  const p = path.join(HOME, '.gemini', 'antigravity-cli', 'settings.json'), s = lerJSON(p, {})
+  const ws = new Set([...(s.trustedWorkspaces || []), ROOT])
+  const perm = s.permissions || {}
+  const allow = new Set([...(perm.allow || []), ...SCRIPTS.map(c => `command(${c})`)])
+  const deny = new Set([...(perm.deny || []), 'command(regex:.*postar\\.js.*)', 'command(regex:.*linkedin.*token.*)'])
+  escrever(p, JSON.stringify({ ...s, trustedWorkspaces: [...ws], permissions: { ...perm, allow: [...allow], deny: [...deny] } }, null, 2))
+}
+
 // ---------------------------------------------------------------- adaptadores
 // pergunta curta para as rotinas: o agente lê o arquivo de instruções (evita passar textos longos pela linha de comando)
 const pedir = arq => `Leia o arquivo ${arq} e siga as instruções dele à risca.`
@@ -87,8 +99,30 @@ const AGENTES = {
     rotina: arq => ({ args: ['exec', '--sandbox', 'workspace-write', '-c', 'sandbox_workspace_write.network_access=false', '--skip-git-repo-check', '-c', 'tools.web_search=true', pedir(arq)] }),
     teste: ['exec', '--skip-git-repo-check', 'Responda apenas: ok'],
   },
+  // Antigravity CLI (Google): substituiu o Gemini CLI grátis para contas pessoais em junho de 2026.
+  // Login: rodar "agy" uma vez (abre o navegador); a conta fica no Gerenciador de Credenciais do Windows.
+  antigravity: {
+    nome: 'Antigravity', via: 'Antigravity CLI', bin: 'agy', cor: '#3B82F6', gratis: true,
+    instalar: IS_WIN ? { tipo: 'ps', cmd: 'irm https://antigravity.google/cli/install.ps1 | iex', rotulo: 'instalador oficial do Antigravity CLI' } : { tipo: 'sh', cmd: 'curl -fsSL https://antigravity.google/cli/install.sh | bash', rotulo: 'instalador oficial do Antigravity CLI' },
+    antesDoLogin() { confiarAgy() },
+    login: [], loginConsole: [],
+    // não há arquivo de login documentado: o jeito seguro é uma pergunta curta (guardada por 20 min para não gastar cota)
+    async conta(bin) {
+      const c = CONTA_AGY; if (c && Date.now() - c.t < (c.ok ? 20 * 60000 : 45000)) return c.r
+      const r = await rodar(bin, ['-p', 'Responda apenas: ok', '--print-timeout', '60s'], { timeout: 90000 })
+      const t = r.out + r.err, ok = r.code === 0 && /\bok\b/i.test(r.out) && !/authenticat|sign.?in|log.?in/i.test(r.err)
+      CONTA_AGY = { t: Date.now(), ok, r: ok ? { ok: true, conta: 'conta do Google' } : { ok: false, erro: t.trim().split('\n').pop() } }
+      return CONTA_AGY.r
+    },
+    instrucoes: 'AGENTS.md', skills: ['.agents/skills'],
+    prompts: n => ({ arq: path.join(ROOT, '.agents', 'workflows', n + '.md'), fmt: 'md' }),
+    plugins(d) { fundir(path.join(ROOT, '.agents', 'mcp_config.json'), { mcpServers: { desigma: { command: d.mcpExe, args: ['--workspace', d.workspace] } } }) },
+    trava() { confiarAgy(); return 'O Antigravity ' + TRAVA_TXT },
+    rotina: arq => ({ args: ['-p', pedir(arq), '--mode', 'accept-edits', '--print-timeout', '25m'] }),
+    teste: ['-p', 'Responda apenas: ok', '--print-timeout', '90s'],
+  },
   gemini: {
-    nome: 'Gemini', via: 'Gemini CLI', bin: 'gemini', cor: '#4285F4',
+    nome: 'Gemini', via: 'Gemini CLI', bin: 'gemini', cor: '#4285F4', beta: true, aviso: 'O Google desligou o plano grátis do Gemini CLI em junho de 2026. Só funciona com chave paga da API do Gemini.',
     instalar: npm('@google/gemini-cli'),
     // o Gemini CLI abre o login do Google no navegador quando o tipo de login já está escolhido
     antesDoLogin() { const p = path.join(HOME, '.gemini', 'settings.json'), s = lerJSON(p, {}); if (!(s.security && s.security.auth && s.security.auth.selectedType) && !s.selectedAuthType) fundir(p, { security: { auth: { selectedType: 'oauth-personal' } } }) },
@@ -100,8 +134,8 @@ const AGENTES = {
     plugins(d) { fundir(path.join(ROOT, '.gemini', 'settings.json'), { mcpServers: { desigma: { command: d.mcpExe, args: ['--workspace', d.workspace] } } }) },
     // sem --yolo: edições são aceitas sozinhas e o terminal só roda os scripts da lista (tools.allowed)
     trava() { fundir(path.join(ROOT, '.gemini', 'settings.json'), { tools: { allowed: SCRIPTS.map(s => `run_shell_command(${s})`), exclude: [`run_shell_command(${POSTAR})`] } }); return 'O Gemini ' + TRAVA_TXT },
-    rotina: arq => ({ args: ['--approval-mode', 'auto_edit', '-p', pedir(arq)] }),
-    teste: ['-p', 'Responda apenas: ok'],
+    rotina: arq => ({ args: ['--skip-trust', '--approval-mode', 'auto_edit', '-p', pedir(arq)] }),
+    teste: ['--skip-trust', '-p', 'Responda apenas: ok'],
   },
   // ---- outros (beta): login pelo próprio terminal do agente
   copilot: {
@@ -138,7 +172,7 @@ const AGENTES = {
     teste: ['run', 'Responda apenas: ok'],
   },
 }
-const lista = () => Object.entries(AGENTES).map(([id, a]) => ({ id, nome: a.nome, via: a.via, cor: a.cor, beta: !!a.beta }))
+const lista = () => Object.entries(AGENTES).map(([id, a]) => ({ id, nome: a.nome, via: a.via, cor: a.cor, beta: !!a.beta, gratis: !!a.gratis, aviso: a.aviso || null }))
 
 async function status(id) {
   const a = AGENTES[id]; if (!a) throw new Error('agente desconhecido')
@@ -306,7 +340,8 @@ function agendamento(id, rid) {
 const LEITURA = {
   claude: ['-p', '--allowedTools', 'WebFetch,WebSearch', '--disallowedTools', 'Bash,Edit,Write'],
   codex: ['exec', '--sandbox', 'read-only', '--skip-git-repo-check', '-c', 'tools.web_search=true', '-'],
-  gemini: ['-p', 'Siga as instruções recebidas acima.'],
+  gemini: ['--skip-trust', '-p', 'Siga as instruções recebidas acima.'],
+  antigravity: ['-p', 'Leia o arquivo pergunta.md nesta pasta e responda exatamente como ele pede. Só leitura e pesquisa na web: não crie nem altere arquivos.', '--mode', 'plan', '--print-timeout', '6m'],
   qwen: ['-p', 'Siga as instruções recebidas acima.'],
 }
 async function perguntar(id, texto, { timeout = 240000 } = {}) {
@@ -314,7 +349,8 @@ async function perguntar(id, texto, { timeout = 240000 } = {}) {
   if (!a || !args) throw new Error('Esta função usa o Claude, o ChatGPT ou o Gemini. Troque de IA em Ajustes.')
   const bin = achar(a.bin); if (!bin) throw new Error(`O ${a.via} não está instalado.`)
   const pasta = C.ws('perfis', '.ia'); fs.mkdirSync(pasta, { recursive: true })
-  const r = await rodar(bin, args, { stdin: texto, timeout, cwd: pasta })
+  if (id === 'antigravity') fs.writeFileSync(path.join(pasta, 'pergunta.md'), texto, 'utf8')
+  const r = await rodar(bin, args, { stdin: id === 'antigravity' ? null : texto, timeout, cwd: pasta })
   if (r.code !== 0 && !r.out.trim()) throw new Error(`O ${a.nome} não respondeu${r.err ? ': ' + r.err.trim().split('\n').pop().slice(0, 200) : '.'}`)
   if (r.code !== 0 && /limit|quota|rate.?limit|429|usage|credit|crédito|exceeded|esgot/i.test(r.out.slice(-600))) throw new Error(`O ${a.nome} chegou ao limite de uso: ${r.out.trim().split('\n').pop().slice(0, 160)}`)
   return r.out

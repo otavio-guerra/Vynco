@@ -11,21 +11,21 @@
 > **O Vynco está em beta test.** É uma versão de teste: pode ter erros, telas e funções podem mudar sem aviso, e nem tudo foi testado em todos os computadores. Use com calma, confira cada post antes de aprovar (nada é publicado sem você) e conte o que encontrar nas [issues](https://github.com/otavio-guerra/Vynco/issues).
 
 O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
-- a **sua IA** (Claude, ChatGPT, Gemini ou outra) pesquisa e desenha as peças no seu design system;
+- a **sua IA** (Claude, ChatGPT, Antigravity ou outra) pesquisa e desenha as peças no seu design system;
 - o **Desigma** monta tudo num projeto editável;
 - o **app local do Vynco** cuida da parte que é sua: olhar, aprovar e publicar.
 
 **[Baixar o beta para testar](https://github.com/otavio-guerra/Vynco/releases)** (Windows, instalador `.exe`)
 
-![Boas-vindas do Vynco](docs/img/vynco-boas-vindas.png)
+![Início do Vynco: o próximo post em destaque e a agenda por dia](docs/img/vynco-inicio.png)
 
-| Apresentação | Fila |
+| Revisar | Agenda |
 |---|---|
-| ![Apresentação: uma pergunta por tela](docs/img/vynco-apresentacao.png) | ![Fila com a prévia no feed](docs/img/vynco-fila.png) |
-| **Calendário** | **Criar** |
-| ![Calendário com posts agendados](docs/img/vynco-calendario.png) | ![Modelos de post para qualquer área](docs/img/vynco-criar.png) |
-| **Biblioteca** | **Rede** |
-| ![Biblioteca de mídia](docs/img/vynco-biblioteca.png) | ![Conexões e vagas](docs/img/vynco-rede.png) |
+| ![Revisar: esperando você, aprovados e rascunhos](docs/img/vynco-fila.png) | ![Agenda do mês com o que sai e quando](docs/img/vynco-calendario.png) |
+| **Criar** | **Estratégia** |
+| ![Criar: modo automático e modelos de post](docs/img/vynco-criar.png) | ![Estratégia em uma frase](docs/img/vynco-estrategia.png) |
+| **Conexões** | **Design system** |
+| ![Conexões para a sua área](docs/img/vynco-rede.png) | ![Vynco Design System 1.0](docs/img/design-system.png) |
 
 <sub>Capturas da demonstração, com dados de exemplo.</sub>
 
@@ -54,18 +54,23 @@ Nasceu para o meu próprio perfil ([portfolio-otavio-guerra.vercel.app](https://
 Uma ideia por tela, com o mínimo de atrito. A entrada tem cinco passos e nenhum comando fora do app (a tela de boas-vindas vem antes):
 1. **LinkedIn:** um botão, "Continuar com LinkedIn", como em qualquer site. Você entra e clica em Permitir; o Vynco nunca vê a sua senha.
 2. **Você:** uma apresentação logo depois do LinkedIn, uma pergunta por tela, com cartões grandes e barra de progresso: a área (até 3, entre 14 opções ou "Outra"), o que você faz (quantas opções quiser da sua área e, se quiser, o seu cargo escrito), o momento da carreira, o objetivo no LinkedIn e quem você quer alcançar (até 3 de cada), o tom de voz (até 2, cada um com um exemplo de começo de post), a frequência, **onde você já mostra o seu trabalho** (campos sugeridos pela sua área: Behance e Dribbble para design, GitHub para tecnologia, Lattes para saúde, direito e educação, e assim por diante; basta o usuário, o link completo é montado sozinho) e, por fim, a sugestão de **conectar o Magnific** para imagens com IA (opcional, com o aviso de que a API é cobrada à parte). Nada avança sozinho: você marca e confirma em "Continuar" (ou Enter); Esc volta uma pergunta. No fim, um resumo em uma frase mostra como a IA vai te ver, e tocar em qualquer parte dele volta àquela pergunta. O momento da carreira também vira o nível padrão das vagas na aba Rede. O nome e a foto vêm da sua conta do LinkedIn. O LinkedIn não compartilha cargo nem experiência com outros apps, então o resto vem desses toques. Tudo vira o seu perfil, e quando a IA termina de sincronizar ela lê a triagem e todos os links e sugere o resto na aba Perfil, sem aplicar nada sozinha.
-3. **Sua IA:** "Continuar com Claude", "com ChatGPT" (Codex) ou "com Gemini" (Gemini CLI), e um menu com outras (GitHub Copilot, Qwen Code, OpenCode, em beta). Se a ferramenta não estiver instalada, o Vynco instala e abre o login no navegador. Para quem não tem assinatura, a mesma tela explica o [OmniRoute](https://github.com/diegosouzapw/OmniRoute), um projeto gratuito e de código aberto (de outra equipe) que liga o Claude Code, o Codex ou o Gemini CLI a modelos gratuitos, com o aviso de que esses modelos não são os oficiais e cada provedor tem os seus termos.
+3. **Sua IA:** "Continuar com Claude", "com ChatGPT" (Codex) ou "com Antigravity" (Antigravity CLI, do Google, grátis com uma conta Google), e um menu com outras (Gemini CLI com chave paga, GitHub Copilot, Qwen Code, OpenCode, em beta). O Google encerrou o plano grátis do Gemini CLI em junho de 2026; o Antigravity é o substituto. Se a ferramenta não estiver instalada, o Vynco instala e abre o login no navegador. Para quem não tem assinatura, a mesma tela explica o [OmniRoute](https://github.com/diegosouzapw/OmniRoute), um projeto gratuito e de código aberto (de outra equipe) que liga o Claude Code, o Codex ou o Gemini CLI a modelos gratuitos, com o aviso de que esses modelos não são os oficiais e cada provedor tem os seus termos.
 4. **Sincronização:** uma tela de carregamento mostra cada passo (dá para cancelar e escolher outra IA) enquanto o Vynco entrega à IA as regras (`agent/AGENTS.md`), as skills (`agent/skills`), os prompts das rotinas, o plugin do Desigma (MCP, se estiver instalado) e a trava que impede a IA de publicar. No fim, um teste rápido confere se ela responde.
 5. **Estratégia:** enquanto a IA lê as suas respostas e os seus links, a tela mostra o andamento. Quando ela termina, aparece a estratégia sugerida (resumo, área, público, objetivo, tom, temas, cores e pilares de conteúdo). Você marca o que quer usar e clica em "Usar esta estratégia", e então escolhe entre criar o primeiro post ou ir para a Fila. Sem IA, ou se a análise falhar, a tela mostra o ponto de partida que você respondeu.
 
 Depois disso, o app abre no **Início** e tem um menu lateral (no celular, uma barra embaixo) com quatro áreas, na ordem do trabalho: **Estratégia · Criar · Revisar · Agenda**. Estratégia junta o posicionamento (o antigo Perfil) e a **Rede**; Criar junta os **Modelos** e as **Mídias** (a antiga Biblioteca); Revisar é a fila; Agenda junta o **Calendário** e o que já está **No ar**. **Ajustes** fica no menu da sua conta, no canto de cima: conexões (LinkedIn e IA), imagens com IA e preferências à vista, e **Avançado** (Desigma, pastas e o dia 1 do Daily UI) fechado até você abrir. Ao lado de "Revisar", um número mostra quantos posts esperam você.
 
+- **Design system:** tokens de cor (com uma cor por seção), tipografia em 8 degraus, espaçamento de 4 px, raios, elevação e movimento, documentados em [docs/design-system.md](docs/design-system.md), com as pranchas editáveis geradas por `docs/design-system/gerar.js`.
+- **Cada área com a sua cara:** Início, Estratégia, Criar, Revisar, Agenda, Rede e Ajustes têm cor e ícone próprios no sobretítulo, no menu e no brilho do fundo. Revisar separa "Esperando você", "Aprovados" e "Rascunhos" com cores e explicações próprias.
+- **Nada de navegador ou Windows:** barra da janela do próprio Vynco (arrastar, minimizar, maximizar, fechar para a bandeja), listas de escolha e barras de rolagem do app, sem menu de navegador no botão direito (nos campos de texto, só recortar, copiar, colar e selecionar tudo) e sem atalhos de navegador (recarregar, voltar, imprimir, zoom, ferramentas de desenvolvedor).
+- **Erros explicados em Criar:** quando uma criação falha, o cartão diz o motivo em português (limite de uso, login vencido, IA desligada) e o que fazer; o registro técnico fica recolhido.
+- **Avisos que somem sozinhos:** 7 segundos (erros, 14), com uma barrinha do tempo; o mouse em cima pausa.
 - **Tour guiado e interativo:** depois da entrada, a tela escurece e só o item da vez fica aceso. Nos passos de clique, um cursor animado mostra onde clicar, a pessoa clica no próprio item e a tela de verdade abre por trás. Tem barra de progresso, voltar (←), avançar (Enter), pular (Esc) e confete no fim; fica no menu da conta para rever.
 - **Fundo e movimento:** partículas que seguem a cor do estado e reagem ao mouse (a 30 quadros por segundo), aurora e brilhos que derivam devagar, grade de pontos, grão de filme e vinheta. Nos cartões, uma luz acompanha o cursor; os botões fazem ondinha; o indicador do menu desliza até a área ativa; os números do Início contam; publicar solta confete. Com "menos movimento" ligado no sistema, o fundo fica parado.
 - **Início:** um feed do que vai ao ar, em ordem, com cada post do jeito que vai aparecer no LinkedIn (imagem, GIF, carrossel e legenda), o dia e a hora, e se já está aprovado. Ao lado: o que espera você, o que a sua IA vai criar e o que saiu por último. Publicar o que já está aprovado e agendado não usa a sua IA: só precisa do Vynco aberto.
 - **Modo automático (Criar):** a sua IA cria nos dias do plano, o Vynco confere cada post (arquivo gerado, tamanho da legenda, trechos por preencher e o que está em "Evitar" no seu perfil) e aprova sozinho, com a chave dele: a IA continua sem acesso à aprovação. Cada post entra na agenda com uma folga para você vetar (1, 2, 4 ou 12 horas); o que não passa na conferência fica em Revisar. O plano sai da frequência e do objetivo do seu perfil e da folga das suas IAs, e é refeito todo dia: com a semana pela metade, carrossel (o mais pesado) cai para 1 por semana e a reserva divide o resto; com a semana no fim, só a reserva cria. Se a sessão da principal passar de 90% na hora de criar, a reserva assume (ou a criação espera 1 hora). Quem é de design pode incluir o Daily UI (cria às 7h30 e publica às 10h).
 - **Magnific na barra:** as operações do mês e o gasto estimado, contra os limites que você definiu em Ajustes. A API do Magnific não informa o saldo da conta; o menu leva ao site.
-- **IA reserva:** em Ajustes, escolha uma segunda IA (o Gemini é grátis com uma conta Google, cerca de 1.000 pedidos por dia). Se a principal chegar ao limite de uso ou falhar, a mesma tarefa roda de novo com a reserva, e o post vai para Revisar como sempre.
+- **IA reserva:** em Ajustes, escolha uma segunda IA (o Antigravity, do Google, é grátis com uma conta Google, com uma cota semanal). Se a principal chegar ao limite de uso ou falhar, a mesma tarefa roda de novo com a reserva, e o post vai para Revisar como sempre.
 - **Medidor de uso:** no canto de cima, à direita, ficam o LinkedIn e a sua IA com o uso da sessão. Clicando, aparecem a sessão de 5 horas e a semana, com a hora em que renovam (Claude e ChatGPT). O Gemini não informa o uso para outros apps; o Vynco mostra a cota conhecida.
 - **Modo standby (Windows):** fechar a janela esconde o Vynco na bandeja, perto do relógio, e ele continua publicando no horário. Em Ajustes → Preferências, "Abrir com o Windows" faz ele começar escondido quando o computador liga. Para sair de verdade: botão direito no ícone da bandeja → Sair.
 - **O que a sua IA está fazendo:** enquanto ela cria um post, lê o seu perfil ou busca conexões e vagas, a barra do topo mostra "A sua IA está…", em qualquer tela. Quando termina, aparece um aviso com o próximo passo (por exemplo, "Pronto: Dicas práticas · Revisar agora").
@@ -110,7 +115,8 @@ Depois disso, o app abre no **Início** e tem um menu lateral (no celular, uma b
 |---|---|---|---|---|---|
 | Claude (Claude Code) | `CLAUDE.md` | `.claude/skills` | `.claude/commands` | `.mcp.json` | lista fechada de ferramentas e pastas |
 | ChatGPT (Codex) | `AGENTS.md` | `.agents/skills` | `~/.codex/prompts` | `codex mcp add` | sandbox `workspace-write`, terminal sem rede |
-| Gemini (Gemini CLI) | `GEMINI.md` | `.gemini/skills` | `.gemini/commands` | `.gemini/settings.json` | `tools.allowed` só com os scripts das rotinas |
+| Antigravity (Antigravity CLI) | `AGENTS.md` | `.agents/skills` | `.agents/workflows` | `.agents/mcp_config.json` | `permissions.allow` só com os scripts das rotinas e `permissions.deny` no script de publicação |
+| Gemini (Gemini CLI, chave paga) | `GEMINI.md` | `.gemini/skills` | `.gemini/commands` | `.gemini/settings.json` | `tools.allowed` só com os scripts das rotinas |
 
 Tudo isso é gerado dentro da pasta do Vynco a partir de `agent/` e fica fora do Git. Para mudar uma regra ou skill, edite `agent/` e clique em "Sincronizar de novo" em Ajustes. O mapa completo, com as IAs em beta, está em `engine/agentes.js`.
 
@@ -137,7 +143,7 @@ Enquanto a ponte não estiver ligada, o botão avisa e oferece "Usar meu própri
 ## Começar
 Precisa de:
 - **Node 20+** (só para rodar pelo terminal; o `Vynco.exe` já traz o Node dentro);
-- uma conta de IA (Claude, ChatGPT ou Gemini); a ferramenta de linha de comando o Vynco instala na entrada;
+- uma conta de IA (Claude, ChatGPT ou Antigravity, que é grátis); a ferramenta de linha de comando o Vynco instala na entrada;
 - **Microsoft Edge** (para exportar PNG e PDF);
 - **[Desigma](https://github.com/deepfounder-ai/desigma/releases)**, se quiser o projeto editável.
 
