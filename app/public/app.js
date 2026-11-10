@@ -46,6 +46,7 @@ function wire(f, o = {}) {
 // ---------------------------------------------------------------- demonstração (site estático, sem o servidor local)
 const DEMO = TOKEN === '__' + 'TOKEN__'
 const arquivo = p => DEMO ? p : `/files/${encodeURI(String(p).replace(/\\/g, '/'))}`
+const svgDemo = cor => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><radialGradient id="c" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="${cor}" stop-opacity=".55"/><stop offset="1" stop-color="#0e1524"/></radialGradient></defs><rect width="400" height="500" fill="url(#c)"/><path d="M0 380 120 300l80 50 90-70 110 90v130H0z" fill="${cor}" opacity=".45"/><path d="M186 170h28l10 120h-48z" fill="#eef1f8"/><circle cx="200" cy="155" r="14" fill="#ffb547"/><path d="M200 155 400 110v90z" fill="#ffb547" opacity=".22"/></svg>`)
 const D = DEMO && (() => {
   const ja = store.get('onboarded') === '1' || ['fila', 'rotinas', 'ajustes', 'calendario', 'rede', 'biblioteca', 'perfil'].includes(new URLSearchParams(location.search).get('tela'))
   return {
@@ -62,13 +63,13 @@ const D = DEMO && (() => {
       { arquivo: 'demo:processo.mp4', nome: 'processo.mp4', tipo: 'video', bytes: 8.4 * 1048576, criado: Date.now() - 9e6, origem: 'envio', alt: '', avisos: [], apagavel: true },
       { arquivo: 'demo:guia.pdf', nome: 'guia-de-estilo.pdf', tipo: 'documento', bytes: 2.1 * 1048576, criado: Date.now() - 2e7, origem: 'envio', alt: '', avisos: [], apagavel: true }]),
     fila: [
-      { kind: 'dailyui', id: '003', title: 'Daily UI 003 · Tela de entrada', formato: 'gif', hasFile: true, approved: false, published: null, caption: 'Daily UI 003 · Tela de entrada\n\nUm campo por vez, erro que explica o que fazer e foco sempre visível.\n\n- Rótulo fora do campo, para não sumir ao digitar\n- Mensagem de erro perto do erro\n- Botão com o verbo da ação\n\n#dailyui #uidesign #ux' },
-      { kind: 'noticias', id: 'hoje-a', title: 'Carrossel A · notícias do dia', formato: 'carrossel', paginas: 7, hasFile: true, approved: false, published: null, caption: 'O assunto do dia em 7 slides: o que aconteceu, o outro lado e o que muda para quem desenha.\n\nFontes checadas no último slide.\n\n#design #ia #tecnologia' },
+      { kind: 'dailyui', id: '003', title: 'Daily UI 003 · Tela de entrada', formato: 'gif', cover: svgDemo('#8b7cff'), hasFile: true, approved: false, published: null, caption: 'Daily UI 003 · Tela de entrada\n\nUm campo por vez, erro que explica o que fazer e foco sempre visível.\n\n- Rótulo fora do campo, para não sumir ao digitar\n- Mensagem de erro perto do erro\n- Botão com o verbo da ação\n\n#dailyui #uidesign #ux' },
+      { kind: 'noticias', id: 'hoje-a', title: 'Carrossel A · notícias do dia', formato: 'carrossel', paginas: 7, cover: svgDemo('#4cc2ff'), hasFile: true, approved: false, published: null, caption: 'O assunto do dia em 7 slides: o que aconteceu, o outro lado e o que muda para quem desenha.\n\nFontes checadas no último slide.\n\n#design #ia #tecnologia' },
       { kind: 'avulsos', id: 'processo', title: 'Vídeo · bastidores de um projeto', formato: 'video', hasFile: true, approved: false, published: null, caption: 'Quarenta segundos de processo: do rascunho à tela final.\n\nO que você mudaria?\n\n#processo #design' },
-      { kind: 'avulsos', id: 'antes-depois', title: 'Antes e depois · 4 telas', formato: 'multi', arquivos: [], hasFile: true, approved: false, published: null, caption: 'Quatro telas, antes e depois do redesenho.\n\nArraste para o lado e diga qual mudança você notou primeiro.\n\n#uxdesign #redesign' },
+      { kind: 'avulsos', id: 'antes-depois', title: 'Antes e depois · 4 telas', formato: 'multi', arquivos: [svgDemo('#3ddc84'), svgDemo('#ffb547'), svgDemo('#ff7a85'), svgDemo('#4cc2ff')], cover: svgDemo('#3ddc84'), hasFile: true, approved: false, published: null, caption: 'Quatro telas, antes e depois do redesenho.\n\nArraste para o lado e diga qual mudança você notou primeiro.\n\n#uxdesign #redesign' },
       { kind: 'avulsos', id: 'reflexao', title: 'Só texto · uma lição da semana', formato: 'texto', hasFile: true, approved: true, published: null, agendado: new Date(new Date().setHours(33, 0, 0, 0)).toISOString(), caption: 'Uma lição desta semana: mostrar o rascunho cedo economiza três rodadas de ajuste.\n\nO que você aprendeu esta semana?' },
-      { kind: 'series', id: '04', title: 'Série 04 · ferramentas', formato: 'imagem', hasFile: true, approved: true, published: null, caption: 'As ferramentas que eu abro todo dia, e por quê.\n\n#design #ferramentas' },
-      { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', hasFile: true, approved: true, published: { link: 'https://github.com/otavio-guerra/vynco', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
+      { kind: 'series', id: '04', title: 'Série 04 · ferramentas', formato: 'imagem', cover: svgDemo('#ffb547'), hasFile: true, approved: true, published: null, agendado: new Date(new Date().setHours(42, 0, 0, 0)).toISOString(), caption: 'As ferramentas que eu abro todo dia, e por quê.\n\n#design #ferramentas' },
+      { kind: 'series', id: '03', title: 'Série 03 · apresentação', formato: 'imagem', cover: svgDemo('#ff7a85'), hasFile: true, approved: true, published: { link: 'https://github.com/otavio-guerra/vynco', quando: new Date(Date.now() - 864e5).toISOString() }, caption: 'Quem sou eu, em uma imagem.\n\n#portfolio' },
     ],
   }
 })()
@@ -77,7 +78,6 @@ const ag = id => D.lista.find(a => a.id === id)
 const MODELOS_DEMO = [['noticias-da-area', 'Notícias da sua área', 'carrossel', 1, 'semanal', 'O assunto mais quente da semana na sua área, com o que aconteceu, o outro lado e a sua leitura. Fontes checadas.'], ['dicas', 'Dicas práticas', 'carrossel', 0, 'semanal', 'De 5 a 7 dicas curtas e acionáveis sobre um dos seus pilares, uma por slide.'], ['mito-verdade', 'Mito ou verdade', 'carrossel', 0, 'quinzenal', 'Crenças comuns da sua área desmontadas com argumentos simples.'], ['passo-a-passo', 'Passo a passo', 'carrossel', 0, 'quinzenal', 'Como fazer algo que o seu público precisa, em etapas claras.'], ['licao', 'Lição aprendida', 'texto', 0, 'semanal', 'Uma história curta: o que aconteceu, o que você aprendeu e o que faria diferente.'], ['bastidores', 'Bastidores do trabalho', 'texto', 0, 'quinzenal', 'Um processo, uma rotina ou uma ferramenta do seu dia a dia, contado com honestidade.'], ['opiniao', 'Opinião sobre uma tendência', 'texto', 1, 'quinzenal', 'Uma tendência recente da área e o seu ponto de vista, com os dois lados.'], ['pergunta', 'Pergunta para a rede', 'texto', 0, 'semanal', 'Um post curto que termina numa pergunta e puxa conversa nos comentários.'], ['recomendacao', 'Recomendação', 'texto', 0, 'mensal', 'Um livro, curso, ferramenta ou pessoa que ajudou você, e por quê.'], ['daily-ui', 'Daily UI', 'imagem', 0, 'diario', 'A tela do desafio Daily UI do dia, com as decisões de UX numeradas.', 1]]
   .map(([id, titulo, formato, web, freq, desc, design]) => ({ id, titulo, formato, web: !!web, freq, desc, design: !!design, freqTxt: { diario: 'todo dia útil', semanal: 'uma vez por semana', quinzenal: 'a cada 15 dias', mensal: 'uma vez por mês' }[freq] }))
 // imagem de exemplo desenhada na hora (wireframe colorido), para a demonstração
-const svgDemo = cor => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs><radialGradient id="c" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="${cor}" stop-opacity=".55"/><stop offset="1" stop-color="#0e1524"/></radialGradient></defs><rect width="400" height="500" fill="url(#c)"/><path d="M0 380 120 300l80 50 90-70 110 90v130H0z" fill="${cor}" opacity=".45"/><path d="M186 170h28l10 120h-48z" fill="#eef1f8"/><circle cx="200" cy="155" r="14" fill="#ffb547"/><path d="M200 155 400 110v90z" fill="#ffb547" opacity=".22"/></svg>`)
 const usoDemo = () => ({ mes: new Date().toISOString().slice(0, 7), operacoes: D.ops, gasto: D.gasto, semPreco: D.tarefas.filter(t => t.op !== 'melhorar').reduce((s, t) => s + t.itens.length, 0), limiteMensal: 30, orcamentoMensal: 10 })
 const RECURSOS_DEMO = {
   gerar: { proporcoes: [['social_post_4_5', '4:5 · feed'], ['square_1_1', '1:1'], ['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story']], resolucoes: [['1k', '1K'], ['2k', '2K'], ['4k', '4K']], modelos: [['realism', 'Realismo'], ['fluid', 'Fluido'], ['zen', 'Zen'], ['flexible', 'Flexível'], ['super_real', 'Super real'], ['editorial_portraits', 'Retratos editoriais']], maxVersoes: 4 },
@@ -242,7 +242,7 @@ aplicarTema()
 // ---------------------------------------------------------------- cenas
 const ONB = ['ola', 'linkedin', 'voce', 'agente', 'sync', 'estrategia']
 // áreas da navegação: Estratégia (perfil, rede) · Criar (modelos, mídias, editor) · Revisar (fila) · Agenda (calendário)
-const AREA = { voce: 'perfil', perfil: 'perfil', rede: 'perfil', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
+const AREA = { inicio: 'inicio', ajustes: 'ajustes', voce: 'perfil', perfil: 'perfil', rede: 'perfil', rotinas: 'rotinas', biblioteca: 'rotinas', editor: 'rotinas', fila: 'fila', calendario: 'calendario' }
 let atual = null, voltarPara = null
 function cena(nome, { som = true } = {}) {
   const prox = $(`.scene[data-scene="${nome}"]`); if (!prox || atual === prox) return
@@ -256,14 +256,14 @@ function cena(nome, { som = true } = {}) {
     const ob = ONB.indexOf(nome), naEntrada = ob >= 0 && !voltarPara
     $('#stepper').hidden = !(ob > 0 && naEntrada)
     $$('#stepper li').forEach(li => { const i = ONB.indexOf(li.dataset.s); li.classList.toggle('on', i === ob); li.classList.toggle('done', i < ob) })
-    $('#nav').hidden = naEntrada; $('#conns').hidden = naEntrada
+    $('#lado').hidden = naEntrada; document.body.classList.toggle('com-lado', !naEntrada); $('#conns').hidden = naEntrada
     $('#back').hidden = !(ob > 0 || voltarPara)
     const area = AREA[nome] || nome
     $$('#nav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === area))
     $$('.subnav [data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === nome))
     $('#conns').classList.toggle('on', nome === 'ajustes'); menuConta(false)
     if (som) Som.pad()
-    ENTRAR[nome]?.(); if (!ST && !ONB.includes(nome) && !['fila', 'ajustes', 'calendario'].includes(nome)) status()
+    ENTRAR[nome]?.(); if (!ST && !ONB.includes(nome) && !['fila', 'ajustes', 'calendario', 'inicio'].includes(nome)) status()
   }
   if (ant && !reduced) { ant.classList.add('leaving'); setTimeout(mostrar, 200) } else mostrar()
 }
@@ -278,10 +278,10 @@ function voltar() {
   if (voltarPara) { const v = voltarPara; voltarPara = null; return cena(v) }
   const i = ONB.indexOf(n); if (i > 0) cena(ONB[i - 1])
 }
-function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('fila') }
+function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('inicio') }
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), estrategia: () => entrarEstrategia(),
-  fila: () => carregarFila(), rotinas: () => carregarRotinas(), calendario: () => carregarCalendario(), ajustes: () => { status(); carregarImgAjustes() },
+  inicio: () => carregarInicio(), fila: () => carregarFila(), rotinas: () => carregarRotinas(), calendario: () => carregarCalendario(), ajustes: () => { status(); carregarImgAjustes() },
   biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(), rede: () => carregarRede(),
 }
 
@@ -825,7 +825,7 @@ function midiaFeed(i) {
     const art = i.artigo || {}
     return `<div class="fp-media fp-link">${i.cover ? `<img src="${arquivo(i.cover)}" alt="">` : wire('artigo')}<span><b>${esc(art.titulo || 'Título do artigo')}</b><small>${esc(dominio(art.url) || 'site.com')}</small></span></div>`
   }
-  const media = i.formato === 'video' && i.file && !DEMO ? `<video src="${arquivo(i.file)}" controls preload="metadata"></video>` : i.cover ? `<img src="${arquivo(i.cover)}" alt="Prévia de ${esc(i.title)}">` : wire(i.formato || 'imagem', { paginas: i.paginas })
+  const media = i.formato === 'video' && i.file && !DEMO ? `<video src="${arquivo(i.file)}" controls preload="metadata"></video>` : i.formato === 'gif' && i.file && !DEMO ? `<img src="${arquivo(i.file)}" alt="Prévia de ${esc(i.title)}">` : i.cover ? `<img src="${arquivo(i.cover)}" alt="Prévia de ${esc(i.title)}">` : wire(i.formato || 'imagem', { paginas: i.paginas })
   return `<div class="fp-media">${media}${['carrossel', 'documento'].includes(i.formato) ? `<span class="fp-pages">${i.paginas ? i.paginas + ' páginas' : 'Documento'}</span>` : ''}</div>`
 }
 // o cartão do post como aparece no feed (usado na fila e no editor)
@@ -847,7 +847,8 @@ function desenharFila() {
   foco = Math.max(0, Math.min(foco, v.length - 1))
   $('[data-strip]').innerHTML = v.length ? v.map((i, n) => `<button class="post${n === foco ? ' focus' : ''}" data-n="${n}" aria-pressed="${n === foco}">
     <div class="shot">${capa(i)}</div>
-    <footer><span class="state ${estado(i)}"></span><span><b>${esc(i.title)}</b><small>${FMT_TXT[i.formato] || TIPO[i.kind]} · ${estadoTxt(i)}</small></span></footer></button>`).join('')
+    <footer><span class="state ${estado(i)}"></span><span><b>${esc(i.title)}</b><small>${FMT_TXT[i.formato] || TIPO[i.kind]} · ${estadoTxt(i)}</small></span></footer>
+    ${i.formato !== 'texto' && i.caption ? `<p class="resumo">${esc(i.caption.split('\n').filter(l => l.trim())[0] || '')}</p>` : ''}</button>`).join('')
     : `<div class="empty"><div class="wf-row">${wire('imagem')}${wire('carrossel')}${wire('video')}</div><h3>${FILTRO === 'pendente' ? 'Nada esperando você.' : 'Nada por aqui.'}</h3><p>Quando a sua IA terminar uma peça, ela aparece aqui para você olhar antes de ir ao ar.</p><div class="cta small"><button class="btn sm accent" data-view="rotinas">Escolher um modelo de post</button><button class="btn sm" data-novo-post>Escrever um post</button></div></div>`
   detalhe()
 }
@@ -1513,6 +1514,54 @@ $('[data-scene=rede]').addEventListener('click', async e => {
   if (b.dataset.rdCopia != null) { try { await navigator.clipboard.writeText(RD.rede.conexoes[+b.dataset.rdCopia].convite); Som.tique(); pill('Convite copiado', 'Cole na mensagem do convite no LinkedIn.', 'var(--green)') } catch { pill('Não consegui copiar', '', 'var(--amber)') } }
 })
 
+// ---------------------------------------------------------------- início: o que vai ao ar, o que espera você e o que a IA vai fazer
+let INI_ROT = []
+async function carregarInicio() {
+  try { const [f, r] = await Promise.all([api('/api/queue'), api('/api/runs').catch(() => ({ rotinas: [] })), ST ? null : status()]); FILA = f; INI_ROT = (r.rotinas || []).filter(x => x.agenda?.ativo) } catch (e) { return falha(e) }
+  desenharInicio(); contarFila(); atualizarHumor()
+}
+const quandoRel = q => {
+  const d = new Date(q), h = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), dias = Math.round((new Date(ymd(d) + 'T12:00') - new Date(hoje0() + 'T12:00')) / 864e5)
+  return dias === 0 ? `Hoje, ${h}` : dias === 1 ? `Amanhã, ${h}` : `${d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}, ${h}`
+}
+function proximaRotina(r) {   // o próximo dia e hora em que a rotina roda
+  const [hh, mm] = (r.agenda.hora || '08:00').split(':').map(Number), agora = new Date()
+  for (let k = 0; k < 8; k++) { const x = new Date(agora); x.setDate(agora.getDate() + k); x.setHours(hh, mm, 0, 0); if ((r.agenda.dias || []).includes(x.getDay()) && x > agora) return x }
+  return null
+}
+function desenharInicio() {
+  const nome = (ST?.linkedin?.name || '').split(' ')[0], h = new Date().getHours()
+  $('[data-ini-t]').textContent = `${h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'}${nome ? ', ' + nome : ''}.`
+  const ag = FILA.filter(i => i.agendado && !i.published).sort((a, b) => a.agendado.localeCompare(b.agendado))
+  const esp = FILA.filter(CONTA.pendente), pub = FILA.filter(i => i.published).sort((a, b) => String(b.published.quando || '').localeCompare(String(a.published.quando || '')))
+  const sem7 = ag.filter(i => new Date(i.agendado) - Date.now() <= 7 * 864e5).length, semAprov = ag.filter(i => !i.approved).length
+  $('[data-ini-s]').textContent = ag.length ? `O próximo post sai ${quandoRel(ag[0].agendado).toLowerCase()}. ${ag.length === 1 ? 'Só ele está na agenda.' : `Há ${ag.length} posts na agenda.`}` : esp.length ? 'Nada agendado ainda. Revise o que está esperando e escolha quando sai.' : 'Nada agendado ainda. Peça um post à sua IA em Criar.'
+  const li = ST?.linkedin || {}
+  const chip = (n, rot, view, tom = '') => `<button type="button" class="ini-chip glass${tom}" data-view="${view}"><b>${n}</b><span>${rot}</span></button>`
+  $('[data-ini-resumo]').innerHTML = chip(sem7, sem7 === 1 ? 'agendado nos próximos 7 dias' : 'agendados nos próximos 7 dias', 'calendario')
+    + chip(esp.length, 'esperando você', 'fila', esp.length ? ' warn' : '')
+    + chip(pub.filter(i => String(i.published.quando || '').slice(0, 7) === hoje0().slice(0, 7)).length, 'publicados este mês', 'calendario')
+    + `<button type="button" class="ini-chip glass${li.connected ? '' : ' bad'}" data-view="ajustes"><b>${li.connected ? 'LinkedIn' : '!'}</b><span>${li.connected ? (venceLogo(li) ? `vence ${prazo(li.dias)}` : 'conectado') : 'não conectado'}</span></button>`
+  const aviso = semAprov ? `<p class="ini-alerta">${semAprov === 1 ? '1 post agendado ainda não foi aprovado' : `${semAprov} posts agendados ainda não foram aprovados`} e não vai ao ar assim. <button class="link" data-view="fila">Aprovar em Revisar</button></p>` : ''
+  $('[data-ini-feed]').innerHTML = ag.length ? aviso + ag.slice(0, 12).map(i => `<div class="ini-post">
+      <div class="ini-quando"><span class="ini-dot${i.approved ? '' : ' warn'}"></span><b>${quandoRel(i.agendado)}</b><small>${esc(i.title)} · ${i.approved ? 'aprovado, sai sozinho' : 'falta aprovar'}</small></div>
+      ${cartaoFeed(i, { quandoTxt: quandoCurto(i.agendado) })}
+      <div class="ini-acoes"><button class="btn sm" data-ini-abrir="${esc(chaveIt(i))}">Abrir em Revisar</button><button class="link" data-ini-dia="${ymd(new Date(i.agendado))}">Mudar o horário na Agenda</button></div>
+    </div>`).join('') + (ag.length > 12 ? `<p class="fine ini-mais">E mais ${ag.length - 12} depois desses. <button class="link" data-view="calendario">Ver tudo na Agenda</button></p>` : '')
+    : `<div class="empty glass"><h3>Nada agendado.</h3><p>${esp.length ? 'Você tem posts esperando. Aprove e escolha o dia: eles aparecem aqui como vão ficar no feed.' : 'Quando você agendar um post, ele aparece aqui exatamente como vai ficar no feed.'}</p><div class="cta small">${esp.length ? '<button class="btn sm accent" data-view="fila">Revisar agora</button>' : '<button class="btn sm accent" data-view="rotinas">Criar um post</button>'}</div></div>`
+  $('[data-ini-esperando]').innerHTML = `<header class="ed-box-h"><h3>Esperando você</h3><span class="tag">${esp.length}</span></header>${esp.length ? `<div class="ini-mini">${esp.slice(0, 4).map(i => `<button type="button" class="ini-mini-it" data-ini-abrir="${esc(chaveIt(i))}" title="${esc(i.title)}">${capa(i)}</button>`).join('')}</div><button class="btn sm accent" data-view="fila">Revisar agora</button>` : '<p class="fine">Nada para revisar. Quando a sua IA terminar um post, ele aparece aqui.</p>'}`
+  const rots = INI_ROT.map(r => ({ r, q: proximaRotina(r) })).filter(x => x.q).sort((a, b) => a.q - b.q)
+  $('[data-ini-rotinas]').innerHTML = `<header class="ed-box-h"><h3>A sua IA vai criar</h3><button class="link" type="button" data-view="rotinas">Criar</button></header>${rots.length ? `<ul class="ini-lista">${rots.slice(0, 4).map(x => `<li><b>${esc(x.r.titulo)}</b><small>${quandoRel(x.q)} · vai para Revisar</small></li>`).join('')}</ul>` : '<p class="fine">Nenhum modelo se repete sozinho. Em Criar, "Repetir" escolhe os dias e a hora.</p>'}<p class="fine">Criar usa a sua IA (e os créditos dela). Publicar o que já está aprovado e agendado não usa: só precisa do Vynco aberto.</p>`
+  $('[data-ini-noar]').innerHTML = `<header class="ed-box-h"><h3>No ar</h3><button class="link" type="button" data-ini-noar-ver>Ver tudo</button></header>${pub.length ? `<ul class="ini-lista">${pub.slice(0, 3).map(i => `<li><b>${esc(i.title)}</b><small>${i.published.quando ? new Date(i.published.quando).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }) : ''}${i.published.link ? ` · <a class="link" href="${esc(urlOk(i.published.link))}" target="_blank" rel="noopener">ver no LinkedIn ↗</a>` : ''}</small></li>`).join('')}</ul>` : '<p class="fine">Nada publicado pelo Vynco ainda.</p>'}`
+}
+$('[data-scene=inicio]').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return
+  if (b.dataset.iniAbrir) return abrirNaFila(b.dataset.iniAbrir)
+  if (b.dataset.iniDia) { const d = b.dataset.iniDia, n = new Date(d + 'T12:00'); CAL = { ano: n.getFullYear(), mes: n.getMonth(), dia: d }; AG_ABA = 'mes'; voltarPara = null; return cena('calendario') }
+  if (b.matches('[data-ini-noar-ver]')) { AG_ABA = 'noar'; voltarPara = null; return cena('calendario') }
+  if (b.dataset.q === 'mais') { const art = b.closest('.ini-post'), k = art?.querySelector('[data-ini-abrir]')?.dataset.iniAbrir, i = k && itemDe(k); if (i) art.querySelector('.fp').outerHTML = cartaoFeed(i, { aberto: !b.textContent.includes('menos'), quandoTxt: quandoCurto(i.agendado) }) }
+})
+
 // ---------------------------------------------------------------- criar: modelos de post (rotinas) para qualquer área
 let ROT = null, ROT_F = 'todos', ROT_AB = null, ROT_FORM = null, PERF_CR = null
 const DIAS_C = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'], DIAS_N = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
@@ -1793,7 +1842,7 @@ function proximoLivre() {
   for (let k = 0; k < 60; k++) { if (![0, 6].includes(d.getDay()) && !ocupado.has(ymd(d))) return d; d.setDate(d.getDate() + 1) }
   return d
 }
-function contarFila() { desenharFluxo(); desenharSemana(); const n = FILA.filter(CONTA.pendente).length, el = $('[data-nav-n=fila]'); el.hidden = !n; el.textContent = n; el.setAttribute('aria-label', `${n} ${n === 1 ? 'post esperando' : 'posts esperando'} você`) }
+function contarFila() { desenharFluxo(); desenharSemana(); { const lim = Date.now() + 7 * 864e5, na = FILA.filter(i => i.agendado && !i.published && new Date(i.agendado).getTime() <= lim).length, e = $('[data-nav-n=agenda]'); if (e) { e.hidden = !na; e.textContent = na; e.setAttribute('aria-label', `${na} agendados nos próximos 7 dias`) } } const n = FILA.filter(CONTA.pendente).length, el = $('[data-nav-n=fila]'); el.hidden = !n; el.textContent = n; el.setAttribute('aria-label', `${n} ${n === 1 ? 'post esperando' : 'posts esperando'} você`) }
 
 // ---------------------------------------------------------------- ajustes
 function desenharAjustes() {
@@ -2090,7 +2139,7 @@ const pedida = new URLSearchParams(location.search).get('tela')   // ?tela=fila 
 if (pedida && $(`.scene[data-scene="${pedida}"]`)) cena(pedida, { som: false })
 else {
   // quem já tem o LinkedIn e a IA prontos não passa pela entrada de novo (mesmo se as preferências do navegador sumiram)
-  const abrirApp = () => { cena('fila', { som: false }); setInterval(() => atual?.dataset.scene === 'fila' ? carregarFila() : atual?.dataset.scene === 'calendario' && carregarCalendario(), 60000) }
+  const abrirApp = () => { cena('inicio', { som: false }); setInterval(() => { const a = atual?.dataset.scene; a === 'fila' ? carregarFila() : a === 'calendario' ? carregarCalendario() : a === 'inicio' && carregarInicio() }, 60000) }
   if (store.get('onboarded') === '1') abrirApp()
   else status().then(s => { if (!DEMO && s && (s.linkedin?.contas || []).length && s.agente?.sincronizado) { store.set('onboarded', '1'); abrirApp() } else cena('ola', { som: false }) })
 }

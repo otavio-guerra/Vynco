@@ -875,3 +875,62 @@ dialog p { color: var(--soft); margin: 0 }
 .pf-resumo { margin-bottom: 14px } .pf-frase { margin: 0; font-size: 17px; line-height: 1.75; color: var(--soft) }
 .pf-resumo .ed-box-h .fine { margin: 0 }
 .cr-rapido:has(> :only-child) { grid-template-columns: minmax(0, 520px); justify-content: center }
+
+/* menu lateral (fora da entrada) */
+.lado { position: fixed; z-index: 4; top: 0; bottom: 0; left: 0; width: 216px; padding: 72px 12px 16px; display: flex; flex-direction: column; gap: 10px; background: color-mix(in srgb, var(--bg) 70%, transparent); border-right: 1px solid var(--edge); backdrop-filter: blur(18px) }
+.lado nav { display: grid; gap: 2px }
+.lado button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 10px; background: none; color: var(--soft); font: 600 14px var(--font); cursor: pointer; text-align: left; transition: color .2s, background .2s }
+.lado button svg { flex: 0 0 18px; width: 18px; height: 18px }
+.lado button > span:not(.nav-n) { flex: 1; min-width: 0 }
+.lado button:hover { color: var(--text); background: var(--glass) }
+.lado button[aria-current] { color: var(--text); background: var(--glass-3); box-shadow: inset 0 0 0 1px var(--edge) }
+.lado button[aria-current] svg { color: var(--accent) }
+.lado .nav-n { margin-left: 0 }
+.lado-sep { display: block; margin: 12px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint) }
+.lado-pe { margin-top: auto; display: grid; gap: 2px; padding-top: 10px; border-top: 1px solid var(--edge) }
+.lado-pe kbd { font-size: 11px }
+body.com-lado main { padding-left: 216px }
+body.com-lado .bar { padding-left: 20px }
+body.com-lado .scene.view { padding-top: 76px }
+@media (max-width: 860px) {
+  .lado { top: auto; bottom: 0; right: 0; width: auto; height: 64px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); flex-direction: row; border-right: 0; border-top: 1px solid var(--edge) }
+  .lado nav { display: flex; flex: 1; justify-content: space-around }
+  .lado button { flex-direction: column; gap: 2px; width: auto; min-height: 50px; padding: 4px 8px; font-size: 11px; position: relative }
+  .lado .nav-n { position: absolute; top: 0; right: 2px; min-width: 16px; height: 16px; font-size: 10px }
+  .lado-sep, .lado-pe kbd, .lado-pe button[data-atalhos] { display: none }
+  .lado-pe { margin: 0; padding: 0; border: 0; display: flex }
+  body.com-lado main { padding-left: 0; padding-bottom: 72px }
+}
+
+/* início: o feed do que vai ao ar */
+.ini-head { align-items: flex-start; text-align: left } .ini-head .sub { margin-inline: 0 }
+.ini-resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 22px }
+.ini-chip { display: grid; gap: 2px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--edge); text-align: left; cursor: pointer; color: var(--soft); font: 500 13px var(--font); transition: border-color .2s, transform .2s var(--ease) }
+.ini-chip:hover { border-color: var(--edge-2); transform: translateY(-1px) }
+.ini-chip b { font-size: 24px; line-height: 1.1; color: var(--text); font-weight: 700 }
+.ini-chip.warn b { color: var(--amber) } .ini-chip.bad b { color: var(--red) }
+.ini-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start }
+.ini-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px } .ini-h h2 { font-size: 18px; margin: 0 }
+.ini-feed > div { display: grid; gap: 22px; max-width: 560px }
+.ini-post { display: grid; gap: 10px }
+.ini-quando { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center }
+.ini-quando b { font-size: 15px } .ini-quando b::first-letter { text-transform: uppercase }
+.ini-quando small { grid-column: 2; color: var(--soft); font-size: 12.5px }
+.ini-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green) } .ini-dot.warn { background: var(--amber); box-shadow: 0 0 10px var(--amber) }
+.ini-post .fp { margin: 0 }
+.ini-acoes { display: flex; align-items: center; gap: 14px; flex-wrap: wrap }
+.ini-alerta { margin: 0; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--amber) 12%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 40%, transparent); color: var(--text); font-size: 14px }
+.ini-mais { margin: 0 }
+.ini-lado { display: grid; gap: 14px; position: sticky; top: 76px }
+.ini-lado .ed-box { display: grid; gap: 10px } .ini-lado .fine { margin: 0 }
+.ini-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px }
+.ini-mini-it { aspect-ratio: 4 / 5; border-radius: 8px; overflow: hidden; border: 1px solid var(--edge); padding: 0; background: var(--bg-2); cursor: pointer }
+.ini-mini-it img, .ini-mini-it .wf { width: 100%; height: 100%; object-fit: cover; display: block }
+.ini-mini-it:hover { border-color: var(--accent) }
+.ini-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px } .ini-lista li { display: grid } .ini-lista b { font-size: 14px } .ini-lista small { color: var(--soft); font-size: 12.5px }
+.ini-lista small::first-letter { text-transform: uppercase }
+@media (max-width: 1100px) { .ini-grid { grid-template-columns: minmax(0, 1fr) } .ini-lado { position: static } .ini-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+
+/* revisar: cartões maiores, com a legenda à vista */
+.cards > .post { flex: 0 0 220px }
+.post .resumo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 10px 10px; margin: -2px 0 0; font-size: 12.5px; color: var(--soft); line-height: 1.4 }
