@@ -168,9 +168,10 @@ function login(id, { console: emConsole = false } = {}) {
       Object.assign(job, { fase: 'abrindo', msg: 'Abrindo o login no navegador' })
       if (emConsole || !a.login.length) console_(`Entrar no ${a.nome}`, bin, a.loginConsole || a.login)
       else {
-        const p = soltar(bin, a.login, { stdio: ['pipe', 'pipe', 'pipe'] }); p.stdin.end()
-        let abriu = false
-        const ler = b => { job.log = (job.log + b).slice(-2000); const m = !abriu && String(b).match(/https:\/\/[^\s"'<>]+/); if (m && /auth|login|oauth|signin|device/i.test(m[0])) { abriu = true; setTimeout(() => job.fase === 'esperando' && abrirUrl(m[0]), 2500) } }
+        const p = soltar(bin, a.login, { stdio: ['pipe', 'pipe', 'pipe'] })
+        let abriu = false, respondeu = false
+        // o Gemini CLI novo pergunta antes de abrir o navegador ("Do you want to continue? [Y/n]"): o Vynco responde sim
+        const ler = b => { job.log = (job.log + b).slice(-2000); if (!respondeu && /\[Y\/n\]|continue\?|Press Enter/i.test(job.log)) { respondeu = true; try { p.stdin.write('Y\n') } catch {} } const m = !abriu && String(b).match(/https:\/\/[^\s"'<>]+/); if (m && /auth|login|oauth|signin|device/i.test(m[0])) { abriu = true; setTimeout(() => job.fase === 'esperando' && abrirUrl(m[0]), 2500) } }
         p.stdout.on('data', ler); p.stderr.on('data', ler); p.on('error', () => {})
         job.proc = p
       }

@@ -2052,10 +2052,10 @@ function desenharReserva() {
   $('.c-ic', row).style.setProperty('--c', r ? (r.conectado ? 'var(--green)' : 'var(--amber)') : 'var(--faint)')
   $('[data-conn-t]', row).innerHTML = r ? (r.conectado ? `Se a principal chegar ao limite ou falhar, o ${esc(r.nome)} cria no lugar. O post vai para Revisar como sempre.${r.sincronizado ? '' : ' Falta sincronizar.'}` : `Falta entrar na conta do ${esc(r.nome)}.`) + (x ? `<span class="uso-mini">${barrasUso(x)}</span>` : '')
     : 'Quando a sua IA chega ao limite de uso, o Vynco não cria nada. Com uma reserva, outra IA assume. O Gemini é grátis com uma conta Google (cerca de 1.000 pedidos por dia).'
-  $('[data-conn-a]', row).innerHTML = RES_ON ? `<span class="soft">${esc(RES_ON)}</span>` : r ? `${r.conectado && r.sincronizado ? '' : `<button class="btn sm accent" data-act="res-ligar" data-res="${r.id}">Terminar</button>`}<button class="link soft" data-act="res-tirar">Tirar</button>`
+  $('[data-conn-a]', row).innerHTML = RES_ON ? `<span class="soft">${esc(RES_ON)}</span>${RES_JANELA ? `<button class="link" data-act="res-janela" data-res="${RES_JANELA}">Não abriu? Abrir numa janela</button>` : ''}` : r ? `${r.conectado && r.sincronizado ? '' : `<button class="btn sm accent" data-act="res-ligar" data-res="${r.id}">Terminar</button>`}<button class="link soft" data-act="res-tirar">Tirar</button>`
     : `<button class="btn sm accent" data-act="res-ligar" data-res="${ST.agente?.id === 'gemini' ? 'claude' : 'gemini'}">Usar o ${ST.agente?.id === 'gemini' ? 'Claude' : 'Gemini'}${ST.agente?.id === 'gemini' ? '' : ' (grátis)'}</button>`
 }
-let RES_ON = ''
+let RES_ON = '', RES_JANELA = ''
 async function ligarReserva(id) {
   const nome = { claude: 'Claude', gemini: 'Gemini', codex: 'ChatGPT' }[id] || id
   const passo = t => { RES_ON = t; desenharReserva() }
@@ -2065,7 +2065,9 @@ async function ligarReserva(id) {
     if (!r.conectado) {
       passo(r.instalado ? `Abrindo o login do ${nome}…` : `Instalando o ${nome}…`)
       let j = await api('/api/agente/login', { id })
-      while (!['ok', 'erro'].includes(j.fase)) { await espera(DEMO ? 300 : 1500); j = await api('/api/agente/job?id=' + id); if (!j.fase) break; passo(j.msg || 'Entrando…') }
+      const t0 = Date.now()
+      while (!['ok', 'erro'].includes(j.fase)) { await espera(DEMO ? 300 : 1500); j = await api('/api/agente/job?id=' + id); if (!j.fase) break; RES_JANELA = Date.now() - t0 > 20000 ? id : ''; passo(j.msg || 'Entrando…') }
+      RES_JANELA = ''
       if (j.fase !== 'ok') throw new Error(j.msg || `Não deu para entrar no ${nome}.`)
     }
     passo('Ensinando as regras do Vynco…')
@@ -2135,6 +2137,7 @@ document.addEventListener('click', async e => {
   const act = t.dataset.act; if (!act) return
   try {
     if (act === 'res-ligar') return ligarReserva(t.dataset.res)
+    if (act === 'res-janela') { await api('/api/agente/login', { id: t.dataset.res, console: true }); return pill('Abri uma janela de login', 'Siga o que aparece nela. O Vynco percebe sozinho quando terminar.', 'var(--violet)') }
     if (act === 'res-tirar') { await api('/api/agente/reserva', { id: null }); ST = null; await status(); Som.desliga(); return pill('Sem IA reserva', 'Se a principal chegar ao limite, nada é criado até ela voltar.', 'var(--amber)') }
     if (act === 'standby-ligar') { const sb = await api('/api/standby', { ligar: true }); if (ST) ST.standby = sb; Som.liga(); pill('O Vynco abre com o Windows', 'Ele fica na bandeja e publica no horário.', 'var(--green)'); return desenharInicio() }
     if (act === 'li-connect' || act === 'li-reopen') return conectarLinkedin()
