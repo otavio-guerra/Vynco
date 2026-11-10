@@ -88,7 +88,7 @@ async function apiDemo(path, data) {
   await espera(160)
   const q = new URL(path, 'http://x'), id = q.searchParams.get('id') || (data && data.id)
   const it = data && D.fila.find(i => i.kind === data.kind && i.id === data.id)
-  const status = () => ({ agente: D.escolhido ? { id: D.escolhido, nome: ag(D.escolhido).nome, via: ag(D.escolhido).via, instalado: true, conectado: true, conta: 'voce@exemplo.com', sincronizado: D.sincronizado ? new Date().toISOString() : null } : null, linkedin: { ...D.linkedin, dias: Math.floor((D.linkedin.expiresAt - Date.now()) / 864e5), contas: D.linkedin.connected ? [{ id: 'demo', nome: D.linkedin.name, expiresAt: D.linkedin.expiresAt, dias: Math.floor((D.linkedin.expiresAt - Date.now()) / 864e5), valida: true, ativa: true }] : [] }, desigma: { mcpOk: true, exeOk: true, registered: D.sincronizado, workspace: 'C:\\Users\\voce\\Documents\\desigma', exe: 'C:\\Programas\\desigma\\desigma.exe', mcpExe: 'C:\\Programas\\desigma\\desigma-mcp.exe', project: '' }, config: { assetsDir: 'examples/assets', dailyUiStart: '2026-11-03' } })
+  const status = () => ({ reserva: D.reserva || null, standby: D.standby || { disponivel: true, ligado: false }, agente: D.escolhido ? { id: D.escolhido, nome: ag(D.escolhido).nome, via: ag(D.escolhido).via, instalado: true, conectado: true, conta: 'voce@exemplo.com', sincronizado: D.sincronizado ? new Date().toISOString() : null } : null, linkedin: { ...D.linkedin, dias: Math.floor((D.linkedin.expiresAt - Date.now()) / 864e5), contas: D.linkedin.connected ? [{ id: 'demo', nome: D.linkedin.name, expiresAt: D.linkedin.expiresAt, dias: Math.floor((D.linkedin.expiresAt - Date.now()) / 864e5), valida: true, ativa: true }] : [] }, desigma: { mcpOk: true, exeOk: true, registered: D.sincronizado, workspace: 'C:\\Users\\voce\\Documents\\desigma', exe: 'C:\\Programas\\desigma\\desigma.exe', mcpExe: 'C:\\Programas\\desigma\\desigma-mcp.exe', project: '' }, config: { assetsDir: 'examples/assets', dailyUiStart: '2026-11-03' } })
   switch (q.pathname) {
     case '/api/status': return status()
     case '/api/agentes': return { escolhido: D.escolhido, agentes: D.lista.map(a => ({ ...a, ...D.agentes[a.id] })) }
@@ -107,7 +107,7 @@ async function apiDemo(path, data) {
     case '/api/sync/cancelar': if (D.sync && !D.sync.fim) { D.sync.cancelado = true; D.sync.passos.filter(p => p.estado === 'espera').forEach(p => (p.estado = 'pulado')); D.sync.fim = Date.now() } return D.sync || {}
     case '/api/sync': {
       if (!data) return D.sync || {}
-      const a = ag(id || D.escolhido); D.escolhido = a.id
+      const a = ag(id || D.escolhido); if (data.reserva) { D.reserva = { id: a.id, nome: a.nome, via: a.via, conectado: true, sincronizado: new Date().toISOString() } } else D.escolhido = a.id
       const rot = [['conta', `Conferindo a sua conta do ${a.nome}`, 'voce@exemplo.com'], ['instrucoes', 'Ensinando as regras do Vynco', a.id === 'claude' ? 'CLAUDE.md' : a.id === 'gemini' ? 'GEMINI.md' : 'AGENTS.md'], ['skills', 'Instalando 4 skills', 'vynco-daily-ui, vynco-legendas, vynco-marca, vynco-pauta-noticias'], ['prompts', 'Copiando 2 prompts das rotinas', '/vynco-daily-ui, /vynco-pauta-noticias'], ['plugins', 'Ligando o Desigma (plugin MCP)', 'desigma'], ['trava', 'Travando a publicação para o agente', `O ${a.nome} não pode rodar o script de publicação.`], ['teste', `Testando uma resposta do ${a.nome}`, 'respondeu "ok"']]
       const S = D.sync = { agente: a.id, nome: a.nome, passos: rot.map(([pid, rotulo]) => ({ id: pid, rotulo, estado: 'espera', detalhe: '' })), fim: null, ok: false, resumo: { skills: 4, prompts: 2, plugins: 1 } }
       ;(async () => { for (let i = 0; i < rot.length; i++) { if (S.cancelado) return; S.passos[i].estado = 'rodando'; await espera(i === 6 ? 1400 : 650); Object.assign(S.passos[i], { estado: 'ok', detalhe: rot[i][2] }) } S.ok = true; S.fim = Date.now(); D.sincronizado = true })()
@@ -116,6 +116,9 @@ async function apiDemo(path, data) {
     case '/api/linkedin/connect': D.liTimer = setTimeout(() => Object.assign(D.linkedin, { connected: true, name: 'Seu Nome', expiresAt: Date.now() + 60 * 864e5 }), 2400); return { ok: true, modo: 'ponte', msg: 'Demonstração: o login é simulado.' }
     case '/api/linkedin/cancelar': clearTimeout(D.liTimer); return { ok: true }
     case '/api/linkedin/disconnect': Object.assign(D.linkedin, { connected: false, name: null }); return { ok: true }
+    case '/api/limites': return { principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: D.reserva ? { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia. O Gemini não informa o uso para outros apps.' } : null }
+    case '/api/agente/reserva': D.reserva = data.id ? { id: data.id, nome: ag(data.id).nome, via: ag(data.id).via, conectado: true, sincronizado: null } : null; return { ok: true, instalado: true, conectado: true }
+    case '/api/standby': D.standby = { disponivel: true, ligado: !!data.ligar }; return D.standby
     case '/api/queue': return D.fila
     case '/api/runs': return { agente: D.escolhido ? ag(D.escolhido).nome : null, perfil: { area: D.perfil.area }, avisos: [], runs: [], rotinas: MODELOS_DEMO.filter(m => !m.design || /design|ux|ui/i.test(D.perfil.area)).map(m => ({ ...m, agenda: D.rotinas[m.id] || null })) }
     case '/api/agendar': { const k = `${data.kind}:${data.id}`, x = D.fila.find(i => `${i.kind}:${i.id}` === k); if (x) x.agendado = data.quando || null; return { ok: true } }
@@ -300,10 +303,27 @@ async function status() {
   }
   return ST
 }
+let LIM = null, LIM_T = 0
+async function carregarLimites(forcar) {
+  if (!forcar && LIM && Date.now() - LIM_T < 150000) return LIM
+  try { LIM = await api('/api/limites'); LIM_T = Date.now(); desenharConns(); if (!$('#conta-menu').hidden) desenharMenuConta(); if (atual?.dataset.scene === 'ajustes') desenharReserva() } catch { }
+  return LIM
+}
+setInterval(() => { if (store.get('onboarded') === '1') carregarLimites() }, 180000)
+const corUso = p => p >= 90 ? 'var(--red)' : p >= 70 ? 'var(--amber)' : 'var(--accent)'
+const renovaTxt = q => { if (!q) return ''; const d = new Date(q), min = Math.round((d - Date.now()) / 60000); return min <= 0 ? 'renova agora' : min < 60 ? `renova em ${min} min` : min < 24 * 60 ? `renova em ${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}` : `renova ${d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}, ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` }
+// a barra de uso de uma IA (sessão e semana), no menu da conta e em Ajustes
+function barrasUso(x) {
+  if (!x) return ''
+  if (!x.medidor) return `<p class="uso-nota">${esc(x.nota || 'Esta IA não informa o uso.')}${x.usosHoje ? ` O Vynco usou ${x.usosHoje}× hoje.` : ''}</p>`
+  return x.janelas.map(j => `<div class="uso"><div class="uso-l"><span>${esc(j.rotulo)}</span><b style="color:${corUso(j.pct)}">${j.pct}%</b></div><div class="uso-barra" role="progressbar" aria-valuenow="${j.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(j.rotulo)}"><i style="width:${Math.min(100, j.pct)}%;background:${corUso(j.pct)}"></i></div><small>${renovaTxt(j.renova)}</small></div>`).join('')
+}
 function desenharConns() {
   if (!ST) return
+  if (!LIM && !LIM_T) { LIM_T = 1; carregarLimites(true) }
   const l = ST.linkedin, a = ST.agente
-  $('#conns').innerHTML = `<span style="--c:${l.connected && !venceLogo(l) ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)" title="LinkedIn: ${l.connected ? esc(l.name) + (venceLogo(l) ? ' (vence ' + prazo(l.dias) + ')' : '') : 'não conectado'}">${GLIFO.linkedin}</span><span style="--c:${a && a.conectado ? 'var(--green)' : 'var(--amber)'}" title="IA: ${a ? esc(a.nome) : 'nenhuma'}">${glifo(a ? a.id : 'x')}</span>`
+  const ses = LIM?.principal?.medidor ? LIM.principal.janelas[0] : null, liOk = l.connected && !venceLogo(l)
+  $('#conns').innerHTML = `<span class="cx"><span class="cx-ic" style="--c:${liOk ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)">${GLIFO.linkedin}</span><span class="cx-t"><b>${l.connected ? esc((l.name || 'LinkedIn').split(' ')[0]) : 'LinkedIn'}</b><small>${l.connected ? (venceLogo(l) ? 'vence ' + prazo(l.dias) : 'conectado') : 'desconectado'}</small></span></span><span class="cx"><span class="cx-ic" style="--c:${a && a.conectado ? 'var(--green)' : 'var(--amber)'}">${glifo(a ? a.id : '?')}</span><span class="cx-t"><b>${a ? esc(a.nome) : 'Sem IA'}</b><small>${ses ? `sessão ${ses.pct}%` : a && a.conectado ? (ST.reserva ? 'com reserva' : 'conectada') : 'falta entrar'}</small></span>${ses ? `<span class="cx-anel" style="--p:${Math.min(100, ses.pct)};--cor:${corUso(ses.pct)}" aria-hidden="true"></span>` : ''}</span>`
 }
 
 // ---------------------------------------------------------------- 1. LinkedIn
@@ -1542,7 +1562,8 @@ function desenharInicio() {
     + chip(esp.length, 'esperando você', 'fila', esp.length ? ' warn' : '')
     + chip(pub.filter(i => String(i.published.quando || '').slice(0, 7) === hoje0().slice(0, 7)).length, 'publicados este mês', 'calendario')
     + `<button type="button" class="ini-chip glass${li.connected ? '' : ' bad'}" data-view="ajustes"><b>${li.connected ? 'LinkedIn' : '!'}</b><span>${li.connected ? (venceLogo(li) ? `vence ${prazo(li.dias)}` : 'conectado') : 'não conectado'}</span></button>`
-  const aviso = semAprov ? `<p class="ini-alerta">${semAprov === 1 ? '1 post agendado ainda não foi aprovado' : `${semAprov} posts agendados ainda não foram aprovados`} e não vai ao ar assim. <button class="link" data-view="fila">Aprovar em Revisar</button></p>` : ''
+  const sb = ST?.standby, avisoSb = ag.length && sb?.disponivel && !sb.ligado ? `<p class="ini-alerta">O Vynco só publica com o app aberto. Ligue o modo standby: ele abre com o Windows, fica na bandeja e não perde nenhum horário. <button class="btn sm accent" data-act="standby-ligar">Ligar</button></p>` : ''
+  const aviso = avisoSb + (semAprov ? `<p class="ini-alerta">${semAprov === 1 ? '1 post agendado ainda não foi aprovado' : `${semAprov} posts agendados ainda não foram aprovados`} e não vai ao ar assim. <button class="link" data-view="fila">Aprovar em Revisar</button></p>` : '')
   $('[data-ini-feed]').innerHTML = ag.length ? aviso + ag.slice(0, 12).map(i => `<div class="ini-post">
       <div class="ini-quando"><span class="ini-dot${i.approved ? '' : ' warn'}"></span><b>${quandoRel(i.agendado)}</b><small>${esc(i.title)} · ${i.approved ? 'aprovado, sai sozinho' : 'falta aprovar'}</small></div>
       ${cartaoFeed(i, { quandoTxt: quandoCurto(i.agendado) })}
@@ -1775,13 +1796,17 @@ cal.addEventListener('drop', e => { const d = e.target.closest('[data-dia]'); if
 function desenharMenuConta() {
   if (!ST) return
   const l = ST.linkedin, a = ST.agente
+  const P = LIM?.principal, R = LIM?.reserva
   $('#conta-menu').innerHTML = `<div class="cm-h"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(l.name || 'Você')}</span><span><b>${esc(l.name || 'Você')}</b><small>${l.connected ? (venceLogo(l) ? `LinkedIn vence ${prazo(l.dias)}` : 'LinkedIn conectado') : 'LinkedIn não conectado'} · ${a ? esc(a.nome) + (a.conectado ? '' : ' (falta entrar)') : 'sem IA'}</small></span></div>
+    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm" style="--c:${l.connected && !venceLogo(l) ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)">${GLIFO.linkedin}</span><b>LinkedIn</b><small>${l.connected ? `válido até ${quando(l.expiresAt)}` : 'não conectado: nada vai ao ar'}</small></div></div>
+    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(a ? a.id : '?')}</span><b>${a ? esc(a.nome) : 'Sem IA'}</b><small>${a ? (a.conectado ? 'IA principal' : 'falta entrar na conta') : 'escolha uma em Ajustes'}</small></div>${barrasUso(P)}</div>
+    <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(ST.reserva ? ST.reserva.id : '?')}</span><b>${ST.reserva ? esc(ST.reserva.nome) : 'Sem IA reserva'}</b><small>${ST.reserva ? 'assume se a principal falhar' : 'ligue em Ajustes: o Gemini é grátis'}</small></div>${ST.reserva ? barrasUso(R) : ''}</div>
     <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>
     <button role="menuitem" data-cm="atalhos"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h1M7 7h1M10 7h2M5 9.8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Atalhos de teclado<small>aperte ? em qualquer tela</small></span></button>`
 }
 function menuConta(abrir) {
   const m = $('#conta-menu'), b = $('#conns'), on = abrir ?? m.hidden
-  if (on) desenharMenuConta()
+  if (on) { desenharMenuConta(); carregarLimites() }
   m.hidden = !on; b.setAttribute('aria-expanded', on)
   if (on) $('button', m)?.focus()
 }
@@ -1862,6 +1887,7 @@ function desenharAjustes() {
   $('[data-conn=agente] [data-conn-n]').textContent = a ? `${a.nome} · ${a.via}` : 'IA'
   linha('agente', a && a.conectado ? 'var(--green)' : 'var(--amber)', a ? (a.conectado ? `${a.conta || 'conectado'}${a.sincronizado ? ' · sincronizado em ' + quando(Date.parse(a.sincronizado)) : ' · falta sincronizar'}` : 'Falta entrar na conta') : 'Nenhuma IA escolhida.',
     `${a ? '<button class="btn sm" data-act="sync-again">Sincronizar de novo</button>' : ''}<button class="${a ? 'link' : 'btn sm accent'}" data-goscene="agente">${a ? 'Trocar' : 'Escolher'}</button>`)
+  desenharReserva(); desenharStandby()
   const dok = d.mcpOk
   linha('desigma', dok ? (d.registered ? 'var(--green)' : 'var(--amber)') : 'var(--faint)', dok ? (d.registered ? 'Ligado à sua IA: cada peça vira um quadro editável.' : 'Encontrado. Sincronize para ligar à sua IA.') : 'Não encontrado neste computador. É opcional.',
     dok ? '' : '<a class="link" href="https://github.com/deepfounder-ai/desigma/releases" target="_blank" rel="noopener">Baixar</a>')
@@ -1869,6 +1895,46 @@ function desenharAjustes() {
   const fc = $('[data-form=config]'); if (document.activeElement !== fc.assetsDir) fc.assetsDir.value = config.assetsDir || ''; if (document.activeElement !== fc.dailyUiStart) fc.dailyUiStart.value = config.dailyUiStart || ''
   marcarPrefs()
 }
+function desenharReserva() {
+  if (!ST) return
+  const r = ST.reserva, x = LIM?.reserva, row = $('[data-conn=reserva]'); if (!row) return
+  $('[data-res-ic]', row).innerHTML = glifo(r ? r.id : 'gemini')
+  $('[data-res-n]', row).innerHTML = r ? `IA reserva · ${esc(r.nome)}` : 'IA reserva <small class="opt">recomendado</small>'
+  $('.c-ic', row).style.setProperty('--c', r ? (r.conectado ? 'var(--green)' : 'var(--amber)') : 'var(--faint)')
+  $('[data-conn-t]', row).innerHTML = r ? (r.conectado ? `Se a principal chegar ao limite ou falhar, o ${esc(r.nome)} cria no lugar. O post vai para Revisar como sempre.${r.sincronizado ? '' : ' Falta sincronizar.'}` : `Falta entrar na conta do ${esc(r.nome)}.`) + (x ? `<span class="uso-mini">${barrasUso(x)}</span>` : '')
+    : 'Quando a sua IA chega ao limite de uso, o Vynco não cria nada. Com uma reserva, outra IA assume. O Gemini é grátis com uma conta Google (cerca de 1.000 pedidos por dia).'
+  $('[data-conn-a]', row).innerHTML = RES_ON ? `<span class="soft">${esc(RES_ON)}</span>` : r ? `${r.conectado && r.sincronizado ? '' : `<button class="btn sm accent" data-act="res-ligar" data-res="${r.id}">Terminar</button>`}<button class="link soft" data-act="res-tirar">Tirar</button>`
+    : `<button class="btn sm accent" data-act="res-ligar" data-res="${ST.agente?.id === 'gemini' ? 'claude' : 'gemini'}">Usar o ${ST.agente?.id === 'gemini' ? 'Claude' : 'Gemini'}${ST.agente?.id === 'gemini' ? '' : ' (grátis)'}</button>`
+}
+let RES_ON = ''
+async function ligarReserva(id) {
+  const nome = { claude: 'Claude', gemini: 'Gemini', codex: 'ChatGPT' }[id] || id
+  const passo = t => { RES_ON = t; desenharReserva() }
+  try {
+    passo('Conferindo…')
+    let r = await api('/api/agente/reserva', { id })
+    if (!r.conectado) {
+      passo(r.instalado ? `Abrindo o login do ${nome}…` : `Instalando o ${nome}…`)
+      let j = await api('/api/agente/login', { id })
+      while (!['ok', 'erro'].includes(j.fase)) { await espera(DEMO ? 300 : 1500); j = await api('/api/agente/job?id=' + id); if (!j.fase) break; passo(j.msg || 'Entrando…') }
+      if (j.fase !== 'ok') throw new Error(j.msg || `Não deu para entrar no ${nome}.`)
+    }
+    passo('Ensinando as regras do Vynco…')
+    let s2; try { s2 = await api('/api/sync', { id, reserva: true }) } catch (e) { if (e.status !== 409) throw e; s2 = await api('/api/sync') }
+    while (!s2.fim) { await espera(DEMO ? 220 : 800); s2 = await api('/api/sync') }
+    if (s2.passos?.some(p => p.estado === 'falhou')) throw new Error(s2.passos.find(p => p.estado === 'falhou').detalhe || 'a sincronização falhou')
+    Som.liga(); pill(`${nome} é a sua IA reserva`, 'Se a principal chegar ao limite, ele assume.', 'var(--green)')
+  } catch (e) { falha(e) } finally { RES_ON = ''; ST = null; await status(); carregarLimites(true); desenharReserva() }
+}
+function desenharStandby() {
+  const box = $('[data-standby]'); if (!box || !ST) return
+  const sb = ST.standby || {}; box.hidden = !sb.disponivel
+  $$('[data-standby-v]', box).forEach(b => b.classList.toggle('on', (b.dataset.standbyV === '1') === !!sb.ligado))
+}
+$('[data-standby]')?.addEventListener('click', async e => {
+  const b = e.target.closest('[data-standby-v]'); if (!b) return
+  try { const sb = await api('/api/standby', { ligar: b.dataset.standbyV === '1' }); if (ST) ST.standby = sb; Som.tique(); desenharStandby(); pill(sb.ligado ? 'O Vynco abre com o Windows' : 'O Vynco não abre mais com o Windows', sb.ligado ? 'Ele fica na bandeja e publica no horário.' : 'Lembre de abrir o app nos horários agendados.', sb.ligado ? 'var(--green)' : 'var(--amber)'); if (atual?.dataset.scene === 'inicio') desenharInicio() } catch (err) { falha(err) }
+})
 function marcarPrefs() { for (const g of $$('[data-pref]')) { const v = store.get(g.dataset.pref, { theme: 'auto', sound: 'tom', toast: 'padrao' }[g.dataset.pref]); $$('button', g).forEach(b => b.classList.toggle('on', b.dataset.v === v)) } }
 $$('[data-pref] button').forEach(b => b.addEventListener('click', () => {
   const k = b.closest('[data-pref]').dataset.pref; store.set(k, b.dataset.v); marcarPrefs()
@@ -1920,6 +1986,9 @@ document.addEventListener('click', async e => {
   if (t.id === 'conns') return menuConta()
   const act = t.dataset.act; if (!act) return
   try {
+    if (act === 'res-ligar') return ligarReserva(t.dataset.res)
+    if (act === 'res-tirar') { await api('/api/agente/reserva', { id: null }); ST = null; await status(); Som.desliga(); return pill('Sem IA reserva', 'Se a principal chegar ao limite, nada é criado até ela voltar.', 'var(--amber)') }
+    if (act === 'standby-ligar') { const sb = await api('/api/standby', { ligar: true }); if (ST) ST.standby = sb; Som.liga(); pill('O Vynco abre com o Windows', 'Ele fica na bandeja e publica no horário.', 'var(--green)'); return desenharInicio() }
     if (act === 'li-connect' || act === 'li-reopen') return conectarLinkedin()
     if (act === 'li-cancel') return cancelarLinkedin()
     if (act === 'li-proprio') return abrirAssistente()

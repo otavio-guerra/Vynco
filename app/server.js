@@ -19,6 +19,7 @@ const PERFIS = require('../engine/perfis.js')
 const REDE = require('../engine/rede.js')
 const MODELOS = require('../engine/modelos.js')
 const APROV = require('../engine/aprovacao.js')
+const LIMITES = require('../engine/limites.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -41,6 +42,15 @@ const send = (res, code, body, type = 'application/json; charset=utf-8', extra =
 const body = req => new Promise(ok => { let s = ''; req.on('data', c => { s += c; if (s.length > 1e5) req.destroy() }); req.on('end', () => { try { ok(JSON.parse(s || '{}')) } catch { ok({}) } }) })
 const publicados = () => readJSON(C.PUBLICADOS, [])
 const agenteId = () => (C.load().agente || {}).id || null
+// IA reserva: quando a principal falha (limite, créditos, login), a mesma tarefa roda uma vez com ela
+const reservaId = () => { const r = (C.load().agenteReserva || {}).id || null; return r && r !== agenteId() && AG.AGENTES[r] ? r : null }
+async function perguntarComReserva(id, texto, opts) {
+  try { return await AG.perguntar(id, texto, opts) } catch (e) {
+    const r = reservaId(); if (!r || r === id) throw e
+    avisar({ ok: true, titulo: 'A sua IA reserva assumiu', texto: `O ${AG.AGENTES[id].nome} não respondeu (${e.message.slice(0, 120)}). O ${AG.AGENTES[r].nome} fez no lugar.` })
+    return AG.perguntar(r, texto, opts)
+  }
+}
 
 // ---------------------------------------------------------------- LinkedIn
 // a conta ativa vem nos campos de sempre (connected, name...); todas as contas vão em "contas", sem token
@@ -220,20 +230,47 @@ function rodarRotinasDoDia() {
 setInterval(() => { rodarAgenda().catch(() => {}); try { rodarRotinasDoDia() } catch {} }, 60000).unref()
 
 const RUNS = []
-function startRun(rid) {
-  const ag = agenteId(); if (!ag) throw new Error('Escolha um agente de IA antes (Ajustes).')
+function startRun(rid, { agente = null, reservaDe = null } = {}) {
+  const ag = agente || agenteId(); if (!ag) throw new Error('Escolha um agente de IA antes (Ajustes).')
   const r = MODELOS.MODELOS.find(m => m.id === rid); if (!r) throw new Error('modelo desconhecido')
   if (RUNS.some(x => x.id === rid && x.status === 'rodando')) throw new Error('essa rotina já está rodando')
   const logDir = C.ws('logs'); fs.mkdirSync(logDir, { recursive: true })
   const log = path.join(logDir, `${rid}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`)
   const p = AG.rotina(ag, rid)
-  const item = { id: rid, titulo: r.titulo, agente: AG.AGENTES[ag].nome, status: 'rodando', inicio: Date.now(), log: path.relative(C.WS, log) }
+  const item = { id: rid, titulo: r.titulo, agente: AG.AGENTES[ag].nome, reserva: !!reservaDe, status: 'rodando', inicio: Date.now(), log: path.relative(C.WS, log) }
   const out = fs.createWriteStream(log)
   p.stdout.pipe(out); p.stderr.pipe(out)
   p.on('error', e => { out.write('\n' + e.message); item.status = 'falhou' })
-  p.on('close', code => { item.status = code === 0 ? 'concluída' : 'falhou'; item.fim = Date.now() })
+  p.on('close', code => {
+    item.status = code === 0 ? 'concluída' : 'falhou'; item.fim = Date.now()
+    // falhou com a principal: tenta uma vez com a reserva (o post vai para Revisar como sempre)
+    const res = !reservaDe && item.status === 'falhou' ? reservaId() : null
+    if (res) {
+      item.status = 'passou para a reserva'
+      try { startRun(rid, { agente: res, reservaDe: ag }); avisar({ ok: true, titulo: r.titulo, texto: `O ${AG.AGENTES[ag].nome} não conseguiu criar (limite, créditos ou login). A sua IA reserva, o ${AG.AGENTES[res].nome}, está criando no lugar.` }) }
+      catch (e) { item.status = 'falhou'; avisar({ ok: false, titulo: r.titulo, texto: `Nem a IA principal nem a reserva conseguiram: ${e.message}` }) }
+    }
+  })
   RUNS.unshift(item)
   return item
+}
+
+// ---------------------------------------------------------------- standby: o Vynco abre com o Windows, escondido na bandeja,
+// para publicar no horário mesmo que a pessoa esqueça de abrir. Só na versão desktop (o Tauri passa VYNCO_EXE).
+const RUN_KEY = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
+const { execFileSync } = require('child_process')
+function standbyStatus() {
+  const exe = process.env.VYNCO_EXE
+  if (!exe || process.platform !== 'win32') return { disponivel: false, ligado: false }
+  try { const out = execFileSync('reg', ['query', RUN_KEY, '/v', 'Vynco'], { windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); return { disponivel: true, ligado: /--standby/.test(out) } } catch { return { disponivel: true, ligado: false } }
+}
+function standbyLigar(ligar) {
+  const exe = process.env.VYNCO_EXE
+  if (!exe || process.platform !== 'win32') throw new Error('Isso só funciona no Vynco instalado no Windows.')
+  if (ligar) execFileSync('reg', ['add', RUN_KEY, '/v', 'Vynco', '/t', 'REG_SZ', '/d', `"${exe}" --standby`, '/f'], { windowsHide: true, stdio: 'ignore' })
+  else { try { execFileSync('reg', ['delete', RUN_KEY, '/v', 'Vynco', '/f'], { windowsHide: true, stdio: 'ignore' }) } catch { } }
+  C.save({ standby: { pedido: !!ligar, quando: new Date().toISOString() } })
+  return standbyStatus()
 }
 
 // ---------------------------------------------------------------- HTTP
@@ -287,12 +324,20 @@ const server = http.createServer(async (req, res) => {
           if (process.env.ENGINE_DEMO) return send(res, 200, DEMO_STATUS())
           const ag = agenteId(), cfg = C.load()
           const agente = ag ? { ...(await AG.status(ag)), nome: AG.AGENTES[ag].nome, via: AG.AGENTES[ag].via, sincronizado: cfg.agente.sincronizado } : null
-          return send(res, 200, { agente, linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() }, desktop: !!process.env.VYNCO_DESKTOP })
+          const rid = reservaId(), reserva = rid ? { id: rid, ...(await AG.status(rid).catch(() => ({}))), nome: AG.AGENTES[rid].nome, via: AG.AGENTES[rid].via, sincronizado: (cfg.agenteReserva || {}).sincronizado || null } : null
+          return send(res, 200, { agente, reserva, standby: standbyStatus(), linkedin: linkedinStatus(), desigma: desigmaStatus(), config: { assetsDir: cfg.assetsDir, workspaceDir: C.WS, dailyUiStart: cfg.dailyUiStart }, cofre: { protegido: S.protegido() }, desktop: !!process.env.VYNCO_DESKTOP })
         }
         case '/api/agentes': {
           const principais = ['claude', 'codex', 'gemini']
           const st = Object.fromEntries(await Promise.all(principais.map(async id => [id, await AG.status(id).catch(() => ({}))])))
           return send(res, 200, { escolhido: agenteId(), agentes: AG.lista().map(a => ({ ...a, ...(st[a.id] || {}) })) })
+        }
+        case '/api/limites': {   // o medidor de uso da IA principal e da reserva
+          if (process.env.ENGINE_DEMO) return send(res, 200, { principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia.' } })
+          const pr = agenteId(), rs = reservaId(), hoje = new Date().toDateString()
+          const usoHoje = nome => RUNS.filter(r => r.agente === nome && new Date(r.inicio).toDateString() === hoje).length
+          const um = async id => id ? { id, nome: AG.AGENTES[id].nome, usosHoje: usoHoje(AG.AGENTES[id].nome), ...(await LIMITES.limites(id).catch(() => ({ medidor: false, nota: 'Não consegui ler o uso agora.' }))) } : null
+          return send(res, 200, { principal: await um(pr), reserva: await um(rs) })
         }
         case '/api/agente/status': return send(res, 200, await AG.status(u.searchParams.get('id')))
         case '/api/agente/job': return send(res, 200, AG.job(u.searchParams.get('id')) || {})
@@ -339,13 +384,23 @@ const server = http.createServer(async (req, res) => {
       case '/api/agente/login': return send(res, 200, AG.login(b.id, { console: !!b.console }))
       case '/api/agente/cancelar': AG.cancelar(b.id); return send(res, 200, { ok: true })
       case '/api/agente/escolher': { if (!AG.AGENTES[b.id]) return send(res, 400, { erro: 'agente desconhecido' }); C.save({ agente: { id: b.id } }); return send(res, 200, { ok: true }) }
+      case '/api/agente/reserva': {   // escolher (ou tirar) a IA reserva
+        if (!b.id) { C.save({ agenteReserva: null }); return send(res, 200, { ok: true }) }
+        if (!AG.AGENTES[b.id]) return send(res, 400, { erro: 'IA desconhecida.' })
+        if (b.id === agenteId()) return send(res, 400, { erro: 'A reserva precisa ser outra IA, diferente da principal.' })
+        const st = await AG.status(b.id).catch(() => ({}))
+        return send(res, 200, { ok: true, instalado: !!st.instalado, conectado: !!st.conectado })
+      }
+      case '/api/standby': {   // abrir com o Windows, escondido na bandeja
+        try { return send(res, 200, standbyLigar(!!b.ligar)) } catch (e) { return send(res, 400, { erro: e.message }) }
+      }
       case '/api/sync/cancelar': return send(res, 200, AG.cancelarSync() || {})
       case '/api/sync': {
         const id = b.id || agenteId(); if (!AG.AGENTES[id]) return send(res, 400, { erro: 'Escolha um agente antes.' })
-        C.save({ agente: { id } })
+        if (b.reserva) { if (id === agenteId()) return send(res, 400, { erro: 'A reserva precisa ser outra IA.' }); C.save({ agenteReserva: { id } }) } else C.save({ agente: { id } })
         const d = desigmaStatus()
         if (d.guessed) C.save({ desigma: { exe: d.exe, mcpExe: d.mcpExe } })   // guarda o que foi achado sozinho
-        try { return send(res, 200, AG.sincronizar(id, d)) } catch (e) { return send(res, 409, { erro: e.message }) }
+        try { return send(res, 200, AG.sincronizar(id, d, { reserva: !!b.reserva })) } catch (e) { return send(res, 409, { erro: e.message }) }
       }
       // ---- LinkedIn: um botão (ponte do Vynco) ou o app próprio do usuário
       case '/api/linkedin/connect': {
@@ -399,13 +454,13 @@ const server = http.createServer(async (req, res) => {
       case '/api/imagem/pedir': { try { return send(res, 200, await IMAGEM.pedir(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/rede/buscar': {
         const ag = agenteId(); if (!ag) return send(res, 400, { erro: 'Conecte uma IA em Ajustes antes.' })
-        try { return send(res, 200, REDE.buscar(perfilAtivo(), ag, AG.perguntar, b)) } catch (e) { return send(res, 400, { erro: e.message }) }
+        try { return send(res, 200, REDE.buscar(perfilAtivo(), ag, perguntarComReserva, b)) } catch (e) { return send(res, 400, { erro: e.message }) }
       }
       // ---- perfil (quem publica, público, tom, pilares, marca)
       case '/api/perfil/salvar': { try { return send(res, 200, PERFIS.salvar(String(b.id || perfilAtivo()), b.perfil || {})) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/perfil/analisar': {
         const ag = agenteId(); if (!ag) return send(res, 400, { erro: 'Conecte uma IA em Ajustes antes.' })
-        try { return send(res, 200, PERFIS.analisar(String(b.id || perfilAtivo()), ag, AG.perguntar, b.sobre)) } catch (e) { return send(res, 400, { erro: e.message }) }
+        try { return send(res, 200, PERFIS.analisar(String(b.id || perfilAtivo()), ag, perguntarComReserva, b.sobre)) } catch (e) { return send(res, 400, { erro: e.message }) }
       }
       // ---- fila
       case '/api/approve': case '/api/unapprove': {

@@ -53,9 +53,9 @@ button { font-family: inherit }
 .back:hover { color: var(--text); background: var(--glass-2) } .back svg { width: 16px; height: 16px }
 .back:not([hidden]) + .wordmark { display: none }
 .conns { display: inline-flex; gap: 4px; padding: 3px; background: var(--glass); border: 1px solid var(--edge); border-radius: 999px; cursor: pointer }
-.conns span { position: relative; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-2) }
-.conns span svg { width: 14px; height: 14px }
-.conns span::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--faint)); box-shadow: 0 0 0 2px var(--bg) }
+.conns .cx-old { position: relative; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-2) }
+.conns .cx-old svg { width: 14px; height: 14px }
+.conns .cx-old::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--faint)); box-shadow: 0 0 0 2px var(--bg) }
 .seg { justify-self: end; display: flex; gap: 2px; padding: 3px; background: var(--glass); border: 1px solid var(--edge); border-radius: 999px; backdrop-filter: blur(16px) }
 .seg button { font: 600 13px var(--font); color: var(--soft); background: none; border: 0; padding: 7px 14px; min-height: 34px; border-radius: 999px; cursor: pointer; transition: color .2s, background .25s var(--ease) }
 .seg button:hover { color: var(--text) }
@@ -934,3 +934,29 @@ body.com-lado .scene.view { padding-top: 76px }
 /* revisar: cartões maiores, com a legenda à vista */
 .cards > .post { flex: 0 0 220px }
 .post .resumo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 10px 10px; margin: -2px 0 0; font-size: 12.5px; color: var(--soft); line-height: 1.4 }
+
+/* conta à direita: LinkedIn e IA com nome, estado e o uso da sessão */
+.bar-r { justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0 }
+.bar-r .conta-menu { left: auto; right: 0; width: 330px }
+.conns { gap: 2px; padding: 3px 4px; align-items: center }
+.conns .cx { display: inline-flex; align-items: center; gap: 8px; padding: 3px 10px 3px 3px; border-radius: 999px; width: auto; height: auto; background: none; position: static }
+.conns .cx::after { display: none }
+.conns .cx + .cx { border-left: 1px solid var(--edge); border-radius: 0 999px 999px 0; padding-left: 9px }
+.cx-ic { position: relative; flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-2) }
+.cx-ic svg { width: 14px; height: 14px }
+.cx-ic::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--faint)); box-shadow: 0 0 0 2px var(--bg) }
+.cx-ic.sm { flex-basis: 24px; width: 24px; height: 24px }
+.cx-t { display: grid; text-align: left; line-height: 1.15 } .cx-t b { font-size: 12.5px; color: var(--text); font-weight: 650 } .cx-t small { font-size: 11px; color: var(--soft) }
+.cx-anel { width: 18px; height: 18px; border-radius: 50%; background: conic-gradient(var(--cor) calc(var(--p) * 1%), var(--glass-3) 0); -webkit-mask: radial-gradient(circle, transparent 5px, #000 5.5px); mask: radial-gradient(circle, transparent 5px, #000 5.5px) }
+.conns .cx-old { display: none }
+@media (max-width: 760px) { .cx-t { display: none } .conns .cx { padding-right: 3px } }
+/* menu da conta: seções com o uso */
+.cm-sec { display: grid; gap: 8px; padding: 10px 10px 12px; border-bottom: 1px solid var(--edge) }
+.cm-sec-h { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center } .cm-sec-h .cx-ic { grid-row: span 2 }
+.cm-sec-h b { font-size: 13.5px } .cm-sec-h small { color: var(--faint); font-size: 12px }
+.uso { display: grid; gap: 4px } .uso-l { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--soft) } .uso-l b { font-size: 12.5px }
+.uso-barra { height: 7px; border-radius: 99px; background: var(--glass-3); overflow: hidden } .uso-barra i { display: block; height: 100%; border-radius: 99px; transition: width .6s var(--ease) }
+.uso small { font-size: 11.5px; color: var(--faint) }
+.uso-nota { margin: 0; font-size: 12.5px; color: var(--soft); line-height: 1.4 }
+.uso-mini { display: grid; gap: 6px; margin-top: 8px; max-width: 420px }
+.pref-standby > span small { display: block; font-size: 12px; color: var(--faint); font-weight: 500; max-width: 340px }

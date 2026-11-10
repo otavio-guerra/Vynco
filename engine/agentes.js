@@ -210,7 +210,7 @@ function copiarPasta(de, para) { fs.mkdirSync(para, { recursive: true }); for (c
 const descricao = arq => (fs.readFileSync(path.join(ROOT, arq), 'utf8').split('\n')[0] || '').replace(/^Você vai /, '').slice(0, 120)
 
 let SYNC = null
-function sincronizar(id, desigma) {
+function sincronizar(id, desigma, { reserva = false } = {}) {
   const a = AGENTES[id]; if (!a) throw new Error('agente desconhecido')
   if (SYNC && !SYNC.fim) throw new Error('A sincronização já está rodando.')
   const skills = skillsFonte(), rot = Object.entries(ROTINAS)
@@ -271,7 +271,8 @@ function sincronizar(id, desigma) {
       return { detalhe: 'respondeu "ok"' }
     })
     if (S.cancelado) return   // cancelada no meio: não marca como sincronizada
-    C.save({ agente: { id, sincronizado: new Date().toISOString(), desigma: S.resumo.plugins > 0 } })
+    if (reserva) C.save({ agenteReserva: { id, sincronizado: new Date().toISOString() } })
+    else C.save({ agente: { id, sincronizado: new Date().toISOString(), desigma: S.resumo.plugins > 0 } })
     S.ok = !passos.some(p => p.estado === 'falhou'); S.fim = Date.now()
   })()
   return estadoSync()
@@ -314,6 +315,7 @@ async function perguntar(id, texto, { timeout = 240000 } = {}) {
   const pasta = C.ws('perfis', '.ia'); fs.mkdirSync(pasta, { recursive: true })
   const r = await rodar(bin, args, { stdin: texto, timeout, cwd: pasta })
   if (r.code !== 0 && !r.out.trim()) throw new Error(`O ${a.nome} não respondeu${r.err ? ': ' + r.err.trim().split('\n').pop().slice(0, 200) : '.'}`)
+  if (r.code !== 0 && /limit|quota|rate.?limit|429|usage|credit|crédito|exceeded|esgot/i.test(r.out.slice(-600))) throw new Error(`O ${a.nome} chegou ao limite de uso: ${r.out.trim().split('\n').pop().slice(0, 160)}`)
   return r.out
 }
 
