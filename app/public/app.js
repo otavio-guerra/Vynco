@@ -78,6 +78,7 @@ const ag = id => D.lista.find(a => a.id === id)
 const MODELOS_DEMO = [['noticias-da-area', 'Notícias da sua área', 'carrossel', 1, 'semanal', 'O assunto mais quente da semana na sua área, com o que aconteceu, o outro lado e a sua leitura. Fontes checadas.'], ['dicas', 'Dicas práticas', 'carrossel', 0, 'semanal', 'De 5 a 7 dicas curtas e acionáveis sobre um dos seus pilares, uma por slide.'], ['mito-verdade', 'Mito ou verdade', 'carrossel', 0, 'quinzenal', 'Crenças comuns da sua área desmontadas com argumentos simples.'], ['passo-a-passo', 'Passo a passo', 'carrossel', 0, 'quinzenal', 'Como fazer algo que o seu público precisa, em etapas claras.'], ['licao', 'Lição aprendida', 'texto', 0, 'semanal', 'Uma história curta: o que aconteceu, o que você aprendeu e o que faria diferente.'], ['bastidores', 'Bastidores do trabalho', 'texto', 0, 'quinzenal', 'Um processo, uma rotina ou uma ferramenta do seu dia a dia, contado com honestidade.'], ['opiniao', 'Opinião sobre uma tendência', 'texto', 1, 'quinzenal', 'Uma tendência recente da área e o seu ponto de vista, com os dois lados.'], ['pergunta', 'Pergunta para a rede', 'texto', 0, 'semanal', 'Um post curto que termina numa pergunta e puxa conversa nos comentários.'], ['recomendacao', 'Recomendação', 'texto', 0, 'mensal', 'Um livro, curso, ferramenta ou pessoa que ajudou você, e por quê.'], ['daily-ui', 'Daily UI', 'imagem', 0, 'diario', 'A tela do desafio Daily UI do dia, com as decisões de UX numeradas.', 1]]
   .map(([id, titulo, formato, web, freq, desc, design]) => ({ id, titulo, formato, web: !!web, freq, desc, design: !!design, freqTxt: { diario: 'todo dia útil', semanal: 'uma vez por semana', quinzenal: 'a cada 15 dias', mensal: 'uma vez por mês' }[freq] }))
 // imagem de exemplo desenhada na hora (wireframe colorido), para a demonstração
+const PLANO_DEMO = () => ({ nivel: 'normal', motivo: 'A sua semana está em 61%: carrossel (o mais pesado) cai para 1 por semana e a IA reserva divide o resto.', slots: [[1, 'dicas', 'Dicas práticas', 'carrossel', 'principal'], [3, 'licao', 'Lição aprendida', 'texto', 'reserva'], [5, 'pergunta', 'Pergunta para a rede', 'texto', 'principal']].map(([dia, modelo, titulo, formato, ia]) => ({ dia, modelo, titulo, formato, criar: '07:00', publicar: '12:00', ia })) })
 const usoDemo = () => ({ mes: new Date().toISOString().slice(0, 7), operacoes: D.ops, gasto: D.gasto, semPreco: D.tarefas.filter(t => t.op !== 'melhorar').reduce((s, t) => s + t.itens.length, 0), limiteMensal: 30, orcamentoMensal: 10 })
 const RECURSOS_DEMO = {
   gerar: { proporcoes: [['social_post_4_5', '4:5 · feed'], ['square_1_1', '1:1'], ['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story']], resolucoes: [['1k', '1K'], ['2k', '2K'], ['4k', '4K']], modelos: [['realism', 'Realismo'], ['fluid', 'Fluido'], ['zen', 'Zen'], ['flexible', 'Flexível'], ['super_real', 'Super real'], ['editorial_portraits', 'Retratos editoriais']], maxVersoes: 4 },
@@ -116,8 +117,9 @@ async function apiDemo(path, data) {
     case '/api/linkedin/connect': D.liTimer = setTimeout(() => Object.assign(D.linkedin, { connected: true, name: 'Seu Nome', expiresAt: Date.now() + 60 * 864e5 }), 2400); return { ok: true, modo: 'ponte', msg: 'Demonstração: o login é simulado.' }
     case '/api/linkedin/cancelar': clearTimeout(D.liTimer); return { ok: true }
     case '/api/linkedin/disconnect': Object.assign(D.linkedin, { connected: false, name: null }); return { ok: true }
-    case '/api/limites': return { principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: D.reserva ? { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia. O Gemini não informa o uso para outros apps.' } : null }
+    case '/api/limites': return { imagem: { nome: 'Magnific', temChave: true, site: 'https://www.magnific.com', operacoes: D.ops, gasto: D.gasto, limiteMensal: 30, orcamentoMensal: 10 }, principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: D.reserva ? { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia. O Gemini não informa o uso para outros apps.' } : null }
     case '/api/agente/reserva': D.reserva = data.id ? { id: data.id, nome: ag(data.id).nome, via: ag(data.id).via, conectado: true, sincronizado: null } : null; return { ok: true, instalado: true, conectado: true }
+    case '/api/automatico': if (data) { D.auto = !!data.ativo; D.autoDui = !!data.dailyUi } return { ativo: !!D.auto, dailyUi: !!D.autoDui, veto: 2, design: true, temReserva: !!D.reserva, aplicado: D.auto ? PLANO_DEMO() : null, plano: PLANO_DEMO() }
     case '/api/standby': D.standby = { disponivel: true, ligado: !!data.ligar }; return D.standby
     case '/api/queue': return D.fila
     case '/api/runs': return { agente: D.escolhido ? ag(D.escolhido).nome : null, perfil: { area: D.perfil.area }, avisos: [], runs: [], rotinas: MODELOS_DEMO.filter(m => !m.design || /design|ux|ui/i.test(D.perfil.area)).map(m => ({ ...m, agenda: D.rotinas[m.id] || null })) }
@@ -284,7 +286,7 @@ function voltar() {
 function terminar() { store.set('onboarded', '1'); voltarPara = null; cena('inicio') }
 const ENTRAR = {
   linkedin: () => entrarLinkedin(), voce: () => entrarVoce(), agente: () => entrarAgente(), sync: () => entrarSync(), estrategia: () => entrarEstrategia(),
-  inicio: () => carregarInicio(), fila: () => carregarFila(), rotinas: () => carregarRotinas(), calendario: () => carregarCalendario(), ajustes: () => { status(); carregarImgAjustes() },
+  inicio: () => carregarInicio(), fila: () => carregarFila(), rotinas: () => { carregarRotinas(); carregarAuto() }, calendario: () => carregarCalendario(), ajustes: () => { status(); carregarImgAjustes() },
   biblioteca: () => carregarBiblioteca(), editor: () => entrarEditor(), perfil: () => carregarPerfil(), rede: () => carregarRede(),
 }
 
@@ -306,7 +308,7 @@ async function status() {
 let LIM = null, LIM_T = 0
 async function carregarLimites(forcar) {
   if (!forcar && LIM && Date.now() - LIM_T < 150000) return LIM
-  try { LIM = await api('/api/limites'); LIM_T = Date.now(); desenharConns(); if (!$('#conta-menu').hidden) desenharMenuConta(); if (atual?.dataset.scene === 'ajustes') desenharReserva() } catch { }
+  try { LIM = await api('/api/limites'); LIM_T = Date.now(); desenharConns(); if (!$('#conta-menu').hidden) desenharMenuConta(); if (atual?.dataset.scene === 'ajustes') desenharReserva(); if (atual?.dataset.scene === 'rotinas') desenharAuto() } catch { }
   return LIM
 }
 setInterval(() => { if (store.get('onboarded') === '1') carregarLimites() }, 180000)
@@ -316,14 +318,14 @@ const renovaTxt = q => { if (!q) return ''; const d = new Date(q), min = Math.ro
 function barrasUso(x) {
   if (!x) return ''
   if (!x.medidor) return `<p class="uso-nota">${esc(x.nota || 'Esta IA não informa o uso.')}${x.usosHoje ? ` O Vynco usou ${x.usosHoje}× hoje.` : ''}</p>`
-  return x.janelas.map(j => `<div class="uso"><div class="uso-l"><span>${esc(j.rotulo)}</span><b style="color:${corUso(j.pct)}">${j.pct}%</b></div><div class="uso-barra" role="progressbar" aria-valuenow="${j.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(j.rotulo)}"><i style="width:${Math.min(100, j.pct)}%;background:${corUso(j.pct)}"></i></div><small>${renovaTxt(j.renova)}</small></div>`).join('')
+  return x.janelas.map(j => `<div class="uso"><div class="uso-l"><span>${esc(j.rotulo)}</span><b style="color:${corUso(j.pct)}">${j.pct}%</b></div><div class="uso-barra" role="progressbar" aria-valuenow="${j.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(j.rotulo)}"><i style="width:${Math.min(100, j.pct)}%;background:${corUso(j.pct)}"></i></div>${j.renova ? `<small>${renovaTxt(j.renova)}</small>` : ""}</div>`).join('')
 }
 function desenharConns() {
   if (!ST) return
   if (!LIM && !LIM_T) { LIM_T = 1; carregarLimites(true) }
   const l = ST.linkedin, a = ST.agente
   const ses = LIM?.principal?.medidor ? LIM.principal.janelas[0] : null, liOk = l.connected && !venceLogo(l)
-  $('#conns').innerHTML = `<span class="cx"><span class="cx-ic" style="--c:${liOk ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)">${GLIFO.linkedin}</span><span class="cx-t"><b>${l.connected ? esc((l.name || 'LinkedIn').split(' ')[0]) : 'LinkedIn'}</b><small>${l.connected ? (venceLogo(l) ? 'vence ' + prazo(l.dias) : 'conectado') : 'desconectado'}</small></span></span><span class="cx"><span class="cx-ic" style="--c:${a && a.conectado ? 'var(--green)' : 'var(--amber)'}">${glifo(a ? a.id : '?')}</span><span class="cx-t"><b>${a ? esc(a.nome) : 'Sem IA'}</b><small>${ses ? `sessão ${ses.pct}%` : a && a.conectado ? (ST.reserva ? 'com reserva' : 'conectada') : 'falta entrar'}</small></span>${ses ? `<span class="cx-anel" style="--p:${Math.min(100, ses.pct)};--cor:${corUso(ses.pct)}" aria-hidden="true"></span>` : ''}</span>`
+  $('#conns').innerHTML = `<span class="cx"><span class="cx-ic" style="--c:${liOk ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)">${GLIFO.linkedin}</span><span class="cx-t"><b>${l.connected ? esc((l.name || 'LinkedIn').split(' ')[0]) : 'LinkedIn'}</b><small>${l.connected ? (venceLogo(l) ? 'vence ' + prazo(l.dias) : 'conectado') : 'desconectado'}</small></span></span><span class="cx"><span class="cx-ic" style="--c:${a && a.conectado ? 'var(--green)' : 'var(--amber)'}">${glifo(a ? a.id : '?')}</span><span class="cx-t"><b>${a ? esc(a.nome) : 'Sem IA'}</b><small>${ses ? `sessão ${ses.pct}%` : a && a.conectado ? (ST.reserva ? 'com reserva' : 'conectada') : 'falta entrar'}</small></span>${ses ? `<span class="cx-anel" style="--p:${Math.min(100, ses.pct)};--cor:${corUso(ses.pct)}" aria-hidden="true"></span>` : ''}</span>${LIM?.imagem?.temChave ? `<span class="cx"><span class="cx-ic mg-ic" style="--c:${LIM.imagem.operacoes >= LIM.imagem.limiteMensal ? 'var(--red)' : 'var(--green)'}">M</span><span class="cx-t"><b>Magnific</b><small>${LIM.imagem.operacoes} de ${LIM.imagem.limiteMensal} no mês</small></span></span>` : ''}`
 }
 
 // ---------------------------------------------------------------- 1. LinkedIn
@@ -1535,9 +1537,9 @@ $('[data-scene=rede]').addEventListener('click', async e => {
 })
 
 // ---------------------------------------------------------------- início: o que vai ao ar, o que espera você e o que a IA vai fazer
-let INI_ROT = []
+let INI_ROT = [], INI_AUTO = false
 async function carregarInicio() {
-  try { const [f, r] = await Promise.all([api('/api/queue'), api('/api/runs').catch(() => ({ rotinas: [] })), ST ? null : status()]); FILA = f; INI_ROT = (r.rotinas || []).filter(x => x.agenda?.ativo) } catch (e) { return falha(e) }
+  try { const [f, r, au] = await Promise.all([api('/api/queue'), api('/api/runs').catch(() => ({ rotinas: [] })), api('/api/automatico').catch(() => null), ST ? null : status()]); FILA = f; INI_ROT = (r.rotinas || []).filter(x => x.agenda?.ativo); INI_AUTO = !!au?.ativo } catch (e) { return falha(e) }
   desenharInicio(); contarFila(); atualizarHumor()
 }
 const quandoRel = q => {
@@ -1562,6 +1564,7 @@ function desenharInicio() {
     + chip(esp.length, 'esperando você', 'fila', esp.length ? ' warn' : '')
     + chip(pub.filter(i => String(i.published.quando || '').slice(0, 7) === hoje0().slice(0, 7)).length, 'publicados este mês', 'calendario')
     + `<button type="button" class="ini-chip glass${li.connected ? '' : ' bad'}" data-view="ajustes"><b>${li.connected ? 'LinkedIn' : '!'}</b><span>${li.connected ? (venceLogo(li) ? `vence ${prazo(li.dias)}` : 'conectado') : 'não conectado'}</span></button>`
+  if (INI_AUTO) $('[data-ini-s]').textContent += ' Modo automático ligado: a IA cria e o Vynco aprova e agenda.'
   const sb = ST?.standby, avisoSb = ag.length && sb?.disponivel && !sb.ligado ? `<p class="ini-alerta">O Vynco só publica com o app aberto. Ligue o modo standby: ele abre com o Windows, fica na bandeja e não perde nenhum horário. <button class="btn sm accent" data-act="standby-ligar">Ligar</button></p>` : ''
   const aviso = avisoSb + (semAprov ? `<p class="ini-alerta">${semAprov === 1 ? '1 post agendado ainda não foi aprovado' : `${semAprov} posts agendados ainda não foram aprovados`} e não vai ao ar assim. <button class="link" data-view="fila">Aprovar em Revisar</button></p>` : '')
   $('[data-ini-feed]').innerHTML = ag.length ? aviso + ag.slice(0, 12).map(i => `<div class="ini-post">
@@ -1581,6 +1584,49 @@ $('[data-scene=inicio]').addEventListener('click', e => {
   if (b.dataset.iniDia) { const d = b.dataset.iniDia, n = new Date(d + 'T12:00'); CAL = { ano: n.getFullYear(), mes: n.getMonth(), dia: d }; AG_ABA = 'mes'; voltarPara = null; return cena('calendario') }
   if (b.matches('[data-ini-noar-ver]')) { AG_ABA = 'noar'; voltarPara = null; return cena('calendario') }
   if (b.dataset.q === 'mais') { const art = b.closest('.ini-post'), k = art?.querySelector('[data-ini-abrir]')?.dataset.iniAbrir, i = k && itemDe(k); if (i) art.querySelector('.fp').outerHTML = cartaoFeed(i, { aberto: !b.textContent.includes('menos'), quandoTxt: quandoCurto(i.agendado) }) }
+})
+
+// ---------------------------------------------------------------- modo automático (cartão no topo de Criar)
+let AUTO_D = null, AUTO_OPC = { dailyUi: false, veto: 2 }
+async function carregarAuto() {
+  const box = $('[data-auto]'); if (!box) return
+  try { AUTO_D = await api('/api/automatico') } catch (e) { box.innerHTML = ''; return }
+  AUTO_OPC = { dailyUi: AUTO_D.dailyUi || (!AUTO_D.ativo && AUTO_D.design), veto: AUTO_D.veto ?? 2 }
+  carregarLimites(); desenharAuto()
+}
+const DIA_NOME = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+function desenharAuto() {
+  const box = $('[data-auto]'); if (!box || !AUTO_D) return
+  const on = AUTO_D.ativo, p = on ? AUTO_D.aplicado : AUTO_D.plano
+  const nivelTxt = { normal: 'Ritmo normal', economia: 'Economizando', reserva: 'Só a reserva' }[p?.nivel] || ''
+  const linhas = (p?.slots || []).map(sl => `<tr><td>${DIA_NOME[sl.dia]}</td><td><b>${esc(sl.titulo)}</b><small>${esc(FMT_TXT[sl.formato] || sl.formato || '')}</small></td><td>cria ${esc(sl.criar)}</td><td>sai ${esc(sl.publicar)}</td><td><span class="auto-ia${sl.ia === 'reserva' ? ' res' : ''}">${sl.ia === 'reserva' ? 'reserva' : 'principal'}</span></td></tr>`).join('')
+  box.innerHTML = `<header class="ed-box-h"><h3>Modo automático <span class="auto-st${on ? ' on' : ''}">${on ? 'ligado' : 'desligado'}</span></h3>${on ? '<span class="auto-a"><button class="link" type="button" data-auto-refazer>Refazer o plano agora</button><button class="btn sm" type="button" data-auto-off>Desligar</button></span>' : ''}</header>
+    <p class="fine auto-txt">${on ? 'A sua IA cria nos dias abaixo, o Vynco confere e aprova sozinho, e o post entra na agenda.' : 'A sua IA cria, o Vynco confere cada post (arquivo, tamanho da legenda, trechos por preencher e o que você pediu para evitar) e aprova sozinho.'} Cada post entra na agenda com pelo menos ${AUTO_OPC.veto} ${AUTO_OPC.veto === 1 ? 'hora' : 'horas'} para você vetar. O que não passa na conferência fica em Revisar esperando você.</p>
+    ${p?.erro ? `<p class="ini-alerta">${esc(p.erro)}</p>` : `<div class="auto-grid">
+      <div class="auto-plano"><div class="auto-plano-h"><b>${nivelTxt}${p?.slots ? ` · ${p.slots.length} ${p.slots.length === 1 ? 'post' : 'posts'} por semana` : ''}</b><small>${esc(p?.motivo || '')}</small></div>
+        <table class="auto-tab">${linhas}</table></div>
+      <aside class="auto-folga"><b>Folga das suas IAs</b>${LIM?.principal ? `<div class="auto-ia-b"><small>${esc(LIM.principal.nome)} (principal)</small>${barrasUso(LIM.principal)}</div>` : ''}${LIM?.reserva ? `<div class="auto-ia-b"><small>${esc(LIM.reserva.nome)} (reserva)</small>${barrasUso(LIM.reserva)}</div>` : `<p class="uso-nota">Sem IA reserva. <button class="link" type="button" data-view="ajustes">Ligar o Gemini (grátis)</button> para o plano não parar quando a principal chegar ao limite.</p>`}
+        <p class="uso-nota">O plano é refeito todo dia com o uso de hoje. Com a semana pela metade, ele troca carrossel por texto e passa parte para a reserva.</p></aside>
+    </div>`}
+    ${on ? '' : `<div class="auto-opc">${AUTO_D.design ? `<label class="ed-switch"><input type="checkbox" data-auto-dui${AUTO_OPC.dailyUi ? ' checked' : ''}><span><b>Incluir o Daily UI</b><small>uma tela por dia útil, criada às 7h30 e publicada às 10h</small></span></label>` : ''}
+      <label class="auto-veto"><span>Tempo para vetar</span><select class="sel" data-auto-veto>${[1, 2, 4, 12].map(h => `<option value="${h}"${+AUTO_OPC.veto === h ? ' selected' : ''}>${h} ${h === 1 ? 'hora' : 'horas'}</option>`).join('')}</select></label>
+      <button class="btn accent" type="button" data-auto-on>Ligar o modo automático</button></div>`}`
+}
+$('[data-auto]')?.addEventListener('change', e => {
+  if (e.target.matches('[data-auto-dui]')) { AUTO_OPC.dailyUi = e.target.checked; api('/api/automatico').then(d => { AUTO_D = { ...d, ativo: false }; desenharAuto() }).catch(() => {}) }
+  if (e.target.matches('[data-auto-veto]')) { AUTO_OPC.veto = +e.target.value; desenharAuto() }
+})
+$('[data-auto]')?.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return
+  try {
+    if (b.matches('[data-auto-on]')) {
+      if (!(await confirmar('Ligar o modo automático?', `Os posts vão ao ar sem você ler antes. O Vynco confere cada um e só agenda com pelo menos ${AUTO_OPC.veto} ${AUTO_OPC.veto === 1 ? 'hora' : 'horas'} de folga, para você poder vetar. Dá para desligar quando quiser.`, 'Ligar'))) return
+      await api('/api/automatico', { ativo: true, dailyUi: AUTO_OPC.dailyUi, veto: AUTO_OPC.veto }); Som.liga(); pill('Modo automático ligado', 'A sua IA cria e o Vynco aprova e agenda.', 'var(--green)')
+    }
+    if (b.matches('[data-auto-off]')) { await api('/api/automatico', { ativo: false }); Som.desliga(); pill('Modo automático desligado', 'O que já está na agenda continua lá.', 'var(--amber)') }
+    if (b.matches('[data-auto-refazer]')) { await api('/api/automatico', { ativo: true, dailyUi: AUTO_D.dailyUi, veto: AUTO_D.veto }); Som.tique(); pill('Plano refeito', 'Com o uso de agora das suas IAs.', 'var(--green)') }
+    if (b.matches('[data-auto-on], [data-auto-off], [data-auto-refazer]')) { await carregarAuto(); carregarRotinas() }
+  } catch (err) { falha(err) }
 })
 
 // ---------------------------------------------------------------- criar: modelos de post (rotinas) para qualquer área
@@ -1800,6 +1846,7 @@ function desenharMenuConta() {
   $('#conta-menu').innerHTML = `<div class="cm-h"><span class="avatar" style="${l.foto ? `background-image:url('${esc(l.foto)}');color:transparent` : ''}">${inicial(l.name || 'Você')}</span><span><b>${esc(l.name || 'Você')}</b><small>${l.connected ? (venceLogo(l) ? `LinkedIn vence ${prazo(l.dias)}` : 'LinkedIn conectado') : 'LinkedIn não conectado'} · ${a ? esc(a.nome) + (a.conectado ? '' : ' (falta entrar)') : 'sem IA'}</small></span></div>
     <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm" style="--c:${l.connected && !venceLogo(l) ? 'var(--green)' : 'var(--amber)'};color:#fff;background:var(--li)">${GLIFO.linkedin}</span><b>LinkedIn</b><small>${l.connected ? `válido até ${quando(l.expiresAt)}` : 'não conectado: nada vai ao ar'}</small></div></div>
     <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(a ? a.id : '?')}</span><b>${a ? esc(a.nome) : 'Sem IA'}</b><small>${a ? (a.conectado ? 'IA principal' : 'falta entrar na conta') : 'escolha uma em Ajustes'}</small></div>${barrasUso(P)}</div>
+    ${LIM?.imagem ? `<div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm mg-ic" style="--c:${LIM.imagem.temChave ? 'var(--green)' : 'var(--faint)'}">M</span><b>Magnific</b><small>${LIM.imagem.temChave ? 'imagens com IA' : 'sem chave: ligue em Ajustes'}</small></div>${LIM.imagem.temChave ? barrasUso({ medidor: true, janelas: [{ rotulo: `Operações este mês (${LIM.imagem.operacoes} de ${LIM.imagem.limiteMensal})`, pct: Math.round(100 * LIM.imagem.operacoes / Math.max(1, LIM.imagem.limiteMensal)), renova: null }, { rotulo: `Gasto estimado (€${LIM.imagem.gasto.toFixed(2)} de €${LIM.imagem.orcamentoMensal})`, pct: Math.round(100 * LIM.imagem.gasto / Math.max(0.01, LIM.imagem.orcamentoMensal)), renova: null }] }) + `<p class="uso-nota">Os limites são os que você definiu em Ajustes. A API do Magnific não informa o saldo da conta: ${LIM.imagem.site ? `<a class="link" href="${esc(urlOk(LIM.imagem.site))}" target="_blank" rel="noopener">ver os créditos no site ↗</a>` : 'confira no site'}.</p>` : ''}</div>` : ''}
     <div class="cm-sec"><div class="cm-sec-h"><span class="cx-ic sm">${glifo(ST.reserva ? ST.reserva.id : '?')}</span><b>${ST.reserva ? esc(ST.reserva.nome) : 'Sem IA reserva'}</b><small>${ST.reserva ? 'assume se a principal falhar' : 'ligue em Ajustes: o Gemini é grátis'}</small></div>${ST.reserva ? barrasUso(R) : ''}</div>
     <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes<small>LinkedIn, IA, imagens, som e tema</small></span></button>
     <button role="menuitem" data-cm="atalhos"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h1M7 7h1M10 7h2M5 9.8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Atalhos de teclado<small>aperte ? em qualquer tela</small></span></button>`

@@ -20,6 +20,7 @@ const REDE = require('../engine/rede.js')
 const MODELOS = require('../engine/modelos.js')
 const APROV = require('../engine/aprovacao.js')
 const LIMITES = require('../engine/limites.js')
+const AUTO = require('../engine/automatico.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -223,19 +224,30 @@ function rodarRotinasDoDia() {
   for (const [rid, r] of Object.entries(cfg)) {
     if (!r || !r.ativo || !(r.dias || []).includes(agora.getDay()) || hhmm < (r.hora || '08:00') || r.ultima === hojeLocal()) continue
     if (!MODELOS.MODELOS.some(m => m.id === rid)) continue
-    C.save({ rotinas: { [rid]: { ultima: hojeLocal() } } })
-    try { startRun(rid) } catch (e) { avisar({ ok: false, titulo: (MODELOS.MODELOS.find(m => m.id === rid) || {}).titulo || rid, texto: `A repetição não rodou: ${e.message}` }) }
+    let agente = null
+    if (r.auto && autoCfg().ativo) {
+      const slot = (autoCfg().slots || []).find(x => x.modelo === rid && x.dia === agora.getDay())
+      const res = reservaId(), ses = sessaoPrincipal()
+      if (slot && slot.ia === 'reserva' && res) agente = res
+      else if (ses != null && ses >= 90) {   // a sessão da principal está no fim: a reserva assume, ou espera 1 hora
+        if (res) agente = res
+        else if (!r.adiado || Date.now() - r.adiado < 36e5) { if (!r.adiado) C.save({ rotinas: { [rid]: { adiado: Date.now() } } }); continue }
+      }
+    }
+    C.save({ rotinas: { [rid]: { ultima: hojeLocal(), adiado: null } } })
+    try { startRun(rid, { agente, auto: !!r.auto }) } catch (e) { avisar({ ok: false, titulo: (MODELOS.MODELOS.find(m => m.id === rid) || {}).titulo || rid, texto: `A repetição não rodou: ${e.message}` }) }
   }
 }
 setInterval(() => { rodarAgenda().catch(() => {}); try { rodarRotinasDoDia() } catch {} }, 60000).unref()
 
 const RUNS = []
-function startRun(rid, { agente = null, reservaDe = null } = {}) {
+function startRun(rid, { agente = null, reservaDe = null, auto = false, antes = null } = {}) {
   const ag = agente || agenteId(); if (!ag) throw new Error('Escolha um agente de IA antes (Ajustes).')
   const r = MODELOS.MODELOS.find(m => m.id === rid); if (!r) throw new Error('modelo desconhecido')
   if (RUNS.some(x => x.id === rid && x.status === 'rodando')) throw new Error('essa rotina já está rodando')
   const logDir = C.ws('logs'); fs.mkdirSync(logDir, { recursive: true })
   const log = path.join(logDir, `${rid}-${new Date().toISOString().replace(/[:.]/g, '-')}.log`)
+  const fotoAntes = antes || new Set(queue().map(i => `${i.kind}:${i.id}`))
   const p = AG.rotina(ag, rid)
   const item = { id: rid, titulo: r.titulo, agente: AG.AGENTES[ag].nome, reserva: !!reservaDe, status: 'rodando', inicio: Date.now(), log: path.relative(C.WS, log) }
   const out = fs.createWriteStream(log)
@@ -243,17 +255,65 @@ function startRun(rid, { agente = null, reservaDe = null } = {}) {
   p.on('error', e => { out.write('\n' + e.message); item.status = 'falhou' })
   p.on('close', code => {
     item.status = code === 0 ? 'concluída' : 'falhou'; item.fim = Date.now()
+    if (item.status === 'concluída' && auto && autoCfg().ativo) { try { autoAprovar(rid, fotoAntes) } catch (e) { avisar({ ok: false, titulo: r.titulo, texto: `O modo automático não conseguiu aprovar: ${e.message}` }) } }
     // falhou com a principal: tenta uma vez com a reserva (o post vai para Revisar como sempre)
     const res = !reservaDe && item.status === 'falhou' ? reservaId() : null
     if (res) {
       item.status = 'passou para a reserva'
-      try { startRun(rid, { agente: res, reservaDe: ag }); avisar({ ok: true, titulo: r.titulo, texto: `O ${AG.AGENTES[ag].nome} não conseguiu criar (limite, créditos ou login). A sua IA reserva, o ${AG.AGENTES[res].nome}, está criando no lugar.` }) }
+      try { startRun(rid, { agente: res, reservaDe: ag, auto, antes: fotoAntes }); avisar({ ok: true, titulo: r.titulo, texto: `O ${AG.AGENTES[ag].nome} não conseguiu criar (limite, créditos ou login). A sua IA reserva, o ${AG.AGENTES[res].nome}, está criando no lugar.` }) }
       catch (e) { item.status = 'falhou'; avisar({ ok: false, titulo: r.titulo, texto: `Nem a IA principal nem a reserva conseguiram: ${e.message}` }) }
     }
   })
   RUNS.unshift(item)
   return item
 }
+
+// ---------------------------------------------------------------- modo automático
+const autoCfg = () => C.load().automatico || {}
+let ULTIMO_LIM = null   // o último uso lido das IAs (para decidir sem esperar a rede)
+async function lerLimites() {
+  const pr = agenteId(), rs = reservaId()
+  const um = async id => id ? { id, ...(await LIMITES.limites(id).catch(() => ({ medidor: false }))) } : null
+  ULTIMO_LIM = { principal: await um(pr), reserva: await um(rs), quando: Date.now() }
+  return ULTIMO_LIM
+}
+const sessaoPrincipal = () => { const p = ULTIMO_LIM && ULTIMO_LIM.principal; return p && p.medidor ? (p.janelas.find(j => /sess/i.test(j.rotulo)) || {}).pct : null }
+async function planoAuto(extra = {}) {
+  const cfg = { ...autoCfg(), ...extra }
+  return AUTO.montar({ perfil: PERFIS.carregar(perfilAtivo()), modelos: MODELOS.MODELOS, lim: await lerLimites(), reserva: reservaId(), cfg })
+}
+function aplicarPlano(plano, extra = {}) {
+  const atual = C.load().rotinas || {}, novo = {}
+  for (const [id, r] of Object.entries(atual)) if (r && r.auto) novo[id] = { ativo: false, auto: false }   // tira o plano anterior
+  for (const sl of plano.slots) { const n = novo[sl.modelo] && novo[sl.modelo].auto ? novo[sl.modelo] : (novo[sl.modelo] = { ativo: true, auto: true, dias: [], hora: sl.criar }); n.dias.push(sl.dia) }
+  C.save({ rotinas: novo, automatico: { ...extra, ativo: true, slots: plano.slots, nivel: plano.nivel, motivo: plano.motivo, atualizado: new Date().toISOString() } })
+}
+function desligarAuto() {
+  const novo = {}; for (const [id, r] of Object.entries(C.load().rotinas || {})) if (r && r.auto) novo[id] = { ativo: false, auto: false }
+  C.save({ rotinas: novo, automatico: { ativo: false } })
+}
+// depois que uma rotina do plano termina: confere e aprova o que ela criou, e agenda com janela para vetar
+function autoAprovar(rid, antes) {
+  const perfil = PERFIS.carregar(perfilAtivo()), cfg = autoCfg(), veto = cfg.veto == null ? 2 : cfg.veto
+  const novos = queue().filter(i => !antes.has(`${i.kind}:${i.id}`) && !i.published && !i.approved)
+  const ocupados = queue().filter(i => i.agendado).map(i => i.agendado)
+  for (const it of novos) {
+    const porque = AUTO.conferir(it, perfil)
+    if (porque) { avisar({ ok: false, titulo: it.title, chave: `${it.kind}:${it.id}`, texto: `O modo automático não aprovou: ${porque}. Ele está em Revisar esperando você.` }); continue }
+    APROV.aprovar(it._ok, it.kind, it.id, it._legenda, it._arquivos)
+    const slot = (cfg.slots || []).find(x => x.modelo === rid && x.dia === new Date().getDay()) || (cfg.slots || []).find(x => x.modelo === rid)
+    const q = AUTO.horario(slot ? slot.publicar : '12:00', { veto, ocupados })
+    agendar(it.kind, it.id, q.toISOString()); ocupados.push(q.toISOString())
+    avisar({ ok: true, titulo: it.title, chave: `${it.kind}:${it.id}`, texto: `Criado, conferido e aprovado pelo modo automático. Sai ${q.toLocaleString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Para vetar, abra o post e tire da agenda.` })
+  }
+}
+// o plano acompanha o uso: refeito uma vez por dia, depois das 6h
+setInterval(() => {
+  lerLimites().catch(() => {})
+  const c = autoCfg(); if (!c.ativo || new Date().getHours() < 6 || (c.atualizado && c.atualizado.slice(0, 10) === new Date().toISOString().slice(0, 10))) return
+  planoAuto().then(p => aplicarPlano(p, { dailyUi: c.dailyUi, veto: c.veto })).catch(() => {})
+}, 180000).unref()
+setTimeout(() => lerLimites().catch(() => {}), 5000).unref()
 
 // ---------------------------------------------------------------- standby: o Vynco abre com o Windows, escondido na bandeja,
 // para publicar no horário mesmo que a pessoa esqueça de abrir. Só na versão desktop (o Tauri passa VYNCO_EXE).
@@ -332,12 +392,18 @@ const server = http.createServer(async (req, res) => {
           const st = Object.fromEntries(await Promise.all(principais.map(async id => [id, await AG.status(id).catch(() => ({}))])))
           return send(res, 200, { escolhido: agenteId(), agentes: AG.lista().map(a => ({ ...a, ...(st[a.id] || {}) })) })
         }
+        case '/api/automatico': {
+          const c = autoCfg(); let plano = null
+          try { plano = await planoAuto() } catch (e) { plano = { erro: e.message } }
+          return send(res, 200, { ativo: !!c.ativo, dailyUi: !!c.dailyUi, veto: c.veto == null ? 2 : c.veto, aplicado: c.ativo ? { slots: c.slots, nivel: c.nivel, motivo: c.motivo, atualizado: c.atualizado } : null, plano, temReserva: !!reservaId(), design: MODELOS.MODELOS.some(m => m.id === 'daily-ui') && /design|ux|ui\b|produto/i.test(PERFIS.carregar(perfilAtivo()).area || '') })
+        }
         case '/api/limites': {   // o medidor de uso da IA principal e da reserva
           if (process.env.ENGINE_DEMO) return send(res, 200, { principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia.' } })
           const pr = agenteId(), rs = reservaId(), hoje = new Date().toDateString()
           const usoHoje = nome => RUNS.filter(r => r.agente === nome && new Date(r.inicio).toDateString() === hoje).length
           const um = async id => id ? { id, nome: AG.AGENTES[id].nome, usosHoje: usoHoje(AG.AGENTES[id].nome), ...(await LIMITES.limites(id).catch(() => ({ medidor: false, nota: 'Não consegui ler o uso agora.' }))) } : null
-          return send(res, 200, { principal: await um(pr), reserva: await um(rs) })
+          const im = IMAGEM.provedores().find(p => p.id === 'magnific') || {}
+          return send(res, 200, { principal: await um(pr), reserva: await um(rs), imagem: { nome: 'Magnific', temChave: !!im.temChave, site: im.site || null, ...IMAGEM.uso() } })
         }
         case '/api/agente/status': return send(res, 200, await AG.status(u.searchParams.get('id')))
         case '/api/agente/job': return send(res, 200, AG.job(u.searchParams.get('id')) || {})
@@ -390,6 +456,13 @@ const server = http.createServer(async (req, res) => {
         if (b.id === agenteId()) return send(res, 400, { erro: 'A reserva precisa ser outra IA, diferente da principal.' })
         const st = await AG.status(b.id).catch(() => ({}))
         return send(res, 200, { ok: true, instalado: !!st.instalado, conectado: !!st.conectado })
+      }
+      case '/api/automatico': {
+        if (!agenteId()) return send(res, 400, { erro: 'Conecte uma IA antes (Ajustes).' })
+        if (!b.ativo) { desligarAuto(); return send(res, 200, { ativo: false }) }
+        const extra = { dailyUi: !!b.dailyUi, veto: Math.max(0, Math.min(24, +b.veto || 2)) }
+        const plano = await planoAuto(extra); aplicarPlano(plano, extra)
+        return send(res, 200, { ativo: true, plano })
       }
       case '/api/standby': {   // abrir com o Windows, escondido na bandeja
         try { return send(res, 200, standbyLigar(!!b.ligar)) } catch (e) { return send(res, 400, { erro: e.message }) }
