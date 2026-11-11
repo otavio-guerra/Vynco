@@ -24,8 +24,22 @@ const RECURSOS = {
     otimizado: [['standard', 'Padrão'], ['soft_portraits', 'Retratos suaves'], ['hard_portraits', 'Retratos marcados'], ['art_n_illustration', 'Arte e ilustração'], ['videogame_assets', 'Assets de jogos'], ['nature_n_landscapes', 'Natureza e paisagens'], ['films_n_photography', 'Cinema e fotografia'], ['3d_renders', 'Renders 3D'], ['science_fiction_n_horror', 'Ficção científica e terror']],
   },
   refinar: { titulo: 'Refinar detalhes (Upscaler Precision)' },
+  // vídeo: de uma imagem da biblioteca (primeiro quadro) ou só de um texto. O preço por vídeo não é publicado na documentação.
+  video: {
+    titulo: 'Criar vídeo',
+    modelos: [
+      { id: 'kling', nome: 'Kling 2.6 Pro', dica: 'movimento natural e realista', duracoes: ['5', '10'], proporcoes: [['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story'], ['square_1_1', '1:1']], negativo: true, audio: true },
+      { id: 'seedance', nome: 'Seedance 2.0 Pro', dica: 'cenas mais longas, câmera parada ou livre', duracoes: ['5', '10'], resolucoes: [['720p', '720p'], ['1080p', '1080p']], proporcoes: [['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story'], ['square_1_1', '1:1'], ['traditional_3_4', '3:4'], ['classic_4_3', '4:3']], camera: true, audio: true },
+    ],
+    maxImagem: 10 * 1024 * 1024,
+  },
 }
 const CAMINHO = { gerar: '/v1/ai/mystic', melhorar: '/v1/ai/image-upscaler', refinar: '/v1/ai/image-upscaler-precision' }
+// vídeo: o caminho do pedido e o da consulta (no Seedance a consulta não leva a resolução)
+function caminhoVideo(p) {
+  if (p.modelo === 'seedance') { const r = p.resolucao === '1080p' ? '1080p' : '720p'; return { pedir: `/v1/ai/video/seedance-2-pro-${r}`, consultar: '/v1/ai/video/seedance-2-pro' } }
+  return { pedir: '/v1/ai/image-to-video/kling-v2-6-pro', consultar: '/v1/ai/image-to-video/kling-v2-6-pro', reserva: '/v1/ai/image-to-video/kling-v2-6' }
+}
 
 // preço do upscale pelo tamanho final, a partir dos exemplos oficiais (docs.magnific.com/pricing): só uma estimativa
 const FAIXAS = [[4.0e6, 0.10], [8.3e6, 0.20], [14.8e6, 0.40], [19.7e6, 0.50]]
@@ -36,6 +50,7 @@ function estimar(op, p = {}, origem = {}) {
     return faixa ? { valor: faixa[1], moeda: 'EUR', nota: 'estimativa pelos exemplos de preço da documentação' } : { valor: 0.5, moeda: 'EUR', aPartir: true, nota: 'acima dos exemplos da documentação: a partir de €0,50' }
   }
   if (op === 'gerar') return { valor: null, moeda: 'EUR', nota: 'a documentação não publica o preço do Mystic: confira no painel do Magnific' }
+  if (op === 'video') return { valor: null, moeda: 'EUR', nota: 'a documentação não publica o preço por vídeo (muda com o modelo, a duração e a resolução): confira no painel do Magnific' }
   return { valor: null, moeda: 'EUR', nota: 'a documentação não informa o tamanho final nem o preço desta operação' }
 }
 
@@ -69,19 +84,36 @@ function corpo(op, p, imagem) {
     ...(p.prompt ? { prompt: String(p.prompt).slice(0, 1000) } : {}),
   }
   if (op === 'refinar') return { image: imagem, sharpen: p.sharpen ?? 50, smart_grain: p.smart_grain ?? 7, ultra_detail: p.ultra_detail ?? 30 }
+  if (op === 'video') {
+    const prompt = String(p.prompt || '').trim()
+    if (p.modelo === 'seedance') return {
+      prompt: prompt.slice(0, 4000), duration: p.duracao === '10' ? 10 : 5, aspect_ratio: p.aspect_ratio || 'widescreen_16_9',
+      camera_fixed: !!p.cameraFixa, sound_effects: !!p.som, ...(imagem ? { image: imagem } : {}),
+    }
+    return {
+      duration: p.duracao === '10' ? '10' : '5', cfg_scale: Math.max(0, Math.min(1, +(p.cfg ?? 0.5))), generate_audio: !!p.som,
+      ...(prompt ? { prompt: prompt.slice(0, 2500) } : {}), ...(p.negativo ? { negative_prompt: String(p.negativo).slice(0, 2500) } : {}),
+      ...(imagem ? { image: imagem } : { aspect_ratio: p.aspect_ratio || 'widescreen_16_9' }),
+    }
+  }
   throw new Error('operação desconhecida')
 }
 async function iniciar(op, p, chave, imagem) {
-  const j = await chamar('POST', CAMINHO[op], chave, corpo(op, p, imagem))
+  if (op === 'video' && p.modelo === 'seedance' && !String(p.prompt || '').trim()) throw new Error('Descreva o movimento ou a cena do vídeo.')
+  if (op === 'video' && !imagem && !String(p.prompt || '').trim()) throw new Error('Descreva o vídeo ou escolha uma imagem para animar.')
+  const cv = op === 'video' ? caminhoVideo(p) : null
+  const j = await chamar('POST', cv ? cv.pedir : CAMINHO[op], chave, corpo(op, p, imagem))
   const id = j.data && j.data.task_id
   if (!id) throw new Error('O Magnific não devolveu o número da tarefa.')
-  return { tarefa: id, caminho: CAMINHO[op] }
+  return { tarefa: id, caminho: cv ? cv.consultar : CAMINHO[op], ...(cv && cv.reserva ? { reserva: cv.reserva } : {}) }
 }
 async function consultar(t, chave) {
-  const j = await chamar('GET', `${t.caminho}/${encodeURIComponent(t.tarefa)}`, chave)
+  let j
+  try { j = await chamar('GET', `${t.caminho}/${encodeURIComponent(t.tarefa)}`, chave) }
+  catch (e) { if (e.status !== 404 || !t.reserva) throw e; j = await chamar('GET', `${t.reserva}/${encodeURIComponent(t.tarefa)}`, chave); t.caminho = t.reserva }
   const d = j.data || {}
   if (d.status === 'COMPLETED') return { estado: 'pronto', urls: d.generated || [] }
-  if (d.status === 'FAILED') return { estado: 'falhou', erro: 'O Magnific não conseguiu concluir esta imagem.' }
+  if (d.status === 'FAILED') return { estado: 'falhou', erro: 'O Magnific não conseguiu concluir este pedido.' }
   return { estado: 'rodando' }
 }
 

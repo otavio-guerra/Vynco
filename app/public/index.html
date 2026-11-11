@@ -178,7 +178,7 @@
       <div><h1>Mídias.</h1><p class="sub" data-bib-sub>Tudo o que pode ir num post: o que você envia e o que a sua IA gera.</p></div>
       <div class="head-a">
         <div class="filters chips" data-bib-filtro><button data-v="todas">Todas</button><button data-v="imagem">Imagens</button><button data-v="gif">GIFs</button><button data-v="video">Vídeos</button><button data-v="documento">Documentos</button><button data-v="rotinas">Das rotinas</button><button data-v="gerada">Geradas com IA</button></div>
-        <button class="btn sm" data-gerar-img><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg>Gerar imagem</button>
+        <button class="btn sm" data-gerar-img><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg>Estúdio: imagem, vídeo e GIF</button>
         <label class="btn accent sm"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Enviar arquivos<input type="file" multiple hidden data-enviar accept=".png,.jpg,.jpeg,.gif,.mp4,.pdf,.ppt,.pptx,.doc,.docx"></label>
       </div>
     </div>
@@ -361,6 +361,18 @@
         <div class="conn-row" data-conn="agente"><span class="c-ic" data-conn-ic></span><span class="c-t"><b data-conn-n>IA</b><small data-conn-t></small></span><span class="c-a" data-conn-a></span></div>
         <div class="conn-row" data-conn="reserva"><span class="c-ic" data-res-ic></span><span class="c-t"><b data-res-n>IA reserva <small class="opt">recomendado</small></b><small data-conn-t></small></span><span class="c-a" data-conn-a></span></div>
       </section>
+      <section class="set glass ia-mod" data-ia-mod>
+        <h3>Modelo e esforço <small class="opt">quanto cada tarefa gasta</small></h3>
+        <p class="set-sub">Escolha o modelo e o esforço de cada IA. Menos esforço gasta menos da sua sessão; mais esforço pensa mais antes de responder. "Padrão" usa o que a sua conta já usa.</p>
+        <div class="ia-modos" role="group" aria-label="Modos prontos">
+          <button type="button" data-ia-modo="economico"><b>Econômico</b><small>gasta pouco, bom para o dia a dia</small></button>
+          <button type="button" data-ia-modo="equilibrado"><b>Equilibrado</b><small>o melhor custo e qualidade</small></button>
+          <button type="button" data-ia-modo="caprichado"><b>Caprichado</b><small>mais qualidade, gasta mais</small></button>
+          <button type="button" data-ia-modo="padrao"><b>Padrão da conta</b><small>o Vynco não escolhe nada</small></button>
+        </div>
+        <p class="ia-dica" data-ia-dica hidden></p>
+        <div data-ia-lista><p class="set-sub">Carregando…</p></div>
+      </section>
       <section class="set glass" data-img-ajustes>
         <h3>Imagens com IA</h3>
         <div class="conn-row"><span class="c-ic mg" data-img-ic><svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="10" fill="#000"/><path d="M27.6 11 24 19.97 20.4 11h-7.2L6 37h9l9-11.66L33 37h9l-7.2-26h-7.2Z" fill="#fff"/></svg></span><span class="c-t"><b>Magnific <small class="opt">gerar, melhorar e refinar imagens</small></b><small data-img-st></small></span><span class="c-a" data-img-a></span></div>
@@ -442,8 +454,13 @@
   <div class="f-act"><span class="soft" data-pk-n>Nada escolhido</span><button class="btn" type="button" data-close>Cancelar</button><button class="btn accent" type="button" data-pk-ok disabled>Adicionar</button></div>
 </div></dialog>
 <dialog id="estudio"><div class="glass sheet sheet-lg estudio">
-  <header class="ed-box-h"><h3><span class="es-ic" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg></span>Estúdio de imagens <small class="soft" data-es-prov>Magnific</small></h3>
-    <div class="chips" data-es-op><button data-v="gerar">Gerar</button><button data-v="melhorar">Melhorar</button><button data-v="refinar">Refinar</button></div></header>
+  <header class="ed-box-h"><h3><span class="es-ic" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M8 1.5c.4 3.4 2.6 5.6 6 6-3.4.4-5.6 2.6-6 6-.4-3.4-2.6-5.6-6-6 3.4-.4 5.6-2.6 6-6Z" fill="currentColor"/></svg></span>Estúdio <small class="soft" data-es-prov>Magnific</small></h3>
+    <div class="es-modos" role="tablist" aria-label="O que criar" data-es-modo>
+      <button type="button" role="tab" data-v="imagem"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2.5" width="12" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m2.5 11 3.5-3.5 3 3 1.8-1.8L13.5 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Imagem</button>
+      <button type="button" role="tab" data-v="video"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3.5" width="9.5" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m11 7 3.5-2v6L11 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Vídeo</button>
+      <button type="button" role="tab" data-v="gif"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="8" y="10.4" text-anchor="middle" font-size="5.2" font-weight="800" fill="currentColor" font-family="Segoe UI, sans-serif">GIF</text></svg>GIF</button>
+    </div></header>
+  <div class="chips es-ops" data-es-op></div>
   <div class="es-aviso" data-es-chave hidden><b>Falta a chave da API do Magnific.</b><span>Crie uma chave no site do Magnific e cole em Ajustes → Imagens com IA. Ela fica só no cofre deste computador.</span><button class="btn sm" type="button" data-es-ajustes>Abrir Ajustes</button></div>
   <div class="es-grid">
     <div class="es-form" data-es-form></div>
@@ -451,6 +468,7 @@
   </div>
   <div class="f-act"><button class="btn" type="button" data-close>Fechar</button><button class="btn accent" type="button" data-es-ir>Gerar</button></div>
 </div></dialog>
+<script src="gif.js"></script>
 <script src="app.js"></script>
 <script src="fx.js"></script>
 <script src="controles.js"></script>

@@ -1408,3 +1408,49 @@ label .vsel { width: 100% }
 .rd-ok { display: inline-flex; align-items: center; gap: 5px } .rd-ok .icr { width: 13px; height: 13px }
 .vg-auto { margin: 0; flex-basis: 100% }
 .conta-menu .cm-linha button.btn { width: auto; min-height: 30px; padding: 5px 12px; flex: 0 0 auto; gap: 6px; white-space: nowrap; border-radius: var(--r-sm); font-size: var(--fs-caption); font-weight: var(--fw-semibold); background: var(--glass-2); border: 1px solid var(--edge-2); color: var(--text) } .conta-menu .cm-linha button.btn.accent { background: var(--btn); border-color: transparent; color: #fff } .conta-menu .cm-linha button.btn:hover { filter: brightness(1.1) } .cm-t b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+
+/* a lista de escolha abre na camada de cima (popover) para ficar por cima das janelas */
+.vsel-lista[popover] { inset: auto; margin: 0; color: var(--text) }
+
+/* Ajustes: modelo e esforço */
+.ia-modos { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-2); margin: var(--sp-3) 0 }
+.ia-modos button { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--edge-2); background: var(--glass-2); color: var(--text); font: inherit; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast) }
+.ia-modos button:hover { border-color: color-mix(in srgb, var(--area) 55%, var(--edge-2)); background: color-mix(in srgb, var(--area) 8%, var(--glass-2)) }
+.ia-modos b { font-size: var(--fs-body) } .ia-modos small { font-size: var(--fs-caption); color: var(--soft); line-height: 1.35 }
+.ia-dica { font-size: var(--fs-small); color: var(--soft); padding: 10px 14px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--area) 8%, transparent); border: 1px solid color-mix(in srgb, var(--area) 25%, transparent); margin-bottom: var(--sp-3) } .ia-dica b { color: var(--text) }
+.ia-bloco { padding: var(--sp-3) 0; border-top: 1px solid var(--edge) } .ia-bloco:first-child { border-top: 0 }
+.ia-cab { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2) } .ia-cab .c-ic { width: 30px; height: 30px } .ia-cab .tag { margin-left: 4px }
+.ia-linha { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 1.2fr) auto; gap: var(--sp-3); align-items: center; padding: 8px 0 }
+.ia-t { display: grid; gap: 1px } .ia-t b { font-size: var(--fs-body) } .ia-t small { font-size: var(--fs-caption); color: var(--soft) }
+.ia-m .vsel, .ia-m input { width: 100% } .ia-m input { font: var(--fw-medium) var(--fs-body) var(--font); padding: 8px 12px; border: 1px solid var(--edge-2); background: var(--glass-2); color: var(--text) }
+.ia-esf { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); gap: 2px }
+.ia-esf button { font: var(--fw-semibold) var(--fs-caption) var(--font); color: var(--soft); background: none; border: 0; padding: 6px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: color var(--t-fast), background var(--t-fast) }
+.ia-esf button:hover { color: var(--text) } .ia-esf button[aria-checked=true] { color: #fff; background: var(--btn, #625AF6) }
+.ia-nota { font-size: var(--fs-caption); color: var(--faint); margin-top: 4px }
+@media (max-width: 1100px) { .ia-modos { grid-template-columns: repeat(2, 1fr) } .ia-linha { grid-template-columns: 1fr 1fr } .ia-esf { grid-column: 1 / -1; justify-self: start } }
+
+/* Estúdio: imagem, vídeo e GIF */
+.es-modos { display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge) }
+.es-modos button { display: inline-flex; align-items: center; gap: 7px; font: var(--fw-semibold) var(--fs-small) var(--font); color: var(--soft); background: none; border: 0; padding: 8px 16px; border-radius: 999px; cursor: pointer; transition: color var(--t-fast), background var(--t-fast) }
+.es-modos button svg { width: 16px; height: 16px } .es-modos button:hover { color: var(--text) }
+.es-modos button[aria-selected=true] { color: #fff; background: var(--btn, #625AF6); box-shadow: 0 6px 18px color-mix(in srgb, var(--violet) 35%, transparent) }
+.es-ops { margin: 0 0 var(--sp-3) } .es-ops button { font-size: var(--fs-small) }
+.es-linha > span small { font-weight: 500; color: var(--faint); font-size: var(--fs-caption) }
+.es-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); width: 100% }
+.es-card { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: var(--r-md); border: 1px solid var(--edge-2); background: var(--glass-2); color: var(--text); font: inherit; cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast) }
+.es-card b { font-size: var(--fs-body) } .es-card small { font-size: var(--fs-caption); color: var(--soft) }
+.es-card.on { border-color: var(--violet); background: color-mix(in srgb, var(--violet) 14%, var(--glass-2)) }
+.es-sws { display: grid; gap: var(--sp-2); margin: var(--sp-2) 0 }
+.es-mini video { width: 100%; height: 100%; object-fit: cover; pointer-events: none } .es-mini button { position: relative }
+.es-play { position: absolute; inset: auto 6px 6px auto; font-style: normal; font-size: 10px; color: #fff; background: rgba(0,0,0,.55); border-radius: 6px; padding: 2px 5px }
+.es-multi button.on { outline: 2px solid var(--violet); outline-offset: 2px } .es-multi .pk-n { position: absolute; top: 4px; left: 4px }
+.es-orig-img video { width: 64px; height: 64px; object-fit: cover; border-radius: 10px }
+.es-gif-prev { width: 100%; max-height: 220px; border-radius: var(--r-md); background: #000; margin: var(--sp-2) 0 }
+.es-uso.passa i { background: var(--red) !important } .es-uso.passa { color: var(--red) }
+.es-prog { display: grid; gap: 8px; padding: 14px; border-radius: var(--r-md); background: var(--glass-2); border: 1px solid var(--edge); margin-bottom: var(--sp-3) }
+.es-prog b { font-size: var(--fs-small) } .es-prog span { height: 6px; border-radius: 99px; background: var(--glass-3); overflow: hidden } .es-prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--violet), var(--mint)); border-radius: 99px; transition: width .2s }
+.es-tile video { width: 100%; height: 100%; object-fit: cover }
+.es-tile-i { position: absolute; top: 8px; left: 8px; right: 8px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; width: max-content; max-width: calc(100% - 16px) }
+.estudio[data-modo=gif] .es-ic { background: color-mix(in srgb, var(--mint) 20%, transparent); color: var(--mint) }
+.estudio[data-modo=video] .es-ic { background: color-mix(in srgb, #FF8A65 20%, transparent); color: #FF8A65 }
+.ia-cab .c-ic::after { display: none }

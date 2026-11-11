@@ -14,6 +14,7 @@ const M = require('../midia.js')
 const PROVEDORES = { magnific: require('./provedores/magnific.js') }
 const DIR = C.ws('imagens'), TAREFAS = path.join(DIR, 'tarefas.json'), CUSTOS = path.join(DIR, 'custos.json')
 const VALIDADE = 28 * 60 * 1000   // os links do provedor vencem em 30 min: depois disso, a tarefa é dada como perdida
+const VALIDADE_VIDEO = 60 * 60 * 1000   // vídeo demora mais para ficar pronto (o link vence 30 min depois de pronto)
 const PADRAO = { limiteMensal: 30, orcamentoMensal: 10 }
 
 const ler = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')) } catch { return d } }
@@ -44,6 +45,7 @@ function origemDe(arquivo) {
   if (!arquivo) return null
   const item = M.listar().find(i => i.arquivo === arquivo)
   if (!item || !['imagem', 'gif'].includes(item.tipo)) throw new Error('escolha uma imagem da biblioteca')
+  if (item.tipo === 'gif') item.gif = true
   return item
 }
 function estimar({ provedor: id, op, params = {}, origem, versoes = 1 }) {
@@ -59,6 +61,12 @@ async function pedir(pedido) {
   const k = chave(id); if (!k) throw new Error(`Salve a chave da API do ${p.nome} em Ajustes antes.`)
   const params = { ...(pedido.params || {}) }
   if (op === 'gerar' && !String(params.prompt || '').trim()) throw new Error('Descreva a imagem que você quer.')
+  if (op === 'video') {
+    const o = origemDe(pedido.origem)
+    if (o && o.gif) throw new Error('Para animar, escolha uma imagem PNG ou JPG (não um GIF).')
+    if (o && fs.statSync(M.caminho(o.arquivo)).size > p.recursos.video.maxImagem) throw new Error('A imagem passa de 10 MB, o máximo do Magnific para vídeo. Use uma menor.')
+    if (o && o.largura && (o.largura < 300 || o.altura < 300)) throw new Error('A imagem precisa ter pelo menos 300 × 300 pixels.')
+  }
   const est = estimar(pedido), u = est.uso
   if (u.operacoes + est.versoes > u.limiteMensal) throw new Error(`Isso passaria do limite de ${u.limiteMensal} operações neste mês (já foram ${u.operacoes}). Dá para mudar o limite em Ajustes.`)
   if (est.total != null && u.gasto + est.total > u.orcamentoMensal) throw new Error(`Isso passaria do orçamento de €${u.orcamentoMensal} neste mês (estimativa já usada: €${u.gasto}). Dá para mudar em Ajustes.`)
@@ -100,7 +108,7 @@ async function rodada() {
     for (const job of vivas) {
       const p = PROVEDORES[job.provedor], k = chave(job.provedor)
       for (const item of job.itens.filter(i => i.estado === 'rodando')) {
-        if (Date.now() - job.criado > VALIDADE) { Object.assign(item, { estado: 'falhou', erro: 'O tempo acabou: os links do provedor vencem em 30 minutos.' }); continue }
+        if (Date.now() - job.criado > (job.op === 'video' ? VALIDADE_VIDEO : VALIDADE)) { Object.assign(item, { estado: 'falhou', erro: 'O tempo acabou: os links do provedor vencem em 30 minutos.' }); continue }
         if (!p || !k) { Object.assign(item, { estado: 'falhou', erro: 'A chave do provedor foi removida.' }); continue }
         try {
           const r = await p.consultar(item, k)
@@ -121,9 +129,11 @@ async function rodada() {
 // baixa na hora (o link vence) e guarda na biblioteca com a origem de tudo
 async function baixar(job, url, n) {
   const r = await fetch(url, { signal: AbortSignal.timeout(120000) })
-  if (!r.ok) throw new Error('não consegui baixar a imagem pronta (' + r.status + ')')
-  const tipo = r.headers.get('content-type') || '', ext = /png/.test(tipo) || /\.png(\?|$)/i.test(url) ? 'png' : 'jpg'
-  const base = job.op === 'gerar' ? (job.prompt || 'imagem').slice(0, 40) : `${path.basename(job.origem || 'imagem').replace(/\.[^.]+$/, '')}-${job.op === 'melhorar' ? 'melhorada' : 'refinada'}`
+  if (!r.ok) throw new Error('não consegui baixar o arquivo pronto (' + r.status + ')')
+  const tipo = r.headers.get('content-type') || ''
+  const ext = job.op === 'video' ? 'mp4' : /png/.test(tipo) || /\.png(\?|$)/i.test(url) ? 'png' : 'jpg'
+  const base = job.op === 'gerar' || (job.op === 'video' && !job.origem) ? (job.prompt || (job.op === 'video' ? 'video' : 'imagem')).slice(0, 40)
+    : `${path.basename(job.origem || 'imagem').replace(/\.[^.]+$/, '')}-${{ melhorar: 'melhorada', refinar: 'refinada', video: 'animada' }[job.op] || job.op}`
   const p = PROVEDORES[job.provedor]
   const item = M.guardar(`${base}${n ? '-' + (n + 1) : ''}.${ext}`, Buffer.from(await r.arrayBuffer()), {
     origem: job.provedor, provedor: p ? p.nome : job.provedor, op: job.op, prompt: job.prompt || undefined,

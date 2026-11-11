@@ -415,6 +415,12 @@ const server = http.createServer(async (req, res) => {
           return send(res, 200, { ativo: !!c.ativo, dailyUi: !!c.dailyUi, veto: c.veto == null ? 2 : c.veto, aplicado: c.ativo ? { slots: c.slots, nivel: c.nivel, motivo: c.motivo, atualizado: c.atualizado } : null, plano, temReserva: !!reservaId(), design: MODELOS.MODELOS.some(m => m.id === 'daily-ui') && /design|ux|ui\b|produto/i.test(PERFIS.carregar(perfilAtivo()).area || '') })
         }
         case '/api/janela': return send(res, 200, JANELA || { propria: null })
+        case '/api/ia/modelos': {   // modelo e esforço por IA (só as que aceitam escolher)
+          const ids = [...new Set([agenteId(), reservaId(), 'claude', 'codex', 'antigravity'].filter(id => id && AG.ESCOLHA[id]))]
+          const ias = await Promise.all(ids.map(async id => ({ id, nome: AG.AGENTES[id].nome, papel: id === agenteId() ? 'principal' : id === reservaId() ? 'reserva' : '', instalado: !!AG.achar(AG.AGENTES[id].bin),
+            livre: !!AG.ESCOLHA[id].livre, modelos: await AG.modelosDe(id).catch(() => []), escolha: AG.escolhaPub(id) })))
+          return send(res, 200, { esforcos: AG.ESFORCOS, ias: ias.filter(i => i.papel || i.instalado) })
+        }
         case '/api/limites': {   // o medidor de uso da IA principal e da reserva
           if (process.env.ENGINE_DEMO) return send(res, 200, { principal: { id: 'claude', nome: 'Claude', medidor: true, janelas: [{ rotulo: 'Sessão (5 horas)', pct: 34, renova: new Date(Date.now() + 2.2 * 36e5).toISOString() }, { rotulo: 'Semana', pct: 61, renova: new Date(Date.now() + 3.4 * 864e5).toISOString() }] }, reserva: { id: 'gemini', nome: 'Gemini', medidor: false, nota: 'Conta Google gratuita: cerca de 1.000 pedidos por dia.' } })
           const pr = agenteId(), rs = reservaId(), hoje = new Date().toDateString()
@@ -484,6 +490,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ativo: true, plano })
       }
       case '/api/janela': JANELA = { propria: !!b.propria, quando: new Date().toISOString() }; return send(res, 200, { ok: true })
+      case '/api/ia/modelos': { try { return send(res, 200, AG.salvarEscolha(String(b.id || ''), String(b.tipo || ''), b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/standby': {   // abrir com o Windows, escondido na bandeja
         try { return send(res, 200, standbyLigar(!!b.ligar)) } catch (e) { return send(res, 400, { erro: e.message }) }
       }

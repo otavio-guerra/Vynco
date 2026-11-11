@@ -323,13 +323,56 @@ const estadoSync = () => SYNC && { agente: SYNC.agente, nome: SYNC.nome, passos:
 // para de esperar: o passo que está rodando termina sozinho, os próximos são pulados, e dá para sincronizar de novo na hora
 function cancelarSync() { if (!SYNC || SYNC.fim) return estadoSync(); SYNC.cancelado = true; SYNC.passos.filter(p => p.estado === 'espera').forEach(p => (p.estado = 'pulado')); SYNC.fim = Date.now(); return estadoSync() }
 
+// ---------------------------------------------------------------- modelo e esforço de cada IA (Ajustes → Modelo e esforço)
+// Dois tipos de tarefa: "criar" (as rotinas que fazem posts) e "ler" (análise do perfil e busca da Rede).
+// Vazio = o padrão da conta. Só vale para as IAs que aceitam escolher pela linha de comando.
+const ESFORCOS = ['low', 'medium', 'high', 'xhigh', 'max']
+const SEGURO = /^[\w.\-:/]{1,80}$/   // o nome do modelo vai para a linha de comando: nada de espaço, aspas ou símbolos
+const ESCOLHA = {
+  claude: { modelo: m => ['--model', m], esforco: e => ['--effort', e], modelos: [['haiku', 'Haiku', 'rápido, gasta menos'], ['sonnet', 'Sonnet', 'equilibrado'], ['opus', 'Opus', 'mais capaz'], ['fable', 'Fable', 'o mais capaz, gasta mais']] },
+  antigravity: { modelo: m => ['--model', m], esforco: e => ['--effort', e], lista: true },
+  // Codex: o esforço vai como configuração (model_reasoning_effort) e só tem até "high"
+  codex: { modelo: m => ['-m', m], esforco: e => ['-c', `model_reasoning_effort=${e === 'low' ? 'low' : e === 'medium' ? 'medium' : 'high'}`], depois: 1, livre: true },
+}
+let MODELOS_AGY = null
+async function modelosDe(id) {
+  const e = ESCOLHA[id]; if (!e) return []
+  if (e.modelos) return e.modelos.map(([v, n, d]) => ({ v, n, d }))
+  if (!e.lista) return []
+  if (MODELOS_AGY && Date.now() - MODELOS_AGY.t < 36e5) return MODELOS_AGY.l
+  const bin = achar(AGENTES[id].bin); if (!bin) return []
+  const r = await rodar(bin, ['models'], { timeout: 30000 }).catch(() => ({ code: 1, out: '' }))
+  const l = r.out.split('\n').map(x => x.trim().split('\t')).filter(x => x.length >= 2 && SEGURO.test(x[0])).map(([v, n]) => ({ v, n: n.trim() }))
+  if (l.length) MODELOS_AGY = { t: Date.now(), l }
+  return l
+}
+function escolhaDe(id, tipo) {
+  const e = ESCOLHA[id], c = ((C.load().ia || {})[id] || {})[tipo] || {}
+  if (!e) return []
+  const x = []
+  if (c.modelo && SEGURO.test(c.modelo)) x.push(...e.modelo(c.modelo))
+  if (c.esforco && ESFORCOS.includes(c.esforco)) x.push(...e.esforco(c.esforco))
+  return x
+}
+function comEscolha(id, tipo, args) { const x = escolhaDe(id, tipo); if (!x.length) return args; const d = ESCOLHA[id].depois || 0; return [...args.slice(0, d), ...x, ...args.slice(d)] }
+function salvarEscolha(id, tipo, { modelo = '', esforco = '' } = {}) {
+  if (!ESCOLHA[id]) throw new Error('Esta IA não deixa escolher modelo nem esforço.')
+  if (!['criar', 'ler'].includes(tipo)) throw new Error('tipo de tarefa desconhecido')
+  modelo = String(modelo || '').trim(); esforco = String(esforco || '').trim()
+  if (modelo && !SEGURO.test(modelo)) throw new Error('Esse nome de modelo não parece certo: use só letras, números, ponto, hífen e barra.')
+  if (esforco && !ESFORCOS.includes(esforco)) throw new Error('esforço desconhecido')
+  C.save({ ia: { [id]: { [tipo]: { modelo, esforco } } } })
+  return { ok: true }
+}
+const escolhaPub = id => ({ criar: ((C.load().ia || {})[id] || {}).criar || {}, ler: ((C.load().ia || {})[id] || {}).ler || {} })
+
 // ---------------------------------------------------------------- rotinas (o agente escolhido, sem ninguém no teclado)
 function rotina(id, rid) {
   const a = AGENTES[id]; if (!a) throw new Error('agente desconhecido')
   const r = require('./modelos.js').preparar(rid)   // escreve as instruções do modelo a partir do perfil
   const bin = achar(a.bin); if (!bin) throw new Error(`O ${a.via} não está instalado.`)
   const { args, stdin } = a.rotina(r.prompt)
-  const p = soltar(bin, args, { stdio: ['pipe', 'pipe', 'pipe'] })
+  const p = soltar(bin, comEscolha(id, 'criar', args), { stdio: ['pipe', 'pipe', 'pipe'] })
   p.stdin.end(stdin || '')
   return p
 }
@@ -357,10 +400,10 @@ async function perguntar(id, texto, { timeout = 240000 } = {}) {
   const bin = achar(a.bin); if (!bin) throw new Error(`O ${a.via} não está instalado.`)
   const pasta = C.ws('perfis', '.ia'); fs.mkdirSync(pasta, { recursive: true })
   if (id === 'antigravity') fs.writeFileSync(path.join(pasta, 'pergunta.md'), texto, 'utf8')
-  const r = await rodar(bin, args, { stdin: id === 'antigravity' ? null : texto, timeout, cwd: pasta })
+  const r = await rodar(bin, comEscolha(id, 'ler', args), { stdin: id === 'antigravity' ? null : texto, timeout, cwd: pasta })
   if (r.code !== 0 && !r.out.trim()) throw new Error(`O ${a.nome} não respondeu${r.err ? ': ' + r.err.trim().split('\n').pop().slice(0, 200) : '.'}`)
   if (r.code !== 0 && /limit|quota|rate.?limit|429|usage|credit|crédito|exceeded|esgot/i.test(r.out.slice(-600))) throw new Error(`O ${a.nome} chegou ao limite de uso: ${r.out.trim().split('\n').pop().slice(0, 160)}`)
   return r.out
 }
 
-module.exports = { AGENTES, ROTINAS, lista, status, login, job, cancelar, enviarCodigo, sincronizar, estadoSync, cancelarSync, rotina, agendamento, achar, abrirUrl, perguntar }
+module.exports = { ESCOLHA, ESFORCOS, modelosDe, salvarEscolha, escolhaPub, AGENTES, ROTINAS, lista, status, login, job, cancelar, enviarCodigo, sincronizar, estadoSync, cancelarSync, rotina, agendamento, achar, abrirUrl, perguntar }

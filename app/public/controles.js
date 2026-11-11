@@ -74,7 +74,9 @@
       if (lista || sel.disabled) return
       lista = document.createElement('ul'); lista.className = 'vsel-lista'; lista.setAttribute('role', 'listbox')
       lista.innerHTML = [...sel.options].map((o, i) => `<li role="option" data-i="${i}" aria-selected="${i === sel.selectedIndex}"${o.disabled ? ' aria-disabled="true"' : ''}>${o.textContent}</li>`).join('')
+      // na camada de cima (popover): assim a lista fica por cima até de janelas <dialog>, como o Estúdio
       document.body.appendChild(lista)
+      if (lista.showPopover) { lista.popover = 'manual'; try { lista.showPopover() } catch { } }
       const r = bt.getBoundingClientRect(), h = Math.min(lista.scrollHeight, 280), cabe = innerHeight - r.bottom > h + 12
       Object.assign(lista.style, { left: r.left + 'px', minWidth: r.width + 'px', top: (cabe ? r.bottom + 6 : r.top - h - 6) + 'px', maxHeight: '280px' })
       foco = Math.max(0, sel.selectedIndex); marcar()

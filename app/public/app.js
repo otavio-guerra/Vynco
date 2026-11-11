@@ -86,6 +86,9 @@ const RECURSOS_DEMO = {
   gerar: { proporcoes: [['social_post_4_5', '4:5 · feed'], ['square_1_1', '1:1'], ['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story']], resolucoes: [['1k', '1K'], ['2k', '2K'], ['4k', '4K']], modelos: [['realism', 'Realismo'], ['fluid', 'Fluido'], ['zen', 'Zen'], ['flexible', 'Flexível'], ['super_real', 'Super real'], ['editorial_portraits', 'Retratos editoriais']], maxVersoes: 4 },
   melhorar: { fatores: ['2x', '4x', '8x', '16x'], maxPixels: 25.3e6, otimizado: [['standard', 'Padrão'], ['art_n_illustration', 'Arte e ilustração'], ['films_n_photography', 'Cinema e fotografia'], ['3d_renders', 'Renders 3D']] },
   refinar: {},
+  video: { maxImagem: 10485760, modelos: [
+    { id: 'kling', nome: 'Kling 2.6 Pro', dica: 'movimento natural e realista', duracoes: ['5', '10'], proporcoes: [['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story'], ['square_1_1', '1:1']], negativo: true, audio: true },
+    { id: 'seedance', nome: 'Seedance 2.0 Pro', dica: 'cenas mais longas, câmera parada ou livre', duracoes: ['5', '10'], resolucoes: [['720p', '720p'], ['1080p', '1080p']], proporcoes: [['widescreen_16_9', '16:9'], ['social_story_9_16', '9:16 · story'], ['square_1_1', '1:1'], ['traditional_3_4', '3:4'], ['classic_4_3', '4:3']], camera: true, audio: true }] },
 }
 async function apiDemo(path, data) {
   await espera(160)
@@ -163,6 +166,13 @@ async function apiDemo(path, data) {
     case '/api/perfil': return { perfil: D.perfil, ativo: 'principal', perfis: [{ id: 'principal', nome: D.perfil.nome || 'Perfil principal', conta: D.linkedin.connected ? D.linkedin.name : null }], analise: D.analise, agente: 'Claude' }
     case '/api/perfil/salvar': D.perfil = { ...JSON.parse(JSON.stringify(data.perfil)), atualizado: new Date().toISOString() }; return D.perfil
     case '/api/perfil/analise': return D.analise || {}
+    case '/api/ia/modelos': {
+      D.iaMod = D.iaMod || { claude: { criar: { modelo: 'sonnet', esforco: 'medium' }, ler: { modelo: '', esforco: 'low' } }, antigravity: { criar: {}, ler: {} } }
+      if (data && data.id) { D.iaMod[data.id] = D.iaMod[data.id] || {}; D.iaMod[data.id][data.tipo] = { modelo: data.modelo || '', esforco: data.esforco || '' }; return { ok: true } }
+      return { esforcos: ['low', 'medium', 'high', 'xhigh', 'max'], ias: [
+        { id: 'claude', nome: 'Claude', papel: 'principal', instalado: true, livre: false, modelos: [{ v: 'haiku', n: 'Haiku', d: 'rápido, gasta menos' }, { v: 'sonnet', n: 'Sonnet', d: 'equilibrado' }, { v: 'opus', n: 'Opus', d: 'mais capaz' }, { v: 'fable', n: 'Fable', d: 'o mais capaz, gasta mais' }], escolha: D.iaMod.claude },
+        { id: 'antigravity', nome: 'Antigravity', papel: 'reserva', instalado: true, livre: false, modelos: [{ v: 'gemini-3.8-flash-low', n: 'Gemini 3.8 Flash (Low)' }, { v: 'gemini-3.8-flash-high', n: 'Gemini 3.8 Flash (High)' }, { v: 'claude-sonnet-4-6', n: 'Claude Sonnet 4.6 (Thinking)' }, { v: 'claude-opus-4-6-thinking', n: 'Claude Opus 4.6 (Thinking)' }], escolha: D.iaMod.antigravity }] }
+    }
     case '/api/rede': return { rede: D.rede, estado: D.redeEstado, perfil: { area: D.perfil.area, objetivo: D.perfil.objetivo, temas: D.perfil.temas }, agente: 'Claude' }
     case '/api/rede/buscar': {
       D.redeEstado = { estado: 'rodando', tipo: data.tipo }
@@ -1010,6 +1020,7 @@ function detalheMidia() {
     <div class="fp-actions">
       <button class="btn accent" data-mq="usar">Usar em novo post</button>
       ${visual ? `<button class="btn" data-mq="melhorar">Melhorar</button><button class="btn" data-mq="refinar">Refinar</button>` : ''}
+      ${m.tipo === 'imagem' ? '<button class="btn" data-mq="animar">Animar em vídeo</button>' : ''}${m.tipo === 'video' ? '<button class="btn" data-mq="gif">Fazer GIF</button>' : ''}
       <a class="link" href="${arquivo(m.arquivo)}" target="_blank" rel="noopener">Abrir o arquivo</a>
       ${m.apagavel ? `<button class="link soft" data-mq="excluir">Excluir</button>` : ''}
     </div>`
@@ -1019,6 +1030,8 @@ async function acaoMidia(q) {
   try {
     if (q === 'usar') return abrirEditor({ midias: [{ arquivo: m.arquivo, alt: m.alt || '', tipo: m.tipo, nome: m.nome }] })
     if (q === 'melhorar' || q === 'refinar') return abrirEstudio({ op: q, origem: m })
+    if (q === 'animar') return abrirEstudio({ op: 'animar', origem: m })
+    if (q === 'gif') return abrirEstudio({ op: 'gifvideo', origem: m })
     if (q === 'excluir') {
       if (!(await confirmar('Excluir da biblioteca?', `"${m.nome}" vai para a lixeira do workspace. Posts que já usam este arquivo continuam com a cópia deles.`, 'Excluir'))) return
       await api('/api/midia/excluir', { arquivo: m.arquivo }); Som.desliga(); pill('Excluído', m.nome, 'var(--amber)'); BIB_SEL = null; carregarBiblioteca()
@@ -1196,7 +1209,11 @@ $('[data-pk-ok]').addEventListener('click', () => { ED.midias.push(...PK_SEL.map
 
 // ---------------------------------------------------------------- estúdio de imagens (provedores em engine/imagem; hoje, Magnific)
 let IMG = null, ES = null, esTimer = null, esEstimarT = null
-const OP_TXT = { gerar: 'Gerar', melhorar: 'Melhorar', refinar: 'Refinar' }
+const OP_TXT = { gerar: 'Gerar', melhorar: 'Melhorar', refinar: 'Refinar', video: 'Vídeo', animar: 'Animar', texto: 'Vídeo do texto', gifvideo: 'GIF', gifimagens: 'GIF' }
+const OPS = { imagem: [['gerar', 'Gerar'], ['melhorar', 'Melhorar'], ['refinar', 'Refinar']], video: [['animar', 'Animar uma imagem'], ['texto', 'Do texto']], gif: [['gifvideo', 'De um vídeo'], ['gifimagens', 'De imagens']] }
+const modoDe = op => Object.keys(OPS).find(k => OPS[k].some(([v]) => v === op)) || 'imagem'
+const opServidor = op => modoDe(op) === 'video' ? 'video' : op
+const tipoArq = a => /\.mp4$/i.test(a) ? 'video' : /\.gif$/i.test(a) ? 'gif' : 'imagem'
 // identidade do perfil no estúdio: cores e estilo entram no texto; a primeira referência vira a referência de estilo do Mystic
 const coresMarca = m => Object.values(m?.cores || {}).filter(v => /^#[0-9a-f]{6}$/i.test(v || ''))
 const refMarca = m => (m?.referencias || []).find(r => BIB.some(b => b.arquivo === r))
@@ -1206,39 +1223,94 @@ async function abrirEstudio(o = {}) {
   try { IMG = await api('/api/imagem') } catch (e) { return falha(e) }
   if (!BIB.length) { try { BIB = (await api('/api/midia')).itens } catch { } }
   let marca = null; try { marca = (await api('/api/perfil')).perfil.marca } catch { }
-  ES = { op: o.op || 'gerar', origem: o.origem || null, contexto: o.contexto || (atual?.dataset.scene === 'editor' ? 'editor' : null), jobs: [], descartados: new Set(), marca,
-    p: { prompt: o.prompt || '', aspect_ratio: 'social_post_4_5', resolution: '2k', model: 'realism', versoes: 2, scale_factor: '2x', optimized_for: 'standard', creativity: 0, resemblance: 0, hdr: 0, prompt_m: '', sharpen: 50, smart_grain: 7, ultra_detail: 30, usarMarca: !!(marca && marca.usarNoEstudio && temMarca(marca)) } }
+  ES = { op: o.op || 'gerar', origem: o.origem || null, contexto: o.contexto || (atual?.dataset.scene === 'editor' ? 'editor' : null), jobs: [], descartados: new Set(), marca, gifImgs: [], gifs: [], gifProg: null,
+    p: { prompt: o.prompt || '', aspect_ratio: 'social_post_4_5', resolution: '2k', model: 'realism', versoes: 2, scale_factor: '2x', optimized_for: 'standard', creativity: 0, resemblance: 0, hdr: 0, prompt_m: '', sharpen: 50, smart_grain: 7, ultra_detail: 30, usarMarca: !!(marca && marca.usarNoEstudio && temMarca(marca)),
+      v_modelo: 'kling', v_duracao: '5', v_prop: 'widescreen_16_9', v_res: '720p', v_som: false, v_camera: false, v_negativo: '', v_cfg10: 5,
+      g_inicio: 0, g_duracao: 3, g_fps: '10', g_largura: '640', g_prop: 'original', g_vel: '1', g_cores: '256', g_pontilhar: true, g_repetir: true, g_seg: '1.5', g_trans: 'suave' } }
   desenharEstudio(); $('#estudio').showModal(); estimarEs()
 }
 const imagensBib = () => BIB.filter(m => ['imagem', 'gif'].includes(m.tipo))
-const deslize = (k, rot, min, max, dica) => `<label class="es-sl"><span>${rot} <b data-es-v="${k}">${ES.p[k]}</b></span><input type="range" min="${min}" max="${max}" step="1" value="${ES.p[k]}" data-es="${k}"><small>${dica}</small></label>`
+const bibDe = tipos => BIB.filter(m => tipos.includes(m.tipo))
+const deslize = (k, rot, min, max, dica, suf = '') => `<label class="es-sl"><span>${rot} <b data-es-v="${k}">${ES.p[k]}${suf}</b></span><input type="range" min="${min}" max="${max}" step="1" value="${ES.p[k]}" data-es="${k}" data-suf="${suf}"><small>${dica}</small></label>`
+const chipsEs = (k, rot, opcoes, dica = '') => `<div class="es-linha"><span>${rot}${dica ? ` <small>${dica}</small>` : ''}</span><div class="chips">${opcoes.map(([v, t, extra = '']) => `<button type="button" data-es-chip="${k}" data-v="${v}" class="${String(ES.p[k]) === String(v) ? 'on' : ''}" ${extra}>${t}</button>`).join('')}</div></div>`
+const chaveEs = (k, rot, dica) => `<label class="ed-switch"><input type="checkbox" data-es-sw="${k}"${ES.p[k] ? ' checked' : ''}><span><b>${rot}</b><small>${dica}</small></span></label>`
+const modeloVideo = () => prov().recursos.video.modelos.find(m => m.id === ES.p.v_modelo) || prov().recursos.video.modelos[0]
+const quadrosGif = () => ES.op === 'gifvideo' ? GIF.contar.video({ duracao: +ES.p.g_duracao, fps: +ES.p.g_fps }) : GIF.contar.imagens(ES.gifImgs.length, { transicao: ES.p.g_trans })
+function podeIr() {
+  const p = prov(), op = ES.op, temTexto = ES.p.prompt.trim().length > 2
+  if (op === 'gifvideo') return !!ES.origem && quadrosGif() <= 250 && !ES.gifProg
+  if (op === 'gifimagens') return ES.gifImgs.length >= 2 && quadrosGif() <= 250 && !ES.gifProg
+  if (!p.temChave) return false
+  if (op === 'gerar' || op === 'texto') return temTexto
+  if (op === 'animar') return !!ES.origem && (ES.p.v_modelo !== 'seedance' || temTexto)
+  return !!ES.origem
+}
+function rotuloIr() {
+  const op = ES.op
+  if (op === 'gerar') return `Gerar ${ES.p.versoes} ${ES.p.versoes === 1 ? 'versão' : 'versões'}`
+  if (op === 'melhorar') return `Melhorar ${ES.p.scale_factor}`
+  if (op === 'refinar') return 'Refinar'
+  if (op === 'animar' || op === 'texto') return `Criar vídeo de ${ES.p.v_duracao} s`
+  return ES.gifProg ? 'Fazendo o GIF…' : 'Fazer o GIF'
+}
 function desenharEstudio() {
-  const p = prov(), r = p.recursos, op = ES.op
-  $$('[data-es-op] button').forEach(b => b.classList.toggle('on', b.dataset.v === op))
-  $('[data-es-chave]').hidden = p.temChave; $('[data-es-prov]').textContent = p.nome
-  const escolher = `<div class="es-orig">${ES.origem ? `<div class="es-orig-img"><img src="${arquivo(ES.origem.arquivo)}" alt=""><span><b>${esc(ES.origem.nome || ES.origem.arquivo.split('/').pop())}</b><small>${ES.origem.largura ? `${ES.origem.largura} × ${ES.origem.altura}` : ''}</small></span><button class="link" type="button" data-es-trocar>Trocar</button></div>`
-    : `<p class="soft">Escolha a imagem que vai ser ${op === 'melhorar' ? 'melhorada' : 'refinada'}:</p><div class="es-mini">${imagensBib().slice(0, 18).map(m => `<button type="button" data-es-orig="${esc(m.arquivo)}" title="${esc(m.nome)}"><img src="${arquivo(m.arquivo)}" alt=""></button>`).join('') || '<span class="soft">Nenhuma imagem na biblioteca ainda.</span>'}</div>`}</div>`
+  const p = prov(), r = p.recursos, op = ES.op, modo = modoDe(op), local = modo === 'gif'
+  $$('[data-es-modo] button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.v === modo)))
+  $('[data-es-op]').innerHTML = OPS[modo].map(([v, t]) => `<button type="button" data-v="${v}" class="${v === op ? 'on' : ''}">${t}</button>`).join('')
+  $('#estudio .estudio').dataset.modo = modo
+  $('[data-es-chave]').hidden = local || p.temChave; $('[data-es-prov]').textContent = local ? 'feito no seu computador, sem créditos' : p.nome
+  const tiposOrig = op === 'gifvideo' ? ['video'] : op === 'animar' ? ['imagem'] : ['imagem', 'gif']
+  const nomeOrig = { melhorar: 'a imagem que vai ser melhorada', refinar: 'a imagem que vai ser refinada', animar: 'a imagem que vai ganhar movimento (ela vira o primeiro quadro)', gifvideo: 'o vídeo que vira GIF' }[op]
+  const escolher = () => `<div class="es-orig">${ES.origem ? `<div class="es-orig-img">${tipoArq(ES.origem.arquivo) === 'video' ? `<video src="${arquivo(ES.origem.arquivo)}" muted playsinline preload="metadata"></video>` : `<img src="${arquivo(ES.origem.arquivo)}" alt="">`}<span><b>${esc(ES.origem.nome || ES.origem.arquivo.split('/').pop())}</b><small>${ES.origem.largura ? `${ES.origem.largura} × ${ES.origem.altura}` : ''}${ES.origem.duracao ? ` · ${Math.round(ES.origem.duracao)} s` : ''}</small></span><button class="link" type="button" data-es-trocar>Trocar</button></div>`
+    : `<p class="soft">Escolha ${nomeOrig}:</p><div class="es-mini">${bibDe(tiposOrig).slice(0, 18).map(m => `<button type="button" data-es-orig="${esc(m.arquivo)}" title="${esc(m.nome)}">${m.tipo === 'video' ? `<video src="${arquivo(m.arquivo)}" muted preload="metadata"></video><i class="es-play">▶</i>` : `<img src="${arquivo(m.arquivo)}" alt="">`}</button>`).join('') || `<span class="soft">${op === 'gifvideo' ? 'Nenhum vídeo na biblioteca ainda. Envie um MP4 em Mídias.' : 'Nenhuma imagem na biblioteca ainda.'}</span>`}</div>`}</div>`
   let f = ''
   if (op === 'gerar') {
     f = `<label class="ed-campo"><span>O que você quer ver <small>descreva cena, estilo, luz e cores</small></span><textarea data-es="prompt" rows="4" maxlength="4000" placeholder="Ex.: um vynco pixel art num arquipélago ao entardecer, tons de roxo e menta, céu estrelado">${esc(ES.p.prompt)}</textarea></label>
-      <div class="es-linha"><span>Proporção</span><div class="chips">${r.gerar.proporcoes.slice(0, 4).map(([v, t]) => `<button type="button" data-es-chip="aspect_ratio" data-v="${v}" class="${ES.p.aspect_ratio === v ? 'on' : ''}">${t}</button>`).join('')}</div></div>
+      ${chipsEs('aspect_ratio', 'Proporção', r.gerar.proporcoes.slice(0, 4))}
       <div class="fields two"><label><span>Resolução</span><select data-es="resolution">${r.gerar.resolucoes.map(([v, t]) => `<option value="${v}"${ES.p.resolution === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
       <label><span>Estilo do modelo</span><select data-es="model">${r.gerar.modelos.map(([v, t]) => `<option value="${v}"${ES.p.model === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label></div>
-      <div class="es-linha"><span>Versões para escolher</span><div class="chips">${[1, 2, 3, 4].slice(0, r.gerar.maxVersoes).map(n => `<button type="button" data-es-chip="versoes" data-v="${n}" class="${ES.p.versoes === n ? 'on' : ''}">${n}</button>`).join('')}</div></div>
-      ${temMarca(ES.marca) ? `<label class="ed-switch es-marca"><input type="checkbox" data-es-marca${ES.p.usarMarca ? ' checked' : ''}><span><b>Usar a identidade do perfil</b><small><span class="pf-sw">${coresMarca(ES.marca).map(c => `<i style="background:${c}"></i>`).join('')}</span>${ES.marca.estilo ? esc(ES.marca.estilo.slice(0, 90)) : ''}${refMarca(ES.marca) ? ` · referência: ${esc(refMarca(ES.marca).split('/').pop())}` : ''}</small></span></label>` : '<p class="fine">Dica: defina cores, estilo e imagens de referência na tela Perfil para as imagens saírem com a sua cara.</p>'}`
+      ${chipsEs('versoes', 'Versões para escolher', [1, 2, 3, 4].slice(0, r.gerar.maxVersoes).map(n => [n, n]))}
+      ${temMarca(ES.marca) ? `<label class="ed-switch es-marca"><input type="checkbox" data-es-marca${ES.p.usarMarca ? ' checked' : ''}><span><b>Usar a identidade do perfil</b><small><span class="pf-sw">${coresMarca(ES.marca).map(c => `<i style="background:${c}"></i>`).join('')}</span>${ES.marca.estilo ? esc(ES.marca.estilo.slice(0, 90)) : ''}${refMarca(ES.marca) ? ` · referência: ${esc(refMarca(ES.marca).split('/').pop())}` : ''}</small></span></label>` : '<p class="fine">Dica: defina cores, estilo e imagens de referência em Estratégia para as imagens saírem com a sua cara.</p>'}`
   } else if (op === 'melhorar') {
     const o = ES.origem, max = r.melhorar.maxPixels
-    f = escolher + `<div class="es-linha"><span>Aumentar</span><div class="chips">${r.melhorar.fatores.map(v => { const k = parseInt(v), px = o?.largura ? o.largura * k * o.altura * k : 0, passa = px > max; return `<button type="button" data-es-chip="scale_factor" data-v="${v}" class="${ES.p.scale_factor === v ? 'on' : ''}" ${passa ? 'disabled title="passaria do máximo de 25,3 milhões de pixels"' : ''}>${v}${o?.largura ? `<small>${o.largura * k} × ${o.altura * k}</small>` : ''}</button>` }).join('')}</div></div>
+    f = escolher() + `${chipsEs('scale_factor', 'Aumentar', r.melhorar.fatores.map(v => { const k = parseInt(v), passa = o?.largura && o.largura * k * o.altura * k > max; return [v, `${v}${o?.largura ? `<small>${o.largura * k} × ${o.altura * k}</small>` : ''}`, passa ? 'disabled title="passaria do máximo de 25,3 milhões de pixels"' : ''] }))}
       <label class="ed-campo"><span>Tipo de imagem</span><select data-es="optimized_for">${r.melhorar.otimizado.map(([v, t]) => `<option value="${v}"${ES.p.optimized_for === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
       ${deslize('creativity', 'Criatividade', -10, 10, 'mais alto inventa mais detalhes')}${deslize('resemblance', 'Semelhança', -10, 10, 'mais alto fica mais fiel ao original')}${deslize('hdr', 'Definição (HDR)', -10, 10, 'contraste e nitidez')}
       <label class="ed-campo"><span>Orientação <small>opcional: o que realçar</small></span><input data-es="prompt_m" maxlength="1000" value="${esc(ES.p.prompt_m)}" placeholder="Ex.: texturas de pixel art nítidas"></label>`
-  } else {
-    f = escolher + `${deslize('sharpen', 'Nitidez', 0, 100, 'bordas mais definidas')}${deslize('ultra_detail', 'Ultra detalhe', 0, 100, 'acrescenta detalhes finos')}${deslize('smart_grain', 'Granulação', 0, 100, 'textura de foto')}`
+  } else if (op === 'refinar') {
+    f = escolher() + `${deslize('sharpen', 'Nitidez', 0, 100, 'bordas mais definidas')}${deslize('ultra_detail', 'Ultra detalhe', 0, 100, 'acrescenta detalhes finos')}${deslize('smart_grain', 'Granulação', 0, 100, 'textura de foto')}`
+  } else if (modo === 'video') {
+    const m = modeloVideo(), comImg = op === 'animar'
+    f = (comImg ? escolher() : '') + `<label class="ed-campo"><span>${comImg ? 'O que se move' : 'O que acontece no vídeo'} <small>${comImg ? (m.id === 'seedance' ? 'obrigatório no Seedance: movimento, câmera e clima' : 'opcional: descreva o movimento e a câmera') : 'cena, movimento, luz e câmera'}</small></span><textarea data-es="prompt" rows="3" maxlength="2500" placeholder="${comImg ? 'Ex.: a câmera se aproxima devagar, as luzes da cidade acendem, nuvens passando' : 'Ex.: uma mesa de trabalho com um notebook mostrando gráficos, luz da manhã, câmera deslizando para a direita'}">${esc(ES.p.prompt)}</textarea></label>
+      <div class="es-linha"><span>Modelo</span><div class="es-cards">${r.video.modelos.map(x => `<button type="button" data-es-chip="v_modelo" data-v="${x.id}" class="es-card${x.id === m.id ? ' on' : ''}"><b>${x.nome}</b><small>${x.dica}</small></button>`).join('')}</div></div>
+      ${chipsEs('v_duracao', 'Duração', m.duracoes.map(d => [d, d + ' s']))}
+      ${!comImg || m.id === 'seedance' ? chipsEs('v_prop', 'Proporção', m.proporcoes) : '<p class="fine">A proporção segue a da imagem escolhida.</p>'}
+      ${m.resolucoes ? chipsEs('v_res', 'Resolução', m.resolucoes) : ''}
+      <div class="es-sws">${m.audio ? chaveEs('v_som', 'Som gerado pela IA', 'efeitos e ambiente; no LinkedIn o vídeo começa sem som') : ''}${m.camera ? chaveEs('v_camera', 'Câmera parada', 'só o que está na cena se move') : ''}</div>
+      ${m.negativo ? `${deslize('v_cfg10', 'Fidelidade ao texto', 0, 10, 'mais alto segue o texto à risca; mais baixo deixa a IA criar')}<label class="ed-campo"><span>Evitar <small>opcional</small></span><input data-es="v_negativo" maxlength="2500" value="${esc(ES.p.v_negativo)}" placeholder="Ex.: texto distorcido, mãos deformadas, tremor"></label>` : ''}
+      <p class="fine">O vídeo pronto vai para a biblioteca, em MP4. O LinkedIn aceita vídeos de 3 s a 30 min.</p>`
+  } else if (op === 'gifvideo') {
+    f = escolher() + (ES.origem ? `<video class="es-gif-prev" src="${arquivo(ES.origem.arquivo)}" muted playsinline controls preload="metadata" data-es-gif-v></video>
+      <div class="fields two"><label><span>Começa em <small>segundos</small></span><input type="number" min="0" step="0.5" data-es="g_inicio" value="${ES.p.g_inicio}"></label><label><span>Ou</span><button type="button" class="btn sm" data-es-aqui>Usar o ponto do vídeo</button></label></div>` : '')
+      + `${deslize('g_duracao', 'Duração', 1, 10, 'quanto do vídeo vira GIF', ' s')}
+      ${chipsEs('g_fps', 'Quadros por segundo', [['8', '8'], ['10', '10'], ['12', '12'], ['15', '15']], 'mais = mais fluido e mais pesado')}
+      ${chipsEs('g_vel', 'Velocidade', [['0.5', '0,5×'], ['1', '1×'], ['1.5', '1,5×'], ['2', '2×']])}
+      ${chipsEs('g_prop', 'Proporção', [['original', 'Original'], ['1:1', '1:1'], ['4:5', '4:5'], ['16:9', '16:9']])}
+      ${chipsEs('g_largura', 'Largura', [['480', '480'], ['640', '640'], ['800', '800'], ['1080', '1080']], 'pixels')}
+      ${chipsEs('g_cores', 'Cores', [['64', '64'], ['128', '128'], ['256', '256']], 'menos cores = arquivo menor')}
+      <div class="es-sws">${chaveEs('g_pontilhar', 'Pontilhado', 'suaviza degradês com poucas cores')}${chaveEs('g_repetir', 'Repetir sempre', 'o GIF volta ao começo sem parar')}</div>`
+  } else if (op === 'gifimagens') {
+    const imgs = bibDe(['imagem'])
+    f = `<p class="soft">Escolha de 2 a 20 imagens, na ordem do clique:</p><div class="es-mini es-multi">${imgs.slice(0, 30).map(m => { const i = ES.gifImgs.indexOf(m.arquivo); return `<button type="button" data-es-gimg="${esc(m.arquivo)}" class="${i >= 0 ? 'on' : ''}" title="${esc(m.nome)}"><img src="${arquivo(m.arquivo)}" alt="">${i >= 0 ? `<span class="pk-n">${i + 1}</span>` : ''}</button>` }).join('') || '<span class="soft">Nenhuma imagem na biblioteca ainda.</span>'}</div>
+      ${chipsEs('g_seg', 'Tempo em cada imagem', [['0.8', '0,8 s'], ['1.2', '1,2 s'], ['1.5', '1,5 s'], ['2', '2 s'], ['3', '3 s']])}
+      ${chipsEs('g_trans', 'Passagem', [['suave', 'Suave'], ['corte', 'Corte seco']])}
+      ${chipsEs('g_prop', 'Proporção', [['1:1', '1:1'], ['4:5', '4:5 · feed'], ['16:9', '16:9'], ['original', 'Da primeira imagem']])}
+      ${chipsEs('g_largura', 'Largura', [['480', '480'], ['640', '640'], ['800', '800'], ['1080', '1080']], 'pixels')}
+      ${chipsEs('g_cores', 'Cores', [['64', '64'], ['128', '128'], ['256', '256']])}
+      <div class="es-sws">${chaveEs('g_pontilhar', 'Pontilhado', 'suaviza degradês com poucas cores')}${chaveEs('g_repetir', 'Repetir sempre', 'o GIF volta ao começo sem parar')}</div>`
   }
   $('[data-es-form]').innerHTML = f
-  const ok = p.temChave && (op === 'gerar' ? ES.p.prompt.trim().length > 2 : !!ES.origem)
-  const ir = $('[data-es-ir]'); ir.disabled = !ok
-  ir.textContent = op === 'gerar' ? `Gerar ${ES.p.versoes} ${ES.p.versoes === 1 ? 'versão' : 'versões'}` : op === 'melhorar' ? `Melhorar ${ES.p.scale_factor}` : 'Refinar'
+  const ir = $('[data-es-ir]'); ir.disabled = !podeIr(); ir.textContent = rotuloIr()
   desenharResultados()
 }
 function paramsEs() {
@@ -1248,14 +1320,21 @@ function paramsEs() {
     const prompt = [p.prompt.trim(), cores.length ? `Paleta de cores: ${cores.join(', ')}` : '', m?.estilo ? `Estilo: ${m.estilo}` : ''].filter(Boolean).join('. ')
     return { prompt, aspect_ratio: p.aspect_ratio, resolution: p.resolution, model: p.model, ...(ref ? { estiloArquivo: ref } : {}) }
   }
+  if (modoDe(ES.op) === 'video') return { modelo: p.v_modelo, duracao: p.v_duracao, aspect_ratio: p.v_prop, resolucao: p.v_res, som: !!p.v_som, cameraFixa: !!p.v_camera, cfg: +p.v_cfg10 / 10, prompt: p.prompt.trim(), ...(p.v_negativo.trim() ? { negativo: p.v_negativo.trim() } : {}) }
   if (ES.op === 'melhorar') return { scale_factor: p.scale_factor, optimized_for: p.optimized_for, creativity: +p.creativity, resemblance: +p.resemblance, hdr: +p.hdr, ...(p.prompt_m ? { prompt: p.prompt_m } : {}) }
   return { sharpen: +p.sharpen, smart_grain: +p.smart_grain, ultra_detail: +p.ultra_detail }
 }
-const pedidoEs = () => ({ provedor: prov().id, op: ES.op, params: paramsEs(), origem: ES.op === 'gerar' ? undefined : ES.origem?.arquivo, versoes: ES.op === 'gerar' ? ES.p.versoes : 1 })
+const pedidoEs = () => ({ provedor: prov().id, op: opServidor(ES.op), params: paramsEs(), origem: ['gerar', 'texto'].includes(ES.op) ? undefined : ES.origem?.arquivo, versoes: ES.op === 'gerar' ? ES.p.versoes : 1 })
 function estimarEs() {
   clearTimeout(esEstimarT)
   esEstimarT = setTimeout(async () => {
-    if (ES.op !== 'gerar' && !ES.origem) { $('[data-es-custo]').innerHTML = ''; return }
+    if (modoDe(ES.op) === 'gif') {
+      const n = quadrosGif(), passa = n > 250, w = +ES.p.g_largura
+      $('[data-es-custo]').innerHTML = `<b>Grátis: feito aqui, sem créditos</b><small>O GIF é montado no seu computador e vai direto para a biblioteca. Nada sai daqui.</small>
+        <span class="es-uso${passa ? ' passa' : ''}"><span><i style="width:${Math.min(100, n / 250 * 100)}%"></i></span>${n} de 250 quadros (o máximo do LinkedIn)${passa ? ': diminua a duração ou os quadros por segundo' : ''} · ${w} px de largura</span>`
+      return
+    }
+    if (['melhorar', 'refinar', 'animar'].includes(ES.op) && !ES.origem) { $('[data-es-custo]').innerHTML = ''; return }
     try {
       const e = await api('/api/imagem/estimar', pedidoEs()); ES.est = e
       const u = e.uso
@@ -1265,13 +1344,14 @@ function estimarEs() {
   }, 250)
 }
 async function irEs() {
+  if (modoDe(ES.op) === 'gif') return fazerGif()
   const p = prov(), e = ES.est, n = ES.op === 'gerar' ? ES.p.versoes : 1
   const custo = e && e.total != null ? `Custo estimado: ${e.aPartir ? 'a partir de ' : ''}${euro(e.total)}.` : 'O preço desta operação não é publicado pelo Magnific: confira no painel dele.'
   if (!(await confirmar(`Usar créditos do ${p.nome}?`, `${OP_TXT[ES.op]}: ${n} ${n === 1 ? 'operação' : 'operações'}. ${custo} O resultado fica na sua biblioteca.`, OP_TXT[ES.op]))) return
   try {
     const job = await api('/api/imagem/pedir', pedidoEs())
     ES.jobs.unshift(job.id); IMG.tarefas = [job, ...(IMG.tarefas || []).filter(j => j.id !== job.id)]
-    Som.tique(); pill(ES.op === 'gerar' ? `Gerando ${n} ${n === 1 ? 'versão' : 'versões'}…` : `${OP_TXT[ES.op]}…`, 'Leva de alguns segundos a um minuto.', 'var(--violet)')
+    Som.tique(); pill(ES.op === 'gerar' ? `Gerando ${n} ${n === 1 ? 'versão' : 'versões'}…` : `${OP_TXT[ES.op]}…`, modoDe(ES.op) === 'video' ? 'Vídeo leva alguns minutos. Pode fechar: ele chega na biblioteca.' : 'Leva de alguns segundos a um minuto.', 'var(--violet)')
     desenharResultados(); estimarEs(); acompanharEs()
   } catch (err) { falha(err) }
 }
@@ -1282,7 +1362,7 @@ function acompanharEs() {
       const antes = Object.fromEntries((IMG.tarefas || []).map(j => [j.id, j.estado]))
       const r = await api('/api/imagem/tarefas'); IMG.tarefas = r.tarefas
       for (const j of r.tarefas.filter(j => ES?.jobs.includes(j.id) && antes[j.id] === 'rodando' && j.estado !== 'rodando')) {
-        if (j.estado === 'pronto') { Som.liga(); pill('Pronto', 'As imagens já estão na biblioteca.', 'var(--green)') } else { Som.erro(); pill('Não deu certo', (j.itens.find(i => i.erro) || {}).erro || '', 'var(--red)') }
+        if (j.estado === 'pronto') { Som.liga(); pill('Pronto', j.op === 'video' ? 'O vídeo já está na biblioteca.' : 'As imagens já estão na biblioteca.', 'var(--green)') } else { Som.erro(); pill('Não deu certo', (j.itens.find(i => i.erro) || {}).erro || '', 'var(--red)') }
         if (atual?.dataset.scene === 'biblioteca') carregarBiblioteca(); else api('/api/midia').then(x => (BIB = x.itens)).catch(() => {})
       }
       if ($('#estudio').open) desenharResultados()
@@ -1290,34 +1370,62 @@ function acompanharEs() {
     } catch { acompanharEs() }
   }, DEMO ? 700 : 2000)
 }
+async function fazerGif() {
+  const p = ES.p, prog = (k, t) => { ES.gifProg = { k, t }; desenharResultados() }
+  const o = { cores: +p.g_cores, pontilhar: !!p.g_pontilhar, repetir: !!p.g_repetir, largura: +p.g_largura, proporcao: p.g_prop, progresso: prog }
+  ES.gifProg = { k: 0, t: 'Começando…' }; $('[data-es-ir]').disabled = true; $('[data-es-ir]').textContent = rotuloIr(); desenharResultados()
+  try {
+    const r = ES.op === 'gifvideo' ? await GIF.deVideo(arquivo(ES.origem.arquivo), { ...o, inicio: +p.g_inicio || 0, duracao: +p.g_duracao, fps: +p.g_fps, velocidade: +p.g_vel })
+      : await GIF.deImagens(ES.gifImgs.map(a => arquivo(a)), { ...o, segundos: +p.g_seg, transicao: p.g_trans })
+    const nome = (ES.op === 'gifvideo' ? (ES.origem.nome || 'video').replace(/\.[^.]+$/, '') : 'sequencia') + '.gif'
+    let m
+    if (DEMO) { m = { arquivo: URL.createObjectURL(r.blob), nome, tipo: 'gif', bytes: r.blob.size, largura: r.w, altura: r.h, quadros: r.quadros, criado: Date.now(), origem: 'envio', alt: '', avisos: [], apagavel: true }; D.midia.unshift(m) }
+    else { const res = await fetch('/api/midia/upload?nome=' + encodeURIComponent(nome), { method: 'POST', headers: { 'X-Engine-Token': TOKEN }, body: r.blob }); m = await res.json(); if (!res.ok) throw new Error(m.erro || 'Não consegui guardar o GIF.') }
+    ES.gifs.unshift({ arquivo: m.arquivo, info: `${r.w} × ${r.h} · ${r.quadros} quadros · ${tamanho(r.blob.size)}` })
+    Som.liga(); pill('GIF pronto', `${r.quadros} quadros · ${tamanho(r.blob.size)} · já na biblioteca`, 'var(--green)')
+    try { BIB = (await api('/api/midia')).itens } catch { }
+    if (atual?.dataset.scene === 'biblioteca') carregarBiblioteca()
+  } catch (err) { falha(err) } finally { ES.gifProg = null; if ($('#estudio').open) desenharEstudio() }
+}
 function desenharResultados() {
+  if (ES && modoDe(ES.op) === 'gif') {
+    const pr = ES.gifProg
+    $('[data-es-res]').innerHTML = (pr ? `<div class="es-prog"><b>${esc(pr.t)}</b><span><i style="width:${Math.round(pr.k * 100)}%"></i></span></div>` : '')
+      + (ES.gifs.length ? `<div class="es-tiles">${ES.gifs.map(g => `<div class="es-tile"><img src="${arquivo(g.arquivo)}" alt=""><small class="es-tile-i">${g.info}</small><div class="es-tile-a"><button class="btn sm accent" data-es-usar="${esc(g.arquivo)}">${ES.contexto === 'editor' ? 'Usar no post' : 'Usar em post'}</button></div></div>`).join('')}</div>`
+      : pr ? '' : `<div class="es-vazio">${wire('gif')}<p>O GIF aparece aqui e vai para a biblioteca. É feito no seu computador: não gasta créditos e não sai daqui.</p></div>`)
+    return
+  }
   const jobs = (IMG?.tarefas || []).filter(j => ES?.jobs.includes(j.id))
   $('[data-es-res]').innerHTML = jobs.length ? jobs.map(j => `<div class="es-job"><header><span class="${j.estado === 'rodando' ? 'run' : j.estado === 'pronto' ? 'ok' : 'bad'}"><span class="ic"></span></span><b>${OP_TXT[j.op]}${j.prompt ? ` · ${esc(j.prompt.slice(0, 50))}${j.prompt.length > 50 ? '…' : ''}` : ''}</b></header>
       <div class="es-tiles">${j.itens.map(i => i.estado === 'rodando' ? '<div class="es-tile carregando"><span class="spin"></span></div>'
         : i.estado === 'falhou' ? `<div class="es-tile erro"><small>${esc(i.erro || 'falhou')}</small></div>`
-        : (i.arquivos || []).filter(a => !ES.descartados.has(a)).map(a => `<div class="es-tile"><img src="${arquivo(a)}" alt=""><div class="es-tile-a"><button class="btn sm accent" data-es-usar="${esc(a)}">${ES.contexto === 'editor' ? 'Usar no post' : 'Usar em post'}</button><button class="ic-btn" data-es-mais="${esc(a)}" title="Melhorar esta imagem">↑</button><button class="ic-btn" data-es-fora="${esc(a)}" title="Descartar (vai para a lixeira)">×</button></div></div>`).join('')).join('')}</div></div>`).join('')
-    : `<div class="es-vazio">${wire(ES?.op === 'gerar' ? 'imagem' : 'gif')}<p>${ES?.op === 'gerar' ? 'As versões aparecem aqui. Cada uma vai direto para a biblioteca, com o prompt guardado.' : 'O resultado aparece aqui e vai para a biblioteca, ligado à imagem original.'}</p></div>`
+        : (i.arquivos || []).filter(a => !ES.descartados.has(a)).map(a => `<div class="es-tile">${tipoArq(a) === 'video' ? `<video src="${arquivo(a)}" muted loop autoplay playsinline></video>` : `<img src="${arquivo(a)}" alt="">`}<div class="es-tile-a"><button class="btn sm accent" data-es-usar="${esc(a)}">${ES.contexto === 'editor' ? 'Usar no post' : 'Usar em post'}</button>${tipoArq(a) === 'imagem' ? `<button class="ic-btn" data-es-mais="${esc(a)}" title="Melhorar esta imagem">↑</button>` : ''}<button class="ic-btn" data-es-fora="${esc(a)}" title="Descartar (vai para a lixeira)">×</button></div></div>`).join('')).join('')}</div></div>`).join('')
+    : `<div class="es-vazio">${wire(ES && modoDe(ES.op) === 'video' ? 'video' : ES?.op === 'gerar' ? 'imagem' : 'gif')}<p>${ES && modoDe(ES.op) === 'video' ? 'O vídeo aparece aqui quando ficar pronto (leva alguns minutos) e vai para a biblioteca, com o texto guardado.' : ES?.op === 'gerar' ? 'As versões aparecem aqui. Cada uma vai direto para a biblioteca, com o prompt guardado.' : 'O resultado aparece aqui e vai para a biblioteca, ligado à imagem original.'}</p></div>`
 }
 const atualizaEs = () => { desenharEstudio(); estimarEs() }
-$('[data-es-op]').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; ES.op = b.dataset.v; Som.tique(); atualizaEs() })
+const origemCabe = () => { if (!ES.origem) return; const t = tipoArq(ES.origem.arquivo); const ok = ES.op === 'gifvideo' ? t === 'video' : ES.op === 'animar' ? t === 'imagem' : ['melhorar', 'refinar'].includes(ES.op) ? t !== 'video' : true; if (!ok) ES.origem = null }
+$('[data-es-op]').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return; ES.op = b.dataset.v; origemCabe(); Som.tique(); atualizaEs() })
+$('[data-es-modo]').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b || modoDe(ES.op) === b.dataset.v) return; ES.op = OPS[b.dataset.v][0][0]; origemCabe(); Som.tique(); atualizaEs() })
 $('[data-es-form]').addEventListener('click', e => {
-  const c = e.target.closest('[data-es-chip]'); if (c) { ES.p[c.dataset.esChip] = c.dataset.esChip === 'versoes' ? +c.dataset.v : c.dataset.v; Som.tique(); return atualizaEs() }
+  const c = e.target.closest('[data-es-chip]'); if (c) { const k = c.dataset.esChip; ES.p[k] = k === 'versoes' ? +c.dataset.v : c.dataset.v; if (k === 'v_modelo') { const m = modeloVideo(); if (!m.duracoes.includes(ES.p.v_duracao)) ES.p.v_duracao = m.duracoes[0]; if (!m.proporcoes.some(([v]) => v === ES.p.v_prop)) ES.p.v_prop = m.proporcoes[0][0] } Som.tique(); return atualizaEs() }
+  const g = e.target.closest('[data-es-gimg]'); if (g) { const a = g.dataset.esGimg, i = ES.gifImgs.indexOf(a); i >= 0 ? ES.gifImgs.splice(i, 1) : ES.gifImgs.length < 20 && ES.gifImgs.push(a); Som.tique(); return atualizaEs() }
+  if (e.target.closest('[data-es-aqui]')) { const v = $('[data-es-gif-v]'); if (v) { ES.p.g_inicio = Math.round(v.currentTime * 10) / 10; Som.tique(); return atualizaEs() } }
   const o = e.target.closest('[data-es-orig]'); if (o) { ES.origem = BIB.find(m => m.arquivo === o.dataset.esOrig); return atualizaEs() }
   if (e.target.closest('[data-es-trocar]')) { ES.origem = null; return atualizaEs() }
 })
 $('[data-es-form]').addEventListener('input', e => {
   const k = e.target.dataset.es; if (!k) return
   ES.p[k] = e.target.value
-  const v = $(`[data-es-v="${k}"]`); if (v) v.textContent = e.target.value
-  if (k === 'prompt') { const ir = $('[data-es-ir]'); ir.disabled = !(prov().temChave && ES.p.prompt.trim().length > 2) }
+  const v = $(`[data-es-v="${k}"]`); if (v) v.textContent = e.target.value + (e.target.dataset.suf || '')
+  const ir = $('[data-es-ir]'); ir.disabled = !podeIr(); ir.textContent = rotuloIr()
   estimarEs()
 })
-$('[data-es-form]').addEventListener('change', e => { if (e.target.matches('select')) { ES.p[e.target.dataset.es] = e.target.value; estimarEs() } if (e.target.matches('[data-es-marca]')) { ES.p.usarMarca = e.target.checked; Som.tique() } })
+$('[data-es-form]').addEventListener('change', e => { if (e.target.matches('select')) { ES.p[e.target.dataset.es] = e.target.value; estimarEs() } if (e.target.matches('[data-es-marca]')) { ES.p.usarMarca = e.target.checked; Som.tique() } if (e.target.matches('[data-es-sw]')) { ES.p[e.target.dataset.esSw] = e.target.checked; Som.tique() } })
 $('[data-es-ir]').addEventListener('click', irEs)
 $('[data-es-res]').addEventListener('click', async e => {
   const usar = e.target.closest('[data-es-usar]'), mais = e.target.closest('[data-es-mais]'), fora = e.target.closest('[data-es-fora]')
   if (usar) {
-    const m = { arquivo: usar.dataset.esUsar, alt: '', tipo: 'imagem', nome: usar.dataset.esUsar.split('/').pop() }
+    const m = { arquivo: usar.dataset.esUsar, alt: '', tipo: tipoArq(usar.dataset.esUsar), nome: (BIB.find(b => b.arquivo === usar.dataset.esUsar) || {}).nome || usar.dataset.esUsar.split('/').pop() }
     if (ES.contexto === 'editor' && ED) { ED.midias.push(m); edMudou(); Som.liga(); return pill('Imagem no post', 'Escreva o texto alternativo no editor.', 'var(--green)') }
     $('#estudio').close(); return abrirEditor({ midias: [m] })
   }
@@ -2192,7 +2300,7 @@ function desenharAjustes() {
   $('[data-conn=agente] [data-conn-n]').textContent = a ? `${a.nome} · ${a.via}` : 'IA'
   linha('agente', a && a.conectado ? 'var(--green)' : 'var(--amber)', a ? (a.conectado ? `${a.conta || 'conectado'}${a.sincronizado ? ' · sincronizado em ' + quando(Date.parse(a.sincronizado)) : ' · falta sincronizar'}` : 'Falta entrar na conta') : 'Nenhuma IA escolhida.',
     `${a ? '<button class="btn sm" data-act="sync-again">Sincronizar de novo</button>' : ''}<button class="${a ? 'link' : 'btn sm accent'}" data-goscene="agente">${a ? 'Trocar' : 'Escolher'}</button>`)
-  desenharReserva(); desenharStandby()
+  desenharReserva(); desenharStandby(); carregarModelos()
   const dok = d.mcpOk
   linha('desigma', dok ? (d.registered ? 'var(--green)' : 'var(--amber)') : 'var(--faint)', dok ? (d.registered ? 'Ligado à sua IA: cada peça vira um quadro editável.' : 'Encontrado. Sincronize para ligar à sua IA.') : 'Não encontrado neste computador. É opcional.',
     dok ? '' : '<a class="link" href="https://github.com/deepfounder-ai/desigma/releases" target="_blank" rel="noopener">Baixar</a>')
@@ -2240,6 +2348,63 @@ async function ligarReserva(id) {
     Som.liga(); pill(`${nome} é a sua IA reserva`, 'Se a principal chegar ao limite, ele assume.', 'var(--green)')
   } catch (e) { falha(e) } finally { RES_ON = ''; ST = null; await status(); carregarLimites(true); desenharReserva() }
 }
+// ---------------------------------------------------------------- modelo e esforço (Ajustes)
+let IA_MOD = null
+const ESF_NOME = { '': 'Automático', low: 'Baixo', medium: 'Médio', high: 'Alto', xhigh: 'Muito alto', max: 'Máximo' }
+const TAREFA = { criar: ['Criar posts', 'as rotinas, o modo automático e "Criar agora"'], ler: ['Ler e pesquisar', 'análise do perfil, Conexões e Vagas'] }
+async function carregarModelos() {
+  try { IA_MOD = await api('/api/ia/modelos'); desenharModelos() } catch (e) { $('[data-ia-lista]').innerHTML = `<p class="set-sub">${esc(e.message)}</p>` }
+}
+function desenharModelos() {
+  const box = $('[data-ia-lista]'); if (!box || !IA_MOD) return
+  if (!IA_MOD.ias.length) { box.innerHTML = '<p class="set-sub">Conecte o Claude, o ChatGPT ou o Antigravity para escolher modelo e esforço. As outras IAs usam o padrão delas.</p>'; return }
+  // dica pelo uso de agora
+  const pr = LIM?.principal, sess = pr?.janelas?.[0]?.pct, dica = $('[data-ia-dica]')
+  dica.hidden = sess == null
+  if (sess != null) dica.innerHTML = sess >= 70 ? `A sessão da sua IA está em <b>${sess}%</b>. O modo <b>Econômico</b> ajuda a chegar até a renovação.` : `A sessão da sua IA está em <b>${sess}%</b>. Dá para usar o <b>Equilibrado</b> ou o <b>Caprichado</b> com folga.`
+  box.innerHTML = IA_MOD.ias.map(ia => `<div class="ia-bloco" data-ia="${ia.id}">
+      <div class="ia-cab"><span class="c-ic">${glifo(ia.id)}</span><b>${esc(ia.nome)}</b>${ia.papel ? `<small class="tag">${ia.papel}</small>` : ''}</div>
+      ${Object.entries(TAREFA).map(([tipo, [nome, sub]]) => { const e = ia.escolha[tipo] || {}; return `<div class="ia-linha" data-tipo="${tipo}">
+        <span class="ia-t"><b>${nome}</b><small>${sub}</small></span>
+        <label class="ia-m">${ia.livre ? `<input data-ia-modelo value="${esc(e.modelo || '')}" placeholder="Padrão da conta" spellcheck="false" autocomplete="off" aria-label="Modelo para ${nome}">`
+          : `<select data-ia-modelo aria-label="Modelo para ${nome}"><option value="">Padrão da conta</option>${ia.modelos.map(m => `<option value="${esc(m.v)}"${m.v === e.modelo ? ' selected' : ''}>${esc(m.n)}${m.d ? ' · ' + esc(m.d) : ''}</option>`).join('')}</select>`}</label>
+        <span class="ia-esf" role="radiogroup" aria-label="Esforço para ${nome}">${['', ...IA_MOD.esforcos].map(v => `<button type="button" role="radio" aria-checked="${(e.esforco || '') === v}" data-ia-esf="${v}" title="${ESF_NOME[v]}">${ESF_NOME[v]}</button>`).join('')}</span>
+      </div>` }).join('')}
+      ${ia.id === 'codex' ? '<p class="ia-nota">No ChatGPT (Codex), o esforço vai até "Alto": "Muito alto" e "Máximo" usam o alto.</p>' : ''}
+    </div>`).join('')
+}
+async function salvarModelo(id, tipo, patch, quieto) {
+  const ia = IA_MOD.ias.find(i => i.id === id), atual = { ...(ia.escolha[tipo] || {}), ...patch }
+  ia.escolha[tipo] = atual
+  try { await api('/api/ia/modelos', { id, tipo, modelo: atual.modelo || '', esforco: atual.esforco || '' }); if (!quieto) pill('Salvo', `${ia.nome} · ${TAREFA[tipo][0]}: ${atual.modelo ? (ia.modelos.find(m => m.v === atual.modelo)?.n || atual.modelo) : 'modelo padrão'}, esforço ${ESF_NOME[atual.esforco || ''].toLowerCase()}`, 'var(--green)') } catch (e) { falha(e) }
+}
+// modos prontos: escolhem modelo e esforço das duas tarefas de cada IA
+function modoPronto(modo, ia) {
+  const ach = re => (ia.modelos.find(m => re.test(m.v)) || {}).v || ''
+  const M = {
+    economico: { claude: [['sonnet', 'low'], ['haiku', 'low']], antigravity: [[ach(/flash.*low|flash/), 'low'], [ach(/flash.*low|flash/), 'low']], codex: [['', 'low'], ['', 'low']] },
+    equilibrado: { claude: [['sonnet', 'medium'], ['sonnet', 'low']], antigravity: [[ach(/flash.*high|flash/), 'medium'], [ach(/flash.*low|flash/), 'low']], codex: [['', 'medium'], ['', 'low']] },
+    caprichado: { claude: [['opus', 'high'], ['sonnet', 'medium']], antigravity: [[ach(/opus/), 'high'], [ach(/sonnet/), 'medium']], codex: [['', 'high'], ['', 'medium']] },
+    padrao: {},
+  }[modo][ia.id] || [['', ''], ['', '']]
+  return { criar: { modelo: M[0][0], esforco: M[0][1] }, ler: { modelo: M[1][0], esforco: M[1][1] } }
+}
+document.addEventListener('click', async e => {
+  const m = e.target.closest('[data-ia-modo]')
+  if (m) {
+    for (const ia of IA_MOD?.ias || []) { const p = modoPronto(m.dataset.iaModo, ia); for (const tipo of ['criar', 'ler']) await salvarModelo(ia.id, tipo, p[tipo], true) }
+    desenharModelos(); Som.tique?.(); return pill(`Modo ${m.querySelector('b').textContent.toLowerCase()}`, 'Modelo e esforço escolhidos para todas as suas IAs.', 'var(--green)')
+  }
+  const b = e.target.closest('[data-ia-esf]'); if (!b) return
+  const linha = b.closest('[data-tipo]'), id = b.closest('[data-ia]').dataset.ia
+  linha.querySelectorAll('[data-ia-esf]').forEach(x => x.setAttribute('aria-checked', String(x === b)))
+  salvarModelo(id, linha.dataset.tipo, { esforco: b.dataset.iaEsf })
+})
+document.addEventListener('change', e => {
+  const c = e.target.closest('[data-ia-modelo]'); if (!c) return
+  salvarModelo(c.closest('[data-ia]').dataset.ia, c.closest('[data-tipo]').dataset.tipo, { modelo: c.value.trim() })
+})
+
 function desenharStandby() {
   const box = $('[data-standby]'); if (!box || !ST) return
   const sb = ST.standby || {}; box.hidden = !sb.disponivel
