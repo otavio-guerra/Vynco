@@ -100,7 +100,11 @@
 
   async function deVideo(url, o = {}) {
     const { inicio = 0, duracao = 3, fps = 10, largura = 640, proporcao = 'original', velocidade = 1, progresso } = o
-    const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.playsInline = true; v.src = url
+    // o vídeo vai inteiro para a memória antes: assim dá para pular para qualquer ponto (o servidor local não serve pedaços)
+    if (progresso) progresso(0, 'Carregando o vídeo…')
+    const resp = await fetch(url); if (!resp.ok) throw new Error('Não consegui abrir este vídeo.')
+    const local = URL.createObjectURL(await resp.blob())
+    const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.playsInline = true; v.src = local
     await new Promise((ok, erro) => { v.onloadeddata = ok; v.onerror = () => erro(new Error('Não consegui abrir este vídeo.')) })
     const prop = PROP[proporcao] || v.videoWidth / v.videoHeight
     const w = Math.round(Math.min(largura, 1080) / 2) * 2, h = Math.round(w / prop / 2) * 2
@@ -108,13 +112,13 @@
     const fim = Math.min(v.duration, inicio + duracao), n = Math.max(1, Math.floor((fim - inicio) * fps))
     const quadros = []
     for (let i = 0; i < n; i++) {
-      v.currentTime = Math.min(fim - 0.001, inicio + i / fps)
-      await new Promise(ok => { v.onseeked = ok })
+      const alvo = Math.min(fim - 0.001, inicio + i / fps)
+      if (Math.abs(v.currentTime - alvo) > 0.0005) await new Promise(ok => { const t = setTimeout(ok, 4000); v.onseeked = () => { clearTimeout(t); ok() }; v.currentTime = alvo })
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h); cobrir(ctx, v, v.videoWidth, v.videoHeight, w, h)
       quadros.push({ dados: ctx.getImageData(0, 0, w, h).data, atraso: 1000 / fps / velocidade })
       if (progresso) progresso(0.5 * (i + 1) / n, `Lendo o vídeo: quadro ${i + 1} de ${n}`)
     }
-    v.removeAttribute('src'); v.load()
+    v.removeAttribute('src'); v.load(); URL.revokeObjectURL(local)
     return { blob: await montar(quadros, w, h, o), w, h, quadros: quadros.length }
   }
 
