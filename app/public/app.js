@@ -166,6 +166,17 @@ async function apiDemo(path, data) {
     case '/api/perfil': return { perfil: D.perfil, ativo: 'principal', perfis: [{ id: 'principal', nome: D.perfil.nome || 'Perfil principal', conta: D.linkedin.connected ? D.linkedin.name : null }], analise: D.analise, agente: 'Claude' }
     case '/api/perfil/salvar': D.perfil = { ...JSON.parse(JSON.stringify(data.perfil)), atualizado: new Date().toISOString() }; return D.perfil
     case '/api/perfil/analise': return D.analise || {}
+    case '/api/atualizacao': {
+      D.att = D.att || { atual: '0.18.0', procurada: new Date().toISOString(), avisar: true, erro: null, download: null,
+        nova: { versao: '0.19.0', nome: 'Vynco 0.19.0 beta (exemplo)', publicada: new Date(Date.now() - 864e5).toISOString(), tamanho: 31702947, instalavel: true, pagina: 'https://github.com/otavio-guerra/Vynco/releases/latest',
+          notas: '**Demonstração:** esta versão é de exemplo.\n\n- Estúdio com vídeo e GIF\n- Modelo e esforço por IA em Ajustes\n- Atualizações dentro do app' } }
+      if (q.searchParams.get('procurar') === 'agora') D.att.procurada = new Date().toISOString()
+      if (D.att.download?.fase === 'baixando') { D.att.download.feito = Math.min(D.att.download.total, D.att.download.feito + 6e6); if (D.att.download.feito >= D.att.download.total) D.att.download.fase = 'pronto' }
+      return D.att
+    }
+    case '/api/atualizacao/baixar': D.att.download = { fase: 'baixando', feito: 0, total: D.att.nova.tamanho }; return D.att
+    case '/api/atualizacao/instalar': throw new Error('Demonstração: aqui o instalador abriria e o Vynco fecharia para atualizar.')
+    case '/api/atualizacao/avisar': D.att.avisar = !!data.avisar; return D.att
     case '/api/ia/modelos': {
       D.iaMod = D.iaMod || { claude: { criar: { modelo: 'sonnet', esforco: 'medium' }, ler: { modelo: '', esforco: 'low' } }, antigravity: { criar: {}, ler: {} } }
       if (data && data.id) { D.iaMod[data.id] = D.iaMod[data.id] || {}; D.iaMod[data.id][data.tipo] = { modelo: data.modelo || '', esforco: data.esforco || '' }; return { ok: true } }
@@ -2211,6 +2222,7 @@ function desenharMenuConta() {
       <div class="cm-linha"><span class="cx-ic sm mg-ic" style="--c:${I.temChave ? 'var(--green)' : 'var(--faint)'}">${GLIFO.magnific}</span><span class="cm-t"><b>Magnific</b><small>${I.temChave ? `${I.operacoes} de ${I.limiteMensal} operações · €${I.gasto.toFixed(2)} de €${I.orcamentoMensal}` : 'sem chave: ligue em Ajustes'}</small></span>${I.temChave && I.site ? `<a class="link cm-ext" href="${esc(urlOk(I.site))}" target="_blank" rel="noopener" title="A API não informa o saldo: veja os créditos no site">saldo ↗</a>` : ''}</div>
       ${I.temChave ? `<div class="cm-usos um">${mini({ rotulo: 'Operações do mês', pct: Math.round(100 * I.operacoes / Math.max(1, I.limiteMensal)) })}</div>` : ''}
     </div>` : ''}
+    <button class="cm-versao${ATT?.nova ? ' nova' : ''}" role="menuitem" data-cm-att><span>Vynco ${esc(ATT?.atual || '')}</span><b>${ATT?.nova ? `Nova versão ${esc(ATT.nova.versao.replace(/-.*/, ''))} →` : 'Procurar atualizações'}</b></button>
     <div class="cm-acoes">
       <button role="menuitem" data-cm="ajustes"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Ajustes</span></button>
       <button role="menuitem" data-cm="tour"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m6.2 9.8 1-3 3-1-1 3z" fill="currentColor"/></svg><span>Tour</span></button>
@@ -2223,7 +2235,7 @@ function menuConta(abrir) {
   m.hidden = !on; b.setAttribute('aria-expanded', on)
   if (on) $('button', m)?.focus()
 }
-$('#conta-menu').addEventListener('click', e => { const b = e.target.closest('[data-cm]'); if (!b) return; menuConta(false); if (b.dataset.cm === 'atalhos') return $('#atalhos').showModal(); if (b.dataset.cm === 'tour') return tourIniciar(); voltarPara = null; cena(b.dataset.cm) })
+$('#conta-menu').addEventListener('click', e => { if (e.target.closest('[data-cm-att]')) { menuConta(false); abrirAtualizacao(); if (!ATT?.nova) carregarAtualizacao('agora'); return } const b = e.target.closest('[data-cm]'); if (!b) return; menuConta(false); if (b.dataset.cm === 'atalhos') return $('#atalhos').showModal(); if (b.dataset.cm === 'tour') return tourIniciar(); voltarPara = null; cena(b.dataset.cm) })
 document.addEventListener('click', e => { if (!e.target.closest('#conta')) menuConta(false) })
 $('#conta-menu').addEventListener('keydown', e => {
   const bs = $$('#conta-menu button'), k = bs.indexOf(document.activeElement)
@@ -2300,7 +2312,7 @@ function desenharAjustes() {
   $('[data-conn=agente] [data-conn-n]').textContent = a ? `${a.nome} · ${a.via}` : 'IA'
   linha('agente', a && a.conectado ? 'var(--green)' : 'var(--amber)', a ? (a.conectado ? `${a.conta || 'conectado'}${a.sincronizado ? ' · sincronizado em ' + quando(Date.parse(a.sincronizado)) : ' · falta sincronizar'}` : 'Falta entrar na conta') : 'Nenhuma IA escolhida.',
     `${a ? '<button class="btn sm" data-act="sync-again">Sincronizar de novo</button>' : ''}<button class="${a ? 'link' : 'btn sm accent'}" data-goscene="agente">${a ? 'Trocar' : 'Escolher'}</button>`)
-  desenharReserva(); desenharStandby(); carregarModelos()
+  desenharReserva(); desenharStandby(); carregarModelos(); carregarAtualizacao()
   const dok = d.mcpOk
   linha('desigma', dok ? (d.registered ? 'var(--green)' : 'var(--amber)') : 'var(--faint)', dok ? (d.registered ? 'Ligado à sua IA: cada peça vira um quadro editável.' : 'Encontrado. Sincronize para ligar à sua IA.') : 'Não encontrado neste computador. É opcional.',
     dok ? '' : '<a class="link" href="https://github.com/deepfounder-ai/desigma/releases" target="_blank" rel="noopener">Baixar</a>')
@@ -2404,6 +2416,73 @@ document.addEventListener('change', e => {
   const c = e.target.closest('[data-ia-modelo]'); if (!c) return
   salvarModelo(c.closest('[data-ia]').dataset.ia, c.closest('[data-tipo]').dataset.tipo, { modelo: c.value.trim() })
 })
+
+// ---------------------------------------------------------------- atualizações (procura no GitHub, baixa, confere e instala)
+let ATT = null, attTimer = null
+const mb = b => b ? (b / 1048576).toFixed(0) + ' MB' : ''
+// notas da versão: texto simples, com "- item" virando lista e **negrito** respeitado (tudo escapado antes)
+function notasHtml(t) {
+  const linhas = String(t || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, 14)
+  const neg = x => esc(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>')
+  let html = '', lista = false
+  for (const l of linhas) {
+    if (/^[-*] /.test(l)) { if (!lista) { html += '<ul>'; lista = true } html += `<li>${neg(l.slice(2))}</li>`; continue }
+    if (lista) { html += '</ul>'; lista = false }
+    html += /^#+ /.test(l) ? `<p class="att-h">${neg(l.replace(/^#+ /, ''))}</p>` : `<p>${neg(l)}</p>`
+  }
+  return html + (lista ? '</ul>' : '')
+}
+async function carregarAtualizacao(procurar) {
+  try { ATT = await api('/api/atualizacao' + (procurar ? '?procurar=' + procurar : '')) } catch { return }
+  desenharAtualizacao(); marcarAtualizacao()
+  clearTimeout(attTimer)
+  if (ATT.download?.fase === 'baixando') attTimer = setTimeout(() => carregarAtualizacao(), DEMO ? 600 : 1000)
+}
+function desenharAtualizacao() {
+  const box = $('[data-att-corpo]'); if (!box || !ATT) return
+  $('[data-att-v]').textContent = `você está na versão ${ATT.atual}`
+  $('[data-att-avisar]').checked = ATT.avisar
+  const procurada = ATT.procurada ? `Procurado ${quando(Date.parse(ATT.procurada))} às ${new Date(ATT.procurada).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.` : ''
+  if (!ATT.nova) {
+    box.innerHTML = `<div class="att-ok"><span class="att-ic ok" aria-hidden="true">✓</span><span><b>${ATT.erro ? 'Não deu para procurar agora' : 'Você está na versão mais nova'}</b><small>${esc(ATT.erro || procurada)}</small></span><button class="btn sm" type="button" data-att="procurar">Procurar agora</button></div>`
+    return
+  }
+  const n = ATT.nova, d = ATT.download
+  const acao = !n.instalavel ? `<a class="btn sm accent" href="${esc(n.pagina)}" target="_blank" rel="noopener">Abrir a página da versão</a>`
+    : !d || d.fase === 'erro' ? `<button class="btn accent" type="button" data-att="baixar">Baixar e instalar${n.tamanho ? ` · ${mb(n.tamanho)}` : ''}</button>`
+    : d.fase === 'baixando' ? `<div class="att-prog"><span><i style="width:${Math.round(100 * d.feito / Math.max(1, d.total))}%"></i></span><small>Baixando… ${mb(d.feito)} de ${mb(d.total)}</small></div>`
+    : `<button class="btn accent" type="button" data-att="instalar">Instalar agora</button><small class="att-dica">O Vynco fecha e o instalador abre. Os seus posts, a agenda e as conexões ficam onde estão.</small>`
+  box.innerHTML = `<div class="att-nova">
+      <div class="att-cab"><span class="att-ic novo" aria-hidden="true">↑</span><span><b>Versão ${esc(n.versao.replace(/-.*/, ''))} disponível</b><small>${n.publicada ? 'publicada ' + quando(Date.parse(n.publicada)) : ''}${n.tamanho ? ' · ' + mb(n.tamanho) : ''}</small></span></div>
+      ${n.notas ? `<div class="att-notas"><span class="cm-k">O que mudou</span>${notasHtml(n.notas)}</div>` : ''}
+      ${d?.fase === 'erro' ? `<p class="att-erro">${esc(d.erro)}</p>` : ''}
+      <div class="att-acoes">${acao}<a class="link" href="${esc(n.pagina)}" target="_blank" rel="noopener">Ver no GitHub</a></div>
+      <p class="fine">O Vynco confere a impressão digital (SHA-256) do instalador com a publicada no GitHub antes de abrir.</p>
+    </div>`
+}
+// bolinha no botão da conta e aviso uma vez por versão
+function marcarAtualizacao() {
+  const nova = ATT?.nova
+  $('#conns')?.classList.toggle('tem-att', !!nova)
+  if (nova && ATT.avisar && store.get('att-avisada') !== nova.versao && !$('#atualizacoes')?.offsetParent) {
+    store.set('att-avisada', nova.versao)
+    avisoFixo({ tipo: 'info', titulo: `Nova versão do Vynco: ${nova.versao.replace(/-.*/, '')}`, texto: 'Veja o que mudou e instale sem sair do app.', acao: { rotulo: 'Ver novidades', fn: abrirAtualizacao } })
+  }
+}
+function abrirAtualizacao() { voltarPara = null; cena('ajustes'); setTimeout(() => $('#atualizacoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 350) }
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-att]'); if (!b) return
+  const q = b.dataset.att; b.disabled = true
+  try {
+    if (q === 'procurar') { b.textContent = 'Procurando…'; await carregarAtualizacao('agora'); if (!ATT.nova && !ATT.erro) pill('Tudo em dia', `Você já está na versão mais nova (${ATT.atual}).`, 'var(--green)') }
+    if (q === 'baixar') { ATT = await api('/api/atualizacao/baixar', {}); Som.tique(); carregarAtualizacao() }
+    if (q === 'instalar') {
+      if (!(await confirmar('Instalar a versão nova?', 'O Vynco fecha e o instalador abre. Os seus posts, a agenda e as conexões ficam onde estão. Depois, é só abrir o Vynco de novo.', 'Instalar agora'))) { b.disabled = false; return }
+      await api('/api/atualizacao/instalar', {}); pill('Abrindo o instalador…', 'O Vynco vai fechar em instantes.', 'var(--violet)')
+    }
+  } catch (err) { falha(err); b.disabled = false; carregarAtualizacao() }
+})
+document.addEventListener('change', async e => { if (e.target.matches('[data-att-avisar]')) { try { ATT = await api('/api/atualizacao/avisar', { avisar: e.target.checked }); Som.tique() } catch (err) { falha(err) } } })
 
 function desenharStandby() {
   const box = $('[data-standby]'); if (!box || !ST) return
@@ -2687,6 +2766,8 @@ $('[data-scene=estrategia]')?.addEventListener('click', async e => {
 })
 
 // ---------------------------------------------------------------- início
+setTimeout(() => carregarAtualizacao('sim'), DEMO ? 4000 : 8000)
+setInterval(() => carregarAtualizacao(), 30 * 60000)
 if (DEMO) setTimeout(() => pill('Demonstração', 'Logins simulados: nada é conectado nem publicado de verdade.', 'var(--violet)'), 1200)
 if (new URLSearchParams(location.search).has('captura')) document.documentElement.classList.add('static')
 const pedida = new URLSearchParams(location.search).get('tela')   // ?tela=fila abre direto numa cena (útil para capturas e atalhos)

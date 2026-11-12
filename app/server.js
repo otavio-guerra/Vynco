@@ -21,6 +21,7 @@ const MODELOS = require('../engine/modelos.js')
 const APROV = require('../engine/aprovacao.js')
 const LIMITES = require('../engine/limites.js')
 const AUTO = require('../engine/automatico.js')
+const ATUALIZA = require('../engine/atualizacao.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -331,6 +332,8 @@ setInterval(() => {
   planoAuto().then(p => aplicarPlano(p, { dailyUi: c.dailyUi, veto: c.veto })).catch(() => {})
 }, 180000).unref()
 setTimeout(() => lerLimites().catch(() => {}), 5000).unref()
+// procura versão nova ao abrir e a cada 6 horas (sem internet, só tenta de novo depois)
+if (!process.env.ENGINE_DEMO) { setTimeout(() => ATUALIZA.procurar().catch(() => {}), 30000).unref(); setInterval(() => ATUALIZA.procurar().catch(() => {}), 6 * 3600 * 1000).unref() }
 
 // ---------------------------------------------------------------- standby: o Vynco abre com o Windows, escondido na bandeja,
 // para publicar no horário mesmo que a pessoa esqueça de abrir. Só na versão desktop (o Tauri passa VYNCO_EXE).
@@ -415,6 +418,7 @@ const server = http.createServer(async (req, res) => {
           return send(res, 200, { ativo: !!c.ativo, dailyUi: !!c.dailyUi, veto: c.veto == null ? 2 : c.veto, aplicado: c.ativo ? { slots: c.slots, nivel: c.nivel, motivo: c.motivo, atualizado: c.atualizado } : null, plano, temReserva: !!reservaId(), design: MODELOS.MODELOS.some(m => m.id === 'daily-ui') && /design|ux|ui\b|produto/i.test(PERFIS.carregar(perfilAtivo()).area || '') })
         }
         case '/api/janela': return send(res, 200, JANELA || { propria: null })
+        case '/api/atualizacao': return send(res, 200, u.searchParams.get('procurar') ? await ATUALIZA.procurar({ forcar: u.searchParams.get('procurar') === 'agora' }) : ATUALIZA.estado())
         case '/api/ia/modelos': {   // modelo e esforço por IA (só as que aceitam escolher)
           const ids = [...new Set([agenteId(), reservaId(), 'claude', 'codex', 'antigravity'].filter(id => id && AG.ESCOLHA[id]))]
           const ias = await Promise.all(ids.map(async id => ({ id, nome: AG.AGENTES[id].nome, papel: id === agenteId() ? 'principal' : id === reservaId() ? 'reserva' : '', instalado: !!AG.achar(AG.AGENTES[id].bin),
@@ -491,6 +495,9 @@ const server = http.createServer(async (req, res) => {
       }
       case '/api/janela': JANELA = { propria: !!b.propria, quando: new Date().toISOString() }; return send(res, 200, { ok: true })
       case '/api/ia/modelos': { try { return send(res, 200, AG.salvarEscolha(String(b.id || ''), String(b.tipo || ''), b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/atualizacao/baixar': { try { return send(res, 200, await ATUALIZA.baixar()) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/atualizacao/instalar': { try { return send(res, 200, await ATUALIZA.instalar()) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/atualizacao/avisar': return send(res, 200, ATUALIZA.preferir({ avisar: b.avisar }))
       case '/api/standby': {   // abrir com o Windows, escondido na bandeja
         try { return send(res, 200, standbyLigar(!!b.ligar)) } catch (e) { return send(res, 400, { erro: e.message }) }
       }
