@@ -3,7 +3,7 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.17.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.18.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
@@ -32,6 +32,15 @@ O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 ![Vynco Design System 1.0](docs/img/design-system.png)
 
 <sub>Capturas da demonstração (versão 0.17), com dados de exemplo.</sub>
+
+## Novidades da 0.18
+- **Atualizações dentro do app.** O Vynco procura sozinho uma versão nova (ao abrir e a cada 6 horas), mostra o que mudou e baixa e abre o instalador em **Ajustes → Atualizações**, sem passar pelo GitHub. Antes de abrir, confere o tamanho e a impressão digital (SHA-256) que o GitHub publica para o arquivo. Quem está na 0.17 ou antes instala esta versão uma vez pelo jeito antigo; daí em diante, as atualizações chegam pelo app.
+- **Modelo e esforço por IA.** Em Ajustes, cada IA tem modelo e esforço para "Criar posts" e para "Ler e pesquisar", com os modos Econômico, Equilibrado e Caprichado. Vale para o Claude e o Antigravity (`--model` e `--effort`) e para o ChatGPT/Codex (`-m` e `model_reasoning_effort`).
+- **Estúdio com imagem, vídeo e GIF.**
+  - **Vídeo** pelo Magnific (Kling 2.6 Pro e Seedance 2.0 Pro), animando uma imagem da biblioteca ou só a partir de um texto, com duração, proporção, resolução e som. A documentação do Magnific não publica o preço por vídeo, e o app avisa isso antes de gastar.
+  - **GIF** feito no seu computador, sem créditos e sem internet, a partir de um vídeo ou de várias imagens, com quadros por segundo, velocidade, cores e passagem. O app avisa se passar dos 250 quadros que o LinkedIn aceita.
+  - Na biblioteca, as imagens ganharam "Animar em vídeo" e os vídeos, "Fazer GIF".
+- **Correção:** as listas de escolha não abrem mais por trás de janelas como a do Estúdio.
 
 ## Novidades da 0.17
 - **Antigravity no lugar do Gemini.** O Google encerrou o plano grátis do Gemini CLI. O Antigravity CLI (grátis com uma conta Google) virou a IA reserva padrão, e quem usava o Gemini como reserva passa para ele sozinho. Se o navegador mostrar um código no login, há um campo para colar no próprio Vynco. A conta é conferida sem abrir nada (`agy models`).
@@ -104,7 +113,7 @@ Ao lado de "Revisar" e "Agenda", um número mostra quantos posts esperam você e
 
 - **Criar → Mídias:** tudo o que pode ir num post, num lugar só. Ficam ali o que você envia (arraste para a tela ou use "Enviar arquivos") e o que as rotinas geram (Daily UI, série, carrosséis). Cada mídia mostra medidas, tamanho e origem e avisa se passar dos limites do LinkedIn. As imagens ganham **texto alternativo**, que vai junto para o post. Excluir manda para a lixeira do workspace e não quebra posts que já usam o arquivo.
 - **Editor:** "Novo post" na fila (ou "Usar em novo post" na biblioteca) abre o editor: título, texto com contador de 3.000 caracteres, mídias da biblioteca ou enviadas na hora, ordem com ‹ e ›, texto alternativo por imagem e link com cartão (artigo). O formato sai sozinho das mídias (só texto, imagem, várias imagens, vídeo, documento ou artigo), e as regras do LinkedIn são conferidas enquanto você escreve. A prévia ao lado é o mesmo cartão da fila.
-- **Estúdio de imagens (Magnific):** em "Gerar imagem" (Mídias), "Gerar com IA" (Editor) ou "Melhorar" e "Refinar" (numa imagem da biblioteca).
+- **Estúdio (Magnific e GIF):** tem as abas Imagem, Vídeo e GIF (veja as Novidades da 0.18). Abre em "Estúdio" (Mídias), "Gerar com IA" (Editor) ou "Melhorar" e "Refinar" (numa imagem da biblioteca).
   - **Gerar:** cria imagens a partir de um texto com o Mystic, com proporção, resolução, estilo do modelo e de 1 a 4 versões para escolher.
   - **Melhorar:** aumenta 2x, 4x, 8x ou 16x (Upscaler Creative). O Vynco mostra o tamanho final e trava o que passaria de 25,3 milhões de pixels.
   - **Refinar:** nitidez, granulação e ultra detalhe (Upscaler Precision).
@@ -170,7 +179,7 @@ As fontes do design system de exemplo (Space Grotesk, IBM Plex Sans, Press Start
 2. Dê dois cliques. A instalação é só para o seu usuário e não pede administrador.
 3. O app abre na janela dele, sem barra de navegador. Fechar a janela esconde o Vynco na bandeja, perto do relógio, e ele continua publicando no horário. Para sair de verdade: botão direito no ícone da bandeja → Sair.
 
-O Windows pode mostrar o aviso "O Windows protegeu o computador", porque o instalador ainda não tem assinatura digital. Clique em **Mais informações → Executar assim mesmo**. Para atualizar, é só instalar a versão nova por cima: os seus posts e ajustes ficam em `Documentos\Vynco`.
+O Windows pode mostrar o aviso "O Windows protegeu o computador", porque o instalador ainda não tem assinatura digital. Clique em **Mais informações → Executar assim mesmo**. Para atualizar, use **Ajustes → Atualizações** (a partir da 0.18) ou instale a versão nova por cima: os seus posts e ajustes ficam em `Documentos\Vynco`. Se o Windows estiver com o Controle Inteligente de Aplicativos ligado, ele pode bloquear o instalador, que ainda não tem assinatura digital.
 
 Para gerar o exe você mesmo: `npm run exe` (precisa do Node 25.5+; o ícone sai se a variável `RCEDIT` apontar para o `rcedit-x64.exe`).
 
