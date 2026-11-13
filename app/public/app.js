@@ -184,7 +184,13 @@ async function apiDemo(path, data) {
         { id: 'claude', nome: 'Claude', papel: 'principal', instalado: true, livre: false, modelos: [{ v: 'haiku', n: 'Haiku', d: 'rápido, gasta menos' }, { v: 'sonnet', n: 'Sonnet', d: 'equilibrado' }, { v: 'opus', n: 'Opus', d: 'mais capaz' }, { v: 'fable', n: 'Fable', d: 'o mais capaz, gasta mais' }], escolha: D.iaMod.claude },
         { id: 'antigravity', nome: 'Antigravity', papel: 'reserva', instalado: true, livre: false, modelos: [{ v: 'gemini-3.8-flash-low', n: 'Gemini 3.8 Flash (Low)' }, { v: 'gemini-3.8-flash-high', n: 'Gemini 3.8 Flash (High)' }, { v: 'claude-sonnet-4-6', n: 'Claude Sonnet 4.6 (Thinking)' }, { v: 'claude-opus-4-6-thinking', n: 'Claude Opus 4.6 (Thinking)' }], escolha: D.iaMod.antigravity }] }
     }
-    case '/api/rede': return { rede: D.rede, estado: D.redeEstado, perfil: { area: D.perfil.area, objetivo: D.perfil.objetivo, temas: D.perfil.temas }, agente: 'Claude' }
+    case '/api/rede/convites': {
+      D.convites = D.convites || []
+      if (data.acao === 'add') { if (!String(data.quem || '').trim()) throw new Error('Diga para quem você mandou (o nome ou o cargo).'); D.convites.unshift({ id: 'c' + Date.now().toString(36), quem: data.quem.trim(), sugestao: data.sugestao || '', nota: data.nota ?? null, quando: new Date().toISOString(), estado: 'enviado' }) }
+      else { const c = D.convites.find(x => x.id === data.id); if (c && data.acao === 'estado') c.estado = data.estado; if (c && data.acao === 'remover') D.convites.splice(D.convites.indexOf(c), 1) }
+      return { convites: D.convites }
+    }
+    case '/api/rede': D.convites = D.convites || [{ id: 'c1', quem: 'Ana (head de design)', sugestao: 'Líderes de produto em startups', nota: 8, quando: new Date(Date.now() - 25 * 864e5).toISOString(), estado: 'enviado' }, { id: 'c2', quem: 'Bruno (recrutador de design)', sugestao: 'Recrutadores de design', nota: 9, quando: new Date(Date.now() - 4 * 864e5).toISOString(), estado: 'aceito' }, { id: 'c3', quem: 'Carla (product designer)', sugestao: 'Designers sêniores da sua área', nota: 6, quando: new Date(Date.now() - 2 * 864e5).toISOString(), estado: 'enviado' }]; return { convites: D.convites, rede: D.rede, estado: D.redeEstado, perfil: { area: D.perfil.area, objetivo: D.perfil.objetivo, temas: D.perfil.temas }, agente: 'Claude' }
     case '/api/rede/buscar': {
       D.redeEstado = { estado: 'rodando', tipo: data.tipo }
       setTimeout(() => {
@@ -1672,10 +1678,13 @@ function desenharRede() {
       <div class="rd-ctx-a"><button class="btn accent" data-rd-ir="conexoes"${rodando ? ' disabled' : ''}>${r.conexoes.length ? 'Sugerir de novo' : 'Sugerir conexões'}</button><button class="link" type="button" data-view="perfil">Ajustar em Estratégia</button></div>`
   }
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
-  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? r.conexoes.map((c, i) => `<article class="rd-card cx-card" style="--cx:${['var(--sec-rede)', 'var(--sec-agenda)', 'var(--sec-estrategia)', 'var(--sec-criar)', 'var(--sec-inicio)'][i % 5]}"><header class="cx-h"><span class="cx-av" aria-hidden="true">${icr('pessoas')}</span><b>${esc(c.perfil)}</b></header><p>${esc(c.por_que)}</p>
+  const ordem = r.conexoes.map((c, i) => ({ c, i, ...notaConexao(c, RD.perfil) })).sort((a, b) => b.nota - a.nota)
+  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? ordem.map(({ c, i, nota, motivos }) => `<article class="rd-card cx-card" style="--cx:${['var(--sec-rede)', 'var(--sec-agenda)', 'var(--sec-estrategia)', 'var(--sec-criar)', 'var(--sec-inicio)'][i % 5]}"><header class="cx-h"><span class="cx-av" aria-hidden="true">${icr('pessoas')}</span><b>${esc(c.perfil)}</b></header><p>${esc(c.por_que)}</p>
       ${c.convite ? `<details class="rd-convite"><summary><small>${icr('carta')}Convite no seu tom</small><span class="cx-cont${c.convite.length > 200 ? ' muito' : ''}">${c.convite.length}/200</span></summary><span>${esc(c.convite)}</span></details>` : ''}
-      <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">${icr('busca')}Buscar no LinkedIn</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">${icr('copiar')}Copiar o convite</button>` : ''}</div></article>`).join('')
+      <div class="cx-nota" title="Nota pelo seu perfil: decide contratação +3, da sua área +2, é o seu público +2, abre vagas +2, fala dos seus temas +1"><b style="color:${corNota(nota)}">${nota}<small>/10</small></b><span>${motivos.length ? motivos.map(m => `<i>${m}</i>`).join('') : '<i>pouco a ver com o seu perfil</i>'}</span></div>
+      <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">${icr('busca')}Buscar no LinkedIn</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">${icr('copiar')}Copiar o convite</button>` : ''}<button class="link" type="button" data-rd-anota="${i}">${icr('carta')}Anotar convite</button></div></article>`).join('')
     : `<div class="es-vazio glass"><h3>Nenhuma sugestão ainda</h3><p>Clique em "Sugerir conexões": a sua IA indica tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e um convite no seu tom.</p></div>`
+  desenharBuscas(); desenharConvites()
   $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<header class="rd-h"><h2>Para seguir</h2><span class="tag">${r.seguir.length}</span></header><div class="cx-seg-grid">${r.seguir.map(s => `<article class="cx-seg glass"><span class="cx-av sm" aria-hidden="true">${icr(icTipo(s.tipo + ' ' + s.nome))}</span><span><b>${esc(s.nome)}</b><small>${esc(s.tipo || '')}</small>${s.por_que ? `<p>${esc(s.por_que)}</p>` : ''}</span></article>`).join('')}</div>` : ''
   $('[data-rd-nv]').textContent = r.vagas.length ? `${r.vagas.length} ${r.vagas.length === 1 ? "vaga" : "vagas"}` : ''
   const mods = [...new Set(r.vagas.map(v => v.modalidade).filter(Boolean))]
@@ -1703,6 +1712,84 @@ function cartaoVaga(v) {
     </details>` : ''}
     <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">${icr('externo')}Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''}</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? `${icr('escudo')}link conferido` : 'o site não deixa conferir o link'}</span></div></article>`
 }
+// ---------------------------------------------------------------- nota de 0 a 10: o quanto cada tipo de pessoa combina com o seu perfil
+// Só lê o texto da sugestão e o seu perfil (nada do LinkedIn). Os pesos somam 10:
+// decide contratação +3 · da sua área +2 · é o seu público +2 · abre vagas +2 · fala dos seus temas +1
+const semAcento = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+const PARAR = new Set(['para', 'com', 'que', 'dos', 'das', 'uma', 'como', 'mais', 'sobre', 'pessoas', 'quem', 'area', 'voce', 'seus', 'suas'])
+const palavrasDe = t => [...new Set(semAcento(t).split(/[^a-z0-9]+/).filter(p => p.length >= 4 && !PARAR.has(p)))]
+function notaConexao(c, P) {
+  const t = semAcento([c.perfil, c.por_que, c.busca].join(' ')), tem = ps => ps.some(p => t.includes(p)), motivos = []
+  let n = 0
+  if (/recrut|recruit|talent|head|diretor|director|gerente|manager|lider|lead\b|founder|fundador|\bceo\b|socio|owner|coordenador|chief|\bcto\b|\bcmo\b/.test(t)) { n += 3; motivos.push('decide contratação') }
+  if (tem(palavrasDe(P.area))) { n += 2; motivos.push('da sua área') }
+  if (tem(palavrasDe(P.publico))) { n += 2; motivos.push('é o seu público') }
+  if (/contrat|hiring|vagas?\b|recrut|abre(m)? vaga|oportunidade/.test(t)) { n += 2; motivos.push('abre vagas') }
+  if (tem(palavrasDe([].concat(P.temas || []).join(' ')))) { n += 1; motivos.push('fala dos seus temas') }
+  return { nota: Math.min(10, n), motivos }
+}
+const corNota = n => n >= 8 ? 'var(--green)' : n >= 5 ? 'var(--amber)' : 'var(--faint)'
+
+// ---------------------------------------------------------------- buscas prontas por tema (abrem a busca de pessoas no LinkedIn; quem decide é você)
+function buscasProntas(P) {
+  const area = String(P.area || '').split(',')[0].trim().toLowerCase(); if (!area) return []
+  const design = /design|ux|ui\b/.test(area), loc = RD_P.local ? ' ' + RD_P.local.trim() : ''
+  const temas = [].concat(P.temas || []).map(x => String(x).trim()).filter(Boolean).slice(0, 3)
+  return [
+    ['Quem contrata', 'alvo', 'decidem ou indicam para vagas', [`recrutador ${area}`, `talent acquisition ${area}`, `head de ${area}`, `gerente de ${area}`, ...(design ? ['diretor de arte', 'creative director', 'design manager'] : [`diretor de ${area}`])]],
+    ['Vagas ativas', 'pasta', 'pessoas que anunciaram contratação', [`contratando ${area}`, `hiring ${area}`, `vaga ${area}`, `estamos contratando ${area}`]],
+    ['Colegas da área', 'pessoas', 'trocam referências e indicam', [area, ...temas.map(t => `${area} ${t}`), ...(design ? ['product designer', 'ui ux designer'] : [])]],
+  ].map(([t, ic, sub, qs]) => [t, ic, sub, [...new Set(qs)].map(q => ({ q, url: 'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(q + loc) }))])
+}
+function desenharBuscas() {
+  const box = $('[data-rd-buscas]'); if (!box || !RD) return
+  const g = buscasProntas(RD.perfil)
+  box.hidden = !g.length
+  if (!g.length) return
+  box.innerHTML = `<header class="rd-h"><h2>${icr('busca')}Buscas prontas</h2><small class="fine">Abrem a busca de pessoas no LinkedIn${RD_P.local ? ` em ${esc(RD_P.local)}` : ''}. Lá, use os filtros (localidade, empresa) e escolha você quem convidar.</small></header>
+    <div class="rd-bg">${g.map(([t, ic, sub, qs]) => `<div class="rd-bgrupo"><span class="rd-bt">${icr(ic)}<b>${t}</b><small>${sub}</small></span><div class="chips">${qs.map(x => `<a class="chip-link" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.q)}${icr('externo', 'icr mini')}</a>`).join('')}</div></div>`).join('')}</div>`
+}
+
+// ---------------------------------------------------------------- convites que você mandou (anotados à mão)
+let CV_SUG = null
+const CV_EST = [['enviado', 'Aguardando'], ['aceito', 'Aceitou'], ['sem-resposta', 'Sem resposta'], ['retirado', 'Retirado']]
+const diasDesde = q => Math.floor((Date.now() - Date.parse(q)) / 864e5)
+function desenharConvites() {
+  const box = $('[data-rd-conv]'); if (!box || !RD) return
+  const l = RD.convites || [], semana = l.filter(c => diasDesde(c.quando) < 7).length
+  const aceitos = l.filter(c => c.estado === 'aceito').length, respondidos = l.filter(c => ['aceito', 'sem-resposta'].includes(c.estado)).length
+  const parados = l.filter(c => c.estado === 'enviado' && diasDesde(c.quando) >= 21)
+  box.innerHTML = `<header class="rd-h"><h2>${icr('carta')}Convites que você mandou</h2>${l.length ? `<span class="tag">${l.length}</span>` : ''}</header>
+    <p class="fine">O Vynco não envia nem lê convites no LinkedIn. Mande lá e anote aqui para acompanhar quem aceitou.</p>
+    ${l.length ? `<div class="cv-num"><span><b>${semana}</b>nesta semana</span><span><b>${aceitos}</b>aceitaram</span><span><b>${respondidos ? Math.round(100 * aceitos / respondidos) + '%' : '—'}</b>de aceite</span><span><b>${l.filter(c => c.estado === 'enviado').length}</b>aguardando</span></div>` : ''}
+    ${parados.length ? `<p class="cv-alerta">${icr('relogio')}${parados.length} ${parados.length === 1 ? 'convite está' : 'convites estão'} sem resposta há mais de 3 semanas. Muitos convites parados pesam contra a conta: retire os antigos em <a class="link" href="https://www.linkedin.com/mynetwork/invitation-manager/sent/" target="_blank" rel="noopener">Minha rede → Enviados ↗</a> e marque aqui como "Retirado".</p>` : ''}
+    ${semana >= 15 ? '<p class="cv-alerta">O LinkedIn limita quantos convites dá para mandar por semana. Vá com calma: poucos convites, bem escolhidos e com uma nota, rendem mais.</p>' : ''}
+    <form class="cv-add" data-cv-add><input name="quem" maxlength="120" autocomplete="off" placeholder="${CV_SUG ? `Para quem você mandou? (${esc(CV_SUG.sugestao)})` : 'Para quem você mandou? Nome ou cargo'}" aria-label="Para quem você mandou o convite"><button class="btn sm accent" type="submit">Anotar convite</button>${l.length ? '<button class="link" type="button" data-cv-csv>Baixar CSV</button>' : ''}</form>
+    ${l.length ? `<ul class="cv-lista">${l.slice(0, 40).map(c => `<li data-cv="${c.id}"><span class="cv-q"><b>${esc(c.quem)}</b><small>${[c.sugestao, c.nota != null ? 'nota ' + c.nota : '', (d => d < 1 ? 'hoje' : d === 1 ? 'ontem' : 'há ' + d + ' dias')(diasDesde(c.quando))].filter(Boolean).map(esc).join(' · ')}</small></span>
+      <span class="cv-est" role="radiogroup" aria-label="Situação">${CV_EST.map(([v, t]) => `<button type="button" role="radio" aria-checked="${c.estado === v}" data-cv-est="${v}" class="e-${v}">${t}</button>`).join('')}</span><button class="ic-btn" type="button" data-cv-fora title="Apagar da lista" aria-label="Apagar da lista">×</button></li>`).join('')}</ul>` : ''}`
+}
+async function anotarConv(b) { try { const r = await api('/api/rede/convites', b); RD.convites = r.convites; desenharConvites(); return true } catch (e) { falha(e); return false } }
+document.addEventListener('submit', async e => {
+  if (!e.target.matches('[data-cv-add]')) return
+  e.preventDefault()
+  const quem = e.target.quem.value.trim() || (CV_SUG ? CV_SUG.sugestao : '')
+  if (await anotarConv({ acao: 'add', quem, sugestao: CV_SUG?.sugestao || '', nota: CV_SUG?.nota ?? null })) { CV_SUG = null; Som.tique(); pill('Convite anotado', 'Marque "Aceitou" quando a pessoa aceitar.', 'var(--green)'); desenharConvites() }
+})
+document.addEventListener('click', async e => {
+  const est = e.target.closest('[data-cv-est]'), fora = e.target.closest('[data-cv-fora]'), csv = e.target.closest('[data-cv-csv]'), anota = e.target.closest('[data-rd-anota]')
+  if (est) { Som.tique(); return anotarConv({ acao: 'estado', id: est.closest('[data-cv]').dataset.cv, estado: est.dataset.cvEst }) }
+  if (fora) return anotarConv({ acao: 'remover', id: fora.closest('[data-cv]').dataset.cv })
+  if (anota) {
+    const c = RD.rede.conexoes[+anota.dataset.rdAnota]; CV_SUG = { sugestao: c.perfil, nota: notaConexao(c, RD.perfil).nota }
+    desenharConvites(); $('#convites').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('[data-cv-add] input')?.focus(), 400); return
+  }
+  if (csv) {
+    const linhas = [['quando', 'quem', 'sugestao', 'nota', 'situacao'], ...(RD.convites || []).map(c => [c.quando.slice(0, 10), c.quem, c.sugestao, c.nota ?? '', (CV_EST.find(x => x[0] === c.estado) || [, c.estado])[1]])]
+    const blob = new Blob(['\ufeff' + linhas.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n')], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `convites-vynco-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+  }
+})
+
 async function buscarRede(tipo) {
   RD_P.local = $('[data-rd=local]').value
   try { await api('/api/rede/buscar', { tipo, ...RD_P }); RD.estado = { estado: 'rodando', tipo }; humor('work'); Som.tique(); desenharRede(); acompanharRede() } catch (e) { falha(e) }

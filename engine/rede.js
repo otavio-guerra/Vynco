@@ -86,6 +86,26 @@ function buscar(id, agente, perguntar, { tipo = 'ambos', local = '', modalidade 
   }).catch(e => Object.assign(J, { estado: 'falhou', erro: e.message }))
   return { estado: 'rodando' }
 }
+// ---------------------------------------------------------------- convites que você mandou
+// O Vynco não lê nem envia nada no LinkedIn: a pessoa manda o convite lá e anota aqui, para acompanhar quem aceitou
+// e lembrar de retirar os convites parados (muitos convites sem resposta pesam contra a conta).
+const arqConv = id => path.join(C.ws('perfis'), id, 'convites.json')
+const ESTADOS = ['enviado', 'aceito', 'sem-resposta', 'retirado']
+const convites = id => ler(arqConv(id), [])
+function anotarConvite(id, b = {}) {
+  const l = convites(id)
+  if (b.acao === 'add') {
+    const quem = txt(b.quem, 120); if (!quem) throw new Error('Diga para quem você mandou (o nome ou o cargo).')
+    l.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), quem, sugestao: txt(b.sugestao, 120), nota: Number.isInteger(b.nota) ? Math.max(0, Math.min(10, b.nota)) : null, quando: new Date().toISOString(), estado: 'enviado' })
+  } else {
+    const c = l.find(x => x.id === b.id); if (!c) throw new Error('convite não encontrado')
+    if (b.acao === 'estado') { if (!ESTADOS.includes(b.estado)) throw new Error('estado desconhecido'); c.estado = b.estado; c.mudou = new Date().toISOString() }
+    else if (b.acao === 'remover') l.splice(l.indexOf(c), 1)
+    else throw new Error('ação desconhecida')
+  }
+  fs.mkdirSync(path.dirname(arqConv(id)), { recursive: true }); fs.writeFileSync(arqConv(id), JSON.stringify(l.slice(0, 1000), null, 2), 'utf8')
+  return l
+}
 const estado = () => JOB && { id: JOB.id, tipo: JOB.tipo, estado: JOB.estado, erro: JOB.erro, inicio: JOB.inicio }
 
-module.exports = { carregar, buscar, estado, conferir, buscaPessoas, buscaVagas }
+module.exports = { carregar, buscar, estado, conferir, buscaPessoas, buscaVagas, convites, anotarConvite }
