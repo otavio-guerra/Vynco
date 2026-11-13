@@ -288,15 +288,16 @@
     <!-- Conexões: quem ajuda o seu objetivo -->
     <div class="rd-pag" data-rd-pag="conexoes">
       <section class="glass ed-box rd-ctx" data-in data-rd-ctx></section>
-      <div class="cx-grid" data-in>
+      <nav class="rd-tabs" role="tablist" aria-label="Partes de Conexões" data-rd-tabs="conexoes"><button type="button" role="tab" data-rd-tab="sugestoes">Sugestões<span class="n" data-tn="sugestoes"></span></button><button type="button" role="tab" data-rd-tab="buscas">Buscas prontas</button><button type="button" role="tab" data-rd-tab="convites">Convites que você mandou<span class="n" data-tn="convites"></span></button><button type="button" role="tab" data-rd-tab="seguir">Para seguir<span class="n" data-tn="seguir"></span></button></nav>
+      <div class="cx-grid" data-in data-rd-sec="sugestoes">
         <div class="cx-col"><header class="rd-h"><h2><svg class="icr" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="11.5" cy="6.8" r="1.9"/><path d="M1.8 13.5c.5-2.3 2.2-3.5 4.2-3.5s3.7 1.2 4.2 3.5"/></svg>Tipos de pessoa para conectar</h2><span class="tag" data-rd-nc></span></header><div class="cx-lista" data-rd-conexoes></div></div>
         <aside class="glass ed-box cx-dicas"><h3><svg class="icr" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3.5" width="12" height="9" rx="1.6"/><path d="m2.5 4.5 5.5 4.3 5.5-4.3"/></svg>Como convidar bem</h3>
           <ol><li><i><svg class="icr" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3"/></svg></i><b>Diga por que ela.</b><span>Um detalhe do trabalho da pessoa vale mais que um elogio genérico.</span></li><li><i><svg class="icr" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="11.5" cy="6.8" r="1.9"/><path d="M1.8 13.5c.5-2.3 2.2-3.5 4.2-3.5s3.7 1.2 4.2 3.5"/></svg></i><b>Uma frase sobre você.</b><span>O que você faz e o que tem em comum com ela.</span></li><li><i><svg class="icr" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8.5V4a1 1 0 0 1 2 0v3.5M7 7V3a1 1 0 0 1 2 0v4M9 7V4a1 1 0 0 1 2 0v5c0 2.8-1.7 4.5-4.2 4.5-1.6 0-2.7-.8-3.5-2.1L2.2 9.6a1 1 0 0 1 1.6-1.1L5 9.8"/></svg></i><b>Sem pedido no primeiro contato.</b><span>Peça conversa depois que ela aceitar.</span></li></ol>
           <p class="fine">O LinkedIn limita a nota do convite (cerca de 200 caracteres no plano grátis). O contador mostra quanto cada sugestão usa.</p></aside>
       </div>
-      <section class="glass ed-box rd-buscas" data-in data-rd-buscas></section>
-      <section class="glass ed-box rd-conv" data-in data-rd-conv id="convites"></section>
-      <section class="cx-seguir" data-in data-rd-seguir></section>
+      <section class="glass ed-box rd-buscas" data-in data-rd-buscas data-rd-sec="buscas"></section>
+      <section class="glass ed-box rd-conv" data-in data-rd-conv id="convites" data-rd-sec="convites"></section>
+      <section class="cx-seguir" data-in data-rd-seguir data-rd-sec="seguir"></section>
     </div>
 
     <!-- Vagas: o que combina com você agora -->
@@ -310,10 +311,11 @@
         </div>
         <div class="ed-acoes"><button class="btn accent" data-rd-ir="vagas">Buscar vagas</button><span class="fine">A sua IA procura vagas públicas recentes e confere cada link antes de mostrar.</span></div>
       </section>
-      <div class="vg-barra" data-in><header class="rd-h"><h2><svg class="icr" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="12" height="9" rx="1.8"/><path d="M5.8 5V3.8a.9.9 0 0 1 .9-.9h2.6a.9.9 0 0 1 .9.9V5M2 9h12"/></svg>Vagas para você</h2><span class="tag" data-rd-nv></span></header><p class="fine vg-auto" data-vg-auto></p><div class="filters chips" data-vg-filtro></div></div>
-      <div class="vg-lista" data-in data-rd-vagas></div>
-      <section class="glass ed-box rd-buscas" data-in data-vg-buscas></section>
-      <section class="glass ed-box rd-conv" data-in data-vg-cand id="candidaturas"></section>
+      <nav class="rd-tabs" role="tablist" aria-label="Partes de Vagas" data-rd-tabs="vagas"><button type="button" role="tab" data-rd-tab="vagas">Vagas para você<span class="n" data-tn="vagas"></span></button><button type="button" role="tab" data-rd-tab="buscas">Buscas prontas</button><button type="button" role="tab" data-rd-tab="candidaturas">Candidaturas que você mandou<span class="n" data-tn="candidaturas"></span></button></nav>
+      <div class="vg-barra" data-in data-rd-sec="vagas"><header class="rd-h"><h2><svg class="icr" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="12" height="9" rx="1.8"/><path d="M5.8 5V3.8a.9.9 0 0 1 .9-.9h2.6a.9.9 0 0 1 .9.9V5M2 9h12"/></svg>Vagas para você</h2><span class="tag" data-rd-nv></span></header><p class="fine vg-auto" data-vg-auto></p><div class="filters chips" data-vg-filtro></div></div>
+      <div class="vg-lista" data-in data-rd-vagas data-rd-sec="vagas"></div>
+      <section class="glass ed-box rd-buscas" data-in data-vg-buscas data-rd-sec="buscas"></section>
+      <section class="glass ed-box rd-conv" data-in data-vg-cand id="candidaturas" data-rd-sec="candidaturas"></section>
     </div>
     <p class="fine rd-nota">O LinkedIn não deixa apps verem pessoas, conexões ou vagas. A sua IA pesquisa na web (só leitura). Convites e candidaturas: sempre você.</p>
   </section>

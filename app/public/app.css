@@ -1493,3 +1493,27 @@ label .vsel { width: 100% }
 .cv-add input[name=empresa] { flex: 0 1 220px }
 .cv-est .e-enviada[aria-checked=true] { background: var(--violet) } .cv-est .e-entrevista[aria-checked=true] { background: #5AA9FF; color: #0C1220 } .cv-est .e-proposta[aria-checked=true] { background: var(--green); color: #0C1220 } .cv-est .e-recusada[aria-checked=true] { background: var(--red); color: #fff }
 .vg .cx-nota { margin: var(--sp-2) 0 }
+
+/* Rede refinada: abas, nota em anel, cartões e listas */
+.rd-tabs { display: flex; gap: 4px; padding: 4px; margin: var(--sp-4) 0 var(--sp-3); border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); width: max-content; max-width: 100%; overflow-x: auto; position: sticky; top: 8px; z-index: 5; backdrop-filter: blur(14px) }
+.desktop .rd-tabs { top: 92px }
+.rd-tabs button { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font: var(--fw-semibold) var(--fs-small) var(--font); color: var(--soft); background: none; border: 0; padding: 8px 16px; border-radius: 999px; cursor: pointer; transition: color var(--t-fast), background var(--t-fast) }
+.rd-tabs button:hover { color: var(--text) } .rd-tabs button[aria-selected=true] { color: #fff; background: color-mix(in srgb, var(--area) 75%, #000 0%); box-shadow: 0 6px 18px color-mix(in srgb, var(--area) 30%, transparent) }
+.rd-tabs .n:empty { display: none } .rd-tabs .n { font-size: 11px; min-width: 18px; padding: 1px 6px; border-radius: 99px; background: color-mix(in srgb, currentColor 18%, transparent); text-align: center }
+[data-rd-sec][hidden] { display: none !important }
+.rd-buscas, .rd-conv { margin-top: 0 }
+.nota-anel { --p: 0%; --c: var(--faint); flex: none; margin-left: auto; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--c) var(--p), var(--glass-3) 0); position: relative }
+.nota-anel::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--bg-2, #141a2c) } .nota-anel b { position: relative; font-size: 14px; font-weight: 800; color: var(--text) }
+.motivos { font-size: var(--fs-caption) !important; color: var(--faint) !important; line-height: 1.5 }
+.cx-card { display: flex; flex-direction: column } .cx-card .rd-convite { margin-top: auto } .cx-a { margin-top: var(--sp-2) } .cx-a .btn { flex: 0 0 auto } .cx-a .btn.accent { flex: 1 1 auto; justify-content: center }
+.vg-h { align-items: center } .vg-quando { white-space: nowrap }
+.vg-lista { max-width: none } .vg .rd-a { margin-top: 2px }
+.cv-num { display: flex; flex-wrap: wrap; gap: 6px; margin: var(--sp-3) 0 }
+.cv-num button { display: inline-flex; align-items: baseline; gap: 6px; padding: 7px 12px; border-radius: 99px; border: 1px solid var(--edge); background: var(--glass); color: var(--soft); font: var(--fw-medium) var(--fs-caption) var(--font); cursor: pointer; transition: border-color var(--t-fast), background var(--t-fast) }
+.cv-num button b { font-size: 15px; color: var(--text) } .cv-num button:hover { border-color: var(--edge-2) }
+.cv-num button.on { border-color: color-mix(in srgb, var(--area) 60%, var(--edge)); background: color-mix(in srgb, var(--area) 14%, transparent); color: var(--text) }
+.cv-sel { display: inline-flex; align-items: center; gap: 6px } .cv-sel i { width: 9px; height: 9px; border-radius: 50%; background: var(--violet); flex: none } .cv-sel .vsel { min-width: 150px }
+.cv-sel.e-aceito i, .cv-sel.e-proposta i { background: var(--green) } .cv-sel.e-sem-resposta i { background: var(--amber) } .cv-sel.e-retirado i, .cv-sel.e-desisti i { background: var(--faint) } .cv-sel.e-entrevista i { background: #5AA9FF } .cv-sel.e-recusada i { background: var(--red) }
+.cv-alerta a { display: inline !important; padding: 0 !important }
+.rd-prefs .ed-acoes { justify-content: flex-start }
+.cv-lista li { transition: border-color var(--t-fast) } .cv-lista li:hover { border-color: var(--edge-2) }

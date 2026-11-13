@@ -1685,10 +1685,9 @@ function desenharRede() {
   }
   $('[data-rd-nc]').textContent = r.conexoes.length ? `${r.conexoes.length} ${r.conexoes.length === 1 ? "sugestão" : "sugestões"}` : ''
   const ordem = r.conexoes.map((c, i) => ({ c, i, ...notaConexao(c, RD.perfil) })).sort((a, b) => b.nota - a.nota)
-  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? ordem.map(({ c, i, nota, motivos }) => `<article class="rd-card cx-card" style="--cx:${['var(--sec-rede)', 'var(--sec-agenda)', 'var(--sec-estrategia)', 'var(--sec-criar)', 'var(--sec-inicio)'][i % 5]}"><header class="cx-h"><span class="cx-av" aria-hidden="true">${icr('pessoas')}</span><b>${esc(c.perfil)}</b></header><p>${esc(c.por_que)}</p>
+  $('[data-rd-conexoes]').innerHTML = r.conexoes.length ? ordem.map(({ c, i, nota, motivos }) => `<article class="rd-card cx-card" style="--cx:${['var(--sec-rede)', 'var(--sec-agenda)', 'var(--sec-estrategia)', 'var(--sec-criar)', 'var(--sec-inicio)'][i % 5]}"><header class="cx-h"><span class="cx-av" aria-hidden="true">${icr('pessoas')}</span><b>${esc(c.perfil)}</b>${anelNota(nota, 'Nota pelo seu perfil: decide contratação +3, da sua área +2, é o seu público +2, abre vagas +2, fala dos seus temas +1')}</header><p>${esc(c.por_que)}</p><p class="motivos">${motivos.length ? motivos.map(esc).join(' · ') : 'pouco a ver com o seu perfil'}</p>
       ${c.convite ? `<details class="rd-convite"><summary><small>${icr('carta')}Convite no seu tom</small><span class="cx-cont${c.convite.length > 200 ? ' muito' : ''}">${c.convite.length}/200</span></summary><span>${esc(c.convite)}</span></details>` : ''}
-      <div class="cx-nota" title="Nota pelo seu perfil: decide contratação +3, da sua área +2, é o seu público +2, abre vagas +2, fala dos seus temas +1"><b style="color:${corNota(nota)}">${nota}<small>/10</small></b><span>${motivos.length ? motivos.map(m => `<i>${m}</i>`).join('') : '<i>pouco a ver com o seu perfil</i>'}</span></div>
-      <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">${icr('busca')}Buscar no LinkedIn</a>${c.convite ? `<button class="link" type="button" data-rd-copia="${i}">${icr('copiar')}Copiar o convite</button>` : ''}<button class="link" type="button" data-rd-anota="${i}">${icr('carta')}Anotar convite</button></div></article>`).join('')
+      <div class="rd-a cx-a"><a class="btn sm accent" href="${esc(urlOk(c.url))}" target="_blank" rel="noopener">${icr('busca')}Buscar no LinkedIn</a>${c.convite ? `<button class="btn sm" type="button" data-rd-copia="${i}" title="Copiar o convite">${icr('copiar')}Copiar</button>` : ''}<button class="btn sm" type="button" data-rd-anota="${i}" title="Anotar que você mandou o convite">${icr('carta')}Anotar</button></div></article>`).join('')
     : `<div class="es-vazio glass"><h3>Nenhuma sugestão ainda</h3><p>Clique em "Sugerir conexões": a sua IA indica tipos de pessoa que mais ajudam o seu objetivo, com a busca pronta no LinkedIn e um convite no seu tom.</p></div>`
   desenharBuscas(); desenharConvites()
   $('[data-rd-seguir]').innerHTML = r.seguir?.length ? `<header class="rd-h"><h2>Para seguir</h2><span class="tag">${r.seguir.length}</span></header><div class="cx-seg-grid">${r.seguir.map(s => `<article class="cx-seg glass"><span class="cx-av sm" aria-hidden="true">${icr(icTipo(s.tipo + ' ' + s.nome))}</span><span><b>${esc(s.nome)}</b><small>${esc(s.tipo || '')}</small>${s.por_que ? `<p>${esc(s.por_que)}</p>` : ''}</span></article>`).join('')}</div>` : ''
@@ -1702,6 +1701,7 @@ function desenharRede() {
   $('[data-rd-vagas]').innerHTML = (vs.length ? vs.map(cartaoVaga).join('')
     : `<div class="es-vazio glass"><h3>${r.quando ? 'Nada com essas preferências' : 'Nenhuma vaga ainda'}</h3><p>${r.quando ? 'A IA não achou vagas recentes assim. Tente outro local, modalidade ou nível.' : 'Diga onde e como quer trabalhar e clique em "Buscar vagas". A sua IA traz vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
     + (r.maisVagas ? `<a class="link" href="${esc(urlOk(r.maisVagas))}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
+  aplicarAbas()
 }
 // a vaga em duas camadas: o essencial à vista (cargo, empresa, etiquetas, por que combina) e o resto em "Ver detalhes"
 function cartaoVaga({ v, i, nota, motivos }) {
@@ -1710,7 +1710,7 @@ function cartaoVaga({ v, i, nota, motivos }) {
   const lista = (t, xs, cls = '') => xs && xs.length ? `<div class="vg-bloco${cls}"><small>${t}</small><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''
   const tem = (v.requisitos || []).length || (v.diferenciais || []).length || v.combina || v.falta || v.candidatura
   return `<article class="rd-card vg">
-    <header class="vg-h"><span class="vg-logo" aria-hidden="true">${inicial(v.empresa || v.titulo)}</span><span><b>${esc(v.titulo)}</b><small class="rd-meta">${v.empresa ? `${icr('predio')}${esc(v.empresa)}` : ''}${v.local ? `<span>${icr('local')}${esc(v.local)}</span>` : ''}</small></span>${v.publicada ? `<small class="vg-quando">${icr('relogio')}${esc(v.publicada)}</small>` : ''}</header>
+    <header class="vg-h"><span class="vg-logo" aria-hidden="true">${inicial(v.empresa || v.titulo)}</span><span><b>${esc(v.titulo)}</b><small class="rd-meta">${v.empresa ? `${icr('predio')}${esc(v.empresa)}` : ''}${v.local ? `<span>${icr('local')}${esc(v.local)}</span>` : ''}</small></span>${v.publicada ? `<small class="vg-quando">${icr('relogio')}${esc(v.publicada)}</small>` : ''}${anelNota(nota, 'Nota pelo seu perfil e pelo que você procura: da sua área +3, o seu nível +2, a sua modalidade +2, desta semana +1, link conferido +1, mostra o salário +1')}</header>
     ${tags ? `<div class="vg-tags">${tags}</div>` : ''}
     <p>${esc(v.por_que)}</p>
     ${tem ? `<details class="vg-mais"><summary>Ver detalhes</summary>
@@ -1718,9 +1718,30 @@ function cartaoVaga({ v, i, nota, motivos }) {
       ${v.combina || v.falta ? `<div class="vg-fit">${v.combina ? `<div class="vg-bloco ok"><small>O que você já tem</small><p>${esc(v.combina)}</p></div>` : ''}${v.falta ? `<div class="vg-bloco falta"><small>O que pode faltar</small><p>${esc(v.falta)}</p></div>` : ''}</div>` : ''}
       ${v.candidatura ? `<div class="vg-bloco"><small>Como se candidatar</small><p>${esc(v.candidatura)}</p></div>` : ''}
     </details>` : ''}
-    <div class="cx-nota" title="Nota pelo seu perfil e pelo que você procura: da sua área +3, o seu nível +2, a sua modalidade +2, desta semana +1, link conferido +1, mostra o salário +1"><b style="color:${corNota(nota)}">${nota}<small>/10</small></b><span>${motivos.length ? motivos.map(m => `<i>${esc(m)}</i>`).join('') : '<i>pouco a ver com o que você procura</i>'}</span></div>
-    <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">${icr('externo')}Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''}</a>${anotada ? `<span class="rd-ok ok">${icr('escudo')}candidatura anotada</span>` : `<button class="link" type="button" data-vg-anota="${i}">${icr('pasta')}Anotar candidatura</button>`}<span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? `${icr('escudo')}link conferido` : 'o site não deixa conferir o link'}</span></div></article>`
+    <p class="motivos">${motivos.length ? motivos.map(esc).join(' · ') : 'pouco a ver com o que você procura'}</p>
+    <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">${icr('externo')}Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''}</a>${anotada ? `<span class="rd-ok ok">${icr('escudo')}candidatura anotada</span>` : `<button class="btn sm" type="button" data-vg-anota="${i}">${icr('pasta')}Anotar candidatura</button>`}<span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? `${icr('escudo')}link conferido` : 'o site não deixa conferir o link'}</span></div></article>`
 }
+// ---------------------------------------------------------------- abas dentro de Conexões e de Vagas
+const RD_TAB = { conexoes: 'sugestoes', vagas: 'vagas' }
+function aplicarAbas() {
+  if (!RD) return
+  const r = RD.rede, n = { sugestoes: r.conexoes.length, convites: (RD.convites || []).length, seguir: (r.seguir || []).length, vagas: r.vagas.length, candidaturas: (RD.candidaturas || []).length }
+  for (const nav of $$('[data-rd-tabs]')) {
+    const pag = nav.dataset.rdTabs, pagEl = nav.closest('[data-rd-pag]')
+    $$('[data-rd-tab]', nav).forEach(b => {
+      const v = b.dataset.rdTab, c = $('[data-tn]', b)
+      if (c) c.textContent = n[v] || ''
+      b.hidden = v === 'seguir' && !n.seguir
+      b.setAttribute('aria-selected', String(RD_TAB[pag] === v))
+    })
+    $$('[data-rd-sec]', pagEl).forEach(sec => { sec.hidden = sec.dataset.rdSec !== RD_TAB[pag] })
+  }
+}
+function irAba(pag, v) { RD_TAB[pag] = v; aplicarAbas() }
+document.addEventListener('click', e => { const b = e.target.closest('[data-rd-tab]'); if (!b) return; Som.tique(); irAba(b.closest('[data-rd-tabs]').dataset.rdTabs, b.dataset.rdTab) })
+// a nota em anel, no canto do cartão
+const anelNota = (n, titulo) => `<span class="nota-anel" style="--p:${n * 10}%;--c:${corNota(n)}" title="${esc(titulo)}" aria-label="Nota ${n} de 10"><b>${n}</b></span>`
+
 // ---------------------------------------------------------------- nota de 0 a 10: o quanto cada tipo de pessoa combina com o seu perfil
 // Só lê o texto da sugestão e o seu perfil (nada do LinkedIn). Os pesos somam 10:
 // decide contratação +3 · da sua área +2 · é o seu público +2 · abre vagas +2 · fala dos seus temas +1
@@ -1760,7 +1781,9 @@ function desenharBuscas() {
 }
 
 // ---------------------------------------------------------------- convites que você mandou (anotados à mão)
-let CV_SUG = null
+let CV_SUG = null, CV_F = 'todos', CD_F = 'todas'
+const filtroNum = (attr, atual, itens) => `<div class="cv-num" role="group">${itens.map(([v, n, t]) => `<button type="button" ${attr}="${v}" class="${atual === v ? 'on' : ''}" aria-pressed="${atual === v}"><b>${n}</b>${t}</button>`).join('')}</div>`
+const seletor = (attr, atual, ops) => `<span class="cv-sel e-${atual}"><i aria-hidden="true"></i><select ${attr} aria-label="Situação">${ops.map(([v, t]) => `<option value="${v}"${v === atual ? ' selected' : ''}>${t}</option>`).join('')}</select></span>`
 const CV_EST = [['enviado', 'Aguardando'], ['aceito', 'Aceitou'], ['sem-resposta', 'Sem resposta'], ['retirado', 'Retirado']]
 const diasDesde = q => Math.floor((Date.now() - Date.parse(q)) / 864e5)
 function desenharConvites() {
@@ -1770,14 +1793,19 @@ function desenharConvites() {
   const parados = l.filter(c => c.estado === 'enviado' && diasDesde(c.quando) >= 21)
   box.innerHTML = `<header class="rd-h"><h2>${icr('carta')}Convites que você mandou</h2>${l.length ? `<span class="tag">${l.length}</span>` : ''}</header>
     <p class="fine">O Vynco não envia nem lê convites no LinkedIn. Mande lá e anote aqui para acompanhar quem aceitou.</p>
-    ${l.length ? `<div class="cv-num"><span><b>${semana}</b>nesta semana</span><span><b>${aceitos}</b>aceitaram</span><span><b>${respondidos ? Math.round(100 * aceitos / respondidos) + '%' : '—'}</b>de aceite</span><span><b>${l.filter(c => c.estado === 'enviado').length}</b>aguardando</span></div>` : ''}
+    ${l.length ? filtroNum('data-cv-f', CV_F, [['todos', l.length, 'todos'], ['enviado', l.filter(c => c.estado === 'enviado').length, 'aguardando'], ['aceito', aceitos, `aceitaram${respondidos ? ` · ${Math.round(100 * aceitos / respondidos)}%` : ''}`], ['semana', semana, 'nesta semana']]) : ''}
     ${parados.length ? `<p class="cv-alerta">${icr('relogio')}${parados.length} ${parados.length === 1 ? 'convite está' : 'convites estão'} sem resposta há mais de 3 semanas. Muitos convites parados pesam contra a conta: retire os antigos em <a class="link" href="https://www.linkedin.com/mynetwork/invitation-manager/sent/" target="_blank" rel="noopener">Minha rede → Enviados ↗</a> e marque aqui como "Retirado".</p>` : ''}
     ${semana >= 15 ? '<p class="cv-alerta">O LinkedIn limita quantos convites dá para mandar por semana. Vá com calma: poucos convites, bem escolhidos e com uma nota, rendem mais.</p>' : ''}
     <form class="cv-add" data-cv-add><input name="quem" maxlength="120" autocomplete="off" placeholder="${CV_SUG ? `Para quem você mandou? (${esc(CV_SUG.sugestao)})` : 'Para quem você mandou? Nome ou cargo'}" aria-label="Para quem você mandou o convite"><button class="btn sm accent" type="submit">Anotar convite</button>${l.length ? '<button class="link" type="button" data-cv-csv>Baixar CSV</button>' : ''}</form>
-    ${l.length ? `<ul class="cv-lista">${l.slice(0, 40).map(c => `<li data-cv="${c.id}"><span class="cv-q"><b>${esc(c.quem)}</b><small>${[c.sugestao, c.nota != null ? 'nota ' + c.nota : '', (d => d < 1 ? 'hoje' : d === 1 ? 'ontem' : 'há ' + d + ' dias')(diasDesde(c.quando))].filter(Boolean).map(esc).join(' · ')}</small></span>
-      <span class="cv-est" role="radiogroup" aria-label="Situação">${CV_EST.map(([v, t]) => `<button type="button" role="radio" aria-checked="${c.estado === v}" data-cv-est="${v}" class="e-${v}">${t}</button>`).join('')}</span><button class="ic-btn" type="button" data-cv-fora title="Apagar da lista" aria-label="Apagar da lista">×</button></li>`).join('')}</ul>` : ''}`
+    ${l.length ? `<ul class="cv-lista">${l.filter(c => CV_F === 'todos' || (CV_F === 'semana' ? diasDesde(c.quando) < 7 : c.estado === CV_F)).slice(0, 60).map(c => `<li data-cv="${c.id}"><span class="cv-q"><b>${esc(c.quem)}</b><small>${[c.sugestao, c.nota != null ? 'nota ' + c.nota : '', (d => d < 1 ? 'hoje' : d === 1 ? 'ontem' : 'há ' + d + ' dias')(diasDesde(c.quando))].filter(Boolean).map(esc).join(' · ')}</small></span>
+      ${seletor('data-cv-est', c.estado, CV_EST)}<button class="ic-btn" type="button" data-cv-fora title="Apagar da lista" aria-label="Apagar da lista">×</button></li>`).join('')}</ul>` : ''}`
 }
-async function anotarConv(b) { try { const r = await api('/api/rede/convites', b); RD.convites = r.convites; desenharConvites(); return true } catch (e) { falha(e); return false } }
+async function anotarConv(b) { try { const r = await api('/api/rede/convites', b); RD.convites = r.convites; desenharConvites(); aplicarAbas(); return true } catch (e) { falha(e); return false } }
+document.addEventListener('change', e => {
+  const a = e.target.closest('[data-cv-est]'), b = e.target.closest('[data-cd-est]')
+  if (a) { Som.tique(); anotarConv({ acao: 'estado', id: a.closest('[data-cv]').dataset.cv, estado: a.value }).then(aplicarAbas) }
+  if (b) { Som.tique(); anotarCand({ acao: 'estado', id: b.closest('[data-cd]').dataset.cd, estado: b.value }).then(aplicarAbas) }
+})
 document.addEventListener('submit', async e => {
   if (!e.target.matches('[data-cv-add]')) return
   e.preventDefault()
@@ -1786,11 +1814,11 @@ document.addEventListener('submit', async e => {
 })
 document.addEventListener('click', async e => {
   const est = e.target.closest('[data-cv-est]'), fora = e.target.closest('[data-cv-fora]'), csv = e.target.closest('[data-cv-csv]'), anota = e.target.closest('[data-rd-anota]')
-  if (est) { Som.tique(); return anotarConv({ acao: 'estado', id: est.closest('[data-cv]').dataset.cv, estado: est.dataset.cvEst }) }
+  const fcv = e.target.closest('[data-cv-f]'); if (fcv) { CV_F = fcv.dataset.cvF; Som.tique(); return desenharConvites() }
   if (fora) return anotarConv({ acao: 'remover', id: fora.closest('[data-cv]').dataset.cv })
   if (anota) {
     const c = RD.rede.conexoes[+anota.dataset.rdAnota]; CV_SUG = { sugestao: c.perfil, nota: notaConexao(c, RD.perfil).nota }
-    desenharConvites(); $('#convites').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('[data-cv-add] input')?.focus(), 400); return
+    desenharConvites(); irAba('conexoes', 'convites'); setTimeout(() => $('[data-cv-add] input')?.focus(), 150); return
   }
   if (csv) {
     const linhas = [['quando', 'quem', 'sugestao', 'nota', 'situacao'], ...(RD.convites || []).map(c => [c.quando.slice(0, 10), c.quem, c.sugestao, c.nota ?? '', (CV_EST.find(x => x[0] === c.estado) || [, c.estado])[1]])]
@@ -1851,13 +1879,13 @@ function desenharCandidaturas() {
   const quandoTxt = d => d < 1 ? 'hoje' : d === 1 ? 'ontem' : 'há ' + d + ' dias'
   box.innerHTML = `<header class="rd-h"><h2>${icr('pasta')}Candidaturas que você mandou</h2>${l.length ? `<span class="tag">${l.length}</span>` : ''}</header>
     <p class="fine">O Vynco não se candidata por você. Candidate-se no site da vaga e anote aqui para acompanhar cada uma.</p>
-    ${l.length ? `<div class="cv-num"><span><b>${l.filter(c => diasDesde(c.quando) < 7).length}</b>nesta semana</span><span><b>${n('entrevista')}</b>em entrevista</span><span><b>${n('proposta')}</b>com proposta</span><span><b>${l.length ? Math.round(100 * respondidas / l.length) + '%' : '—'}</b>tiveram resposta</span></div>` : ''}
+    ${l.length ? filtroNum('data-cd-f', CD_F, [['todas', l.length, `todas · ${Math.round(100 * respondidas / l.length)}% com resposta`], ['enviada', n('enviada'), 'aguardando'], ['entrevista', n('entrevista'), 'em entrevista'], ['proposta', n('proposta'), 'com proposta']]) : ''}
     ${paradas.length ? `<p class="cv-alerta">${icr('relogio')}${paradas.length} ${paradas.length === 1 ? 'candidatura está' : 'candidaturas estão'} sem resposta há mais de 10 dias. Uma mensagem curta e educada para quem recruta pode destravar: diga a vaga, por que você combina e que segue à disposição.</p>` : ''}
     <form class="cv-add" data-cd-add><input name="vaga" maxlength="140" autocomplete="off" placeholder="Vaga (ex.: Product designer pleno)" aria-label="Vaga"><input name="empresa" maxlength="100" autocomplete="off" placeholder="Empresa" aria-label="Empresa"><button class="btn sm accent" type="submit">Anotar candidatura</button>${l.length ? '<button class="link" type="button" data-cd-csv>Baixar CSV</button>' : ''}</form>
-    ${l.length ? `<ul class="cv-lista">${l.slice(0, 40).map(c => `<li data-cd="${c.id}"><span class="cv-q"><b>${c.link ? `<a class="link" href="${esc(urlOk(c.link))}" target="_blank" rel="noopener">${esc(c.vaga)}</a>` : esc(c.vaga)}</b><small>${[c.empresa, c.nota != null ? 'nota ' + c.nota : '', quandoTxt(diasDesde(c.quando))].filter(Boolean).map(esc).join(' · ')}</small></span>
-      <span class="cv-est" role="radiogroup" aria-label="Situação">${CD_EST.map(([v, t]) => `<button type="button" role="radio" aria-checked="${c.estado === v}" data-cd-est="${v}" class="e-${v}">${t}</button>`).join('')}</span><button class="ic-btn" type="button" data-cd-fora title="Apagar da lista" aria-label="Apagar da lista">×</button></li>`).join('')}</ul>` : ''}`
+    ${l.length ? `<ul class="cv-lista">${l.filter(c => CD_F === 'todas' || c.estado === CD_F).slice(0, 60).map(c => `<li data-cd="${c.id}"><span class="cv-q"><b>${c.link ? `<a class="link" href="${esc(urlOk(c.link))}" target="_blank" rel="noopener">${esc(c.vaga)}</a>` : esc(c.vaga)}</b><small>${[c.empresa, c.nota != null ? 'nota ' + c.nota : '', quandoTxt(diasDesde(c.quando))].filter(Boolean).map(esc).join(' · ')}</small></span>
+      ${seletor('data-cd-est', c.estado, CD_EST)}<button class="ic-btn" type="button" data-cd-fora title="Apagar da lista" aria-label="Apagar da lista">×</button></li>`).join('')}</ul>` : ''}`
 }
-async function anotarCand(b) { try { const r = await api('/api/rede/candidaturas', b); RD.candidaturas = r.candidaturas; desenharCandidaturas(); return true } catch (e) { falha(e); return false } }
+async function anotarCand(b) { try { const r = await api('/api/rede/candidaturas', b); RD.candidaturas = r.candidaturas; desenharCandidaturas(); aplicarAbas(); return true } catch (e) { falha(e); return false } }
 document.addEventListener('submit', async e => {
   if (!e.target.matches('[data-cd-add]')) return
   e.preventDefault()
@@ -1865,7 +1893,7 @@ document.addEventListener('submit', async e => {
 })
 document.addEventListener('click', async e => {
   const est = e.target.closest('[data-cd-est]'), fora = e.target.closest('[data-cd-fora]'), csv = e.target.closest('[data-cd-csv]'), anota = e.target.closest('[data-vg-anota]')
-  if (est) { Som.tique(); return anotarCand({ acao: 'estado', id: est.closest('[data-cd]').dataset.cd, estado: est.dataset.cdEst }) }
+  const fcd = e.target.closest('[data-cd-f]'); if (fcd) { CD_F = fcd.dataset.cdF; Som.tique(); return desenharCandidaturas() }
   if (fora) return anotarCand({ acao: 'remover', id: fora.closest('[data-cd]').dataset.cd })
   if (anota) {
     const v = RD.rede.vagas[+anota.dataset.vgAnota]
