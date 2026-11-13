@@ -3,7 +3,7 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.18.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.19.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
@@ -19,6 +19,8 @@ O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 
 ![Início do Vynco: o próximo post em destaque e a agenda por dia](docs/img/vynco-inicio.png)
 
+![Peça à sua IA: o plano que a IA entendeu, o que vai usar e o gasto, antes de fazer](docs/img/vynco-pedidos.png)
+
 | Revisar | Agenda |
 |---|---|
 | ![Revisar: esperando você, aprovados e rascunhos](docs/img/vynco-fila.png) | ![Agenda do mês com o que sai e quando](docs/img/vynco-calendario.png) |
@@ -31,7 +33,15 @@ O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 
 ![Vynco Design System 1.0](docs/img/design-system.png)
 
-<sub>Capturas da demonstração (versão 0.18), com dados de exemplo.</sub>
+<sub>Capturas da demonstração (versão 0.19), com dados de exemplo.</sub>
+
+## Novidades da 0.19
+- **Peça à sua IA (Início).** Escreva o que quer do seu jeito: "um vídeo sobre X para hoje à tarde" ou "todo dia útil, um post com as fotos novas da pasta X sobre o avanço do meu trabalho".
+  - **Entender:** a opção mais barata da sua IA (ex.: Claude Haiku, esforço baixo) lê o pedido e monta um plano: formato, tema, pasta, horário e repetição. É só raciocínio: nada é criado.
+  - **Conferir:** você vê o plano antes de qualquer gasto e corrige formato, tema, pasta, horário e dias sem chamar a IA de novo. O cartão mostra os tokens que o "entender" gastou, qual IA e modelo vão escrever e, se o pedido usa o Magnific, quantas operações você já usou no mês.
+  - **Fazer:** o Vynco copia as fotos da pasta, pede a imagem ou o vídeo ao Magnific quando o pedido for desse tipo, e a sua IA principal escreve a legenda e os textos alternativos. O post vai para Revisar; com horário, entra na agenda, mas só vai ao ar se você aprovar.
+  - **Repetir:** "todo dia" vira uma repetição que reaproveita o plano (sem gastar o raciocínio de novo) e nunca repete foto. Com o Magnific, só depois que você concordar com o gasto diário.
+  - **Gasto real** em cada pedido: tokens de cada etapa, quanto veio do cache (mais barato), o modelo usado e as operações do Magnific.
 
 ## Novidades da 0.18.1
 Tudo dentro das regras do LinkedIn: o Vynco sugere, abre a busca normal do LinkedIn e ajuda a organizar. Ele não clica, não envia convites, não se candidata e não lê nem publica no feed.

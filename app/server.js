@@ -23,6 +23,7 @@ const LIMITES = require('../engine/limites.js')
 const AUTO = require('../engine/automatico.js')
 const ATUALIZA = require('../engine/atualizacao.js')
 const INTERAGE = require('../engine/interacao.js')
+const PEDIDOS = require('../engine/pedidos.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -242,7 +243,7 @@ function rodarRotinasDoDia() {
     try { startRun(rid, { agente, auto: !!r.auto }) } catch (e) { avisar({ ok: false, titulo: (MODELOS.MODELOS.find(m => m.id === rid) || {}).titulo || rid, texto: `A repetição não rodou: ${e.message}` }) }
   }
 }
-setInterval(() => { rodarAgenda().catch(() => {}); try { rodarRotinasDoDia() } catch {} }, 60000).unref()
+setInterval(() => { rodarAgenda().catch(() => {}); try { rodarRotinasDoDia() } catch {} try { PEDIDOS.rodarRepeticoes() } catch {} }, 60000).unref()
 
 const RUNS = []
 function startRun(rid, { agente = null, reservaDe = null, auto = false, antes = null } = {}) {
@@ -420,6 +421,7 @@ const server = http.createServer(async (req, res) => {
         }
         case '/api/janela': return send(res, 200, JANELA || { propria: null })
         case '/api/interacao': return send(res, 200, INTERAGE.estado(perfilAtivo()))
+        case '/api/pedidos': return send(res, 200, PEDIDOS.estado())
         case '/api/atualizacao': return send(res, 200, u.searchParams.get('procurar') ? await ATUALIZA.procurar({ forcar: u.searchParams.get('procurar') === 'agora' }) : ATUALIZA.estado())
         case '/api/ia/modelos': {   // modelo e esforço por IA (só as que aceitam escolher)
           const ids = [...new Set([agenteId(), reservaId(), 'claude', 'codex', 'antigravity'].filter(id => id && AG.ESCOLHA[id]))]
@@ -561,6 +563,12 @@ const server = http.createServer(async (req, res) => {
       }
       case '/api/imagem/estimar': { try { return send(res, 200, IMAGEM.estimar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/imagem/pedir': { try { return send(res, 200, await IMAGEM.pedir(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/pedidos': { try { return send(res, 200, await PEDIDOS.entender(b.texto)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/pedidos/confirmar': { try { return send(res, 200, await PEDIDOS.confirmar(String(b.id || ''), { agora: b.agora !== false, magnificTodoDia: !!b.magnificTodoDia })) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/pedidos/ajustar': { try { return send(res, 200, PEDIDOS.ajustar(String(b.id || ''), b.plano || {})) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/pedidos/cancelar': { try { return send(res, 200, PEDIDOS.cancelar(String(b.id || ''))) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/pedidos/apagar': { try { return send(res, 200, PEDIDOS.apagar(String(b.id || ''))) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/pedidos/repeticao': { try { return send(res, 200, PEDIDOS.mudarRep(String(b.id || ''), { ativo: b.ativo, apagar: !!b.apagar })) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/interacao': { try { return send(res, 200, INTERAGE.registrar(perfilAtivo(), b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/interacao/ideias': {
         const ag = agenteId(); if (!ag) return send(res, 400, { erro: 'Conecte uma IA em Ajustes antes.' })
@@ -623,6 +631,8 @@ const server = http.createServer(async (req, res) => {
 })
 // a linha "Vynco: http://..." é lida pela versão desktop para abrir a janela na porta certa
 server.on('listening', () => { console.log(`Vynco: http://127.0.0.1:${porta()}/`); IMAGEM.retomar() })
+// pedidos à IA: o motor usa a fila, a agenda e os avisos daqui (a aprovação continua só com você)
+PEDIDOS.ligar({ agenteId, perfilAtivo, avisar, agendar, queue })
 server.on('error', e => {
   if (e.code === 'EADDRINUSE' && process.env.VYNCO_PORTA_LIVRE && server.listening === false && !server._tentouLivre) { server._tentouLivre = true; return server.listen(0, '127.0.0.1') }
   console.error('Vynco: não consegui abrir o painel:', e.message); process.exit(1)

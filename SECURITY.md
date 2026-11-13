@@ -6,6 +6,7 @@ O Vynco está em **beta test**. Ele roda no seu computador, guarda os seus segre
 
 | Versão | Recebe correções de segurança |
 |---|---|
+| 0.19.x (beta) | Sim |
 | 0.18.x (beta) | Sim |
 | Anteriores | Não. Atualize para a versão mais nova em [Releases](https://github.com/otavio-guerra/Vynco/releases) |
 

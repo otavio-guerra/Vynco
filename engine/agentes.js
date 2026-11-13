@@ -346,15 +346,15 @@ async function modelosDe(id) {
   if (l.length) MODELOS_AGY = { t: Date.now(), l }
   return l
 }
-function escolhaDe(id, tipo) {
-  const e = ESCOLHA[id], c = ((C.load().ia || {})[id] || {})[tipo] || {}
+function escolhaDe(id, tipo, forcar) {
+  const e = ESCOLHA[id], c = forcar || ((C.load().ia || {})[id] || {})[tipo] || {}
   if (!e) return []
   const x = []
   if (c.modelo && SEGURO.test(c.modelo)) x.push(...e.modelo(c.modelo))
   if (c.esforco && ESFORCOS.includes(c.esforco)) x.push(...e.esforco(c.esforco))
   return x
 }
-function comEscolha(id, tipo, args) { const x = escolhaDe(id, tipo); if (!x.length) return args; const d = ESCOLHA[id].depois || 0; return [...args.slice(0, d), ...x, ...args.slice(d)] }
+function comEscolha(id, tipo, args, forcar) { const x = escolhaDe(id, tipo, forcar); if (!x.length) return args; const d = ESCOLHA[id].depois || 0; return [...args.slice(0, d), ...x, ...args.slice(d)] }
 function salvarEscolha(id, tipo, { modelo = '', esforco = '' } = {}) {
   if (!ESCOLHA[id]) throw new Error('Esta IA não deixa escolher modelo nem esforço.')
   if (!['criar', 'ler'].includes(tipo)) throw new Error('tipo de tarefa desconhecido')
@@ -394,16 +394,67 @@ const LEITURA = {
   antigravity: ['-p', 'Leia o arquivo pergunta.md nesta pasta e responda exatamente como ele pede. Só leitura e pesquisa na web: não crie nem altere arquivos.', '--mode', 'plan', '--print-timeout', '6m'],
   qwen: ['-p', 'Siga as instruções recebidas acima.'],
 }
-async function perguntar(id, texto, { timeout = 240000 } = {}) {
+// a escolha mais barata de cada IA, para tarefas que são só raciocínio (entender um pedido, montar um plano)
+const BARATO = { claude: { modelo: 'haiku', esforco: 'low' }, codex: { esforco: 'low' }, antigravity: { esforco: 'low' } }
+const nomeBarato = id => { const b = BARATO[id]; if (!b) return AGENTES[id] ? AGENTES[id].nome : id; const m = b.modelo && (ESCOLHA[id].modelos || []).find(x => x[0] === b.modelo); return `${AGENTES[id].nome}${m ? ' ' + m[1] : ''} · esforço baixo` }
+// saída em JSON (Claude e Codex) para saber quantos tokens a tarefa usou
+const COM_USO = {
+  claude: args => [...args, '--output-format', 'json'],
+  codex: args => [args[0], '--json', ...args.slice(1)],
+}
+// lê o texto e o uso de uma saída. Sem números da IA, estima pelo tamanho do texto (4 caracteres ≈ 1 token) e marca como estimado.
+function lerUso(id, saida, entrada = '') {
+  const est = t => Math.ceil(String(t || '').length / 4)
+  if (id === 'claude') {
+    let j = null; const t = String(saida || '').trim()
+    try { j = JSON.parse(t.slice(t.indexOf('{'))) } catch { }
+    if (j && (j.type === 'result' || (j.usage && 'result' in j))) {
+      const u = j.usage || {}, modelos = Object.keys(j.modelUsage || {})
+      const ent = (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0)
+      return { texto: String(j.result || ''), erro: j.is_error ? String(j.result || 'erro') : null, uso: { entrada: ent, saida: u.output_tokens || 0, cache: u.cache_read_input_tokens || 0, total: ent + (u.output_tokens || 0), custoUsd: typeof j.total_cost_usd === 'number' ? +j.total_cost_usd.toFixed(4) : null, modelo: modelos.join(', ') || null, estimado: false } }
+    }
+  }
+  if (id === 'codex') {
+    let ent = 0, sai = 0, cache = 0, achou = false; const msgs = []
+    for (const l of String(saida || '').split('\n')) {
+      let j; try { j = JSON.parse(l) } catch { continue }
+      const u = j.usage || (j.msg && j.msg.info && j.msg.info.total_token_usage)
+      if (j.type === 'turn.completed' && u) { achou = true; ent += u.input_tokens || 0; sai += u.output_tokens || 0; cache += u.cached_input_tokens || 0 }
+      const it = j.item || {}
+      if (j.type === 'item.completed' && (it.type === 'agent_message' || it.item_type === 'assistant_message') && it.text) msgs.push(it.text)
+    }
+    if (achou || msgs.length) return { texto: msgs.join('\n') || String(saida || ''), erro: null, uso: { entrada: ent, saida: sai, cache, total: ent + sai, custoUsd: null, modelo: null, estimado: !achou } }
+  }
+  return { texto: String(saida || ''), erro: null, uso: { entrada: est(entrada), saida: est(saida), cache: 0, total: est(entrada) + est(saida), custoUsd: null, modelo: null, estimado: true } }
+}
+
+async function perguntar(id, texto, { timeout = 240000, barato = false, detalhe = false } = {}) {
   const a = AGENTES[id], args = LEITURA[id]
   if (!a || !args) throw new Error('Esta função usa o Claude, o ChatGPT ou o Gemini. Troque de IA em Ajustes.')
   const bin = achar(a.bin); if (!bin) throw new Error(`O ${a.via} não está instalado.`)
   const pasta = C.ws('perfis', '.ia'); fs.mkdirSync(pasta, { recursive: true })
   if (id === 'antigravity') fs.writeFileSync(path.join(pasta, 'pergunta.md'), texto, 'utf8')
-  const r = await rodar(bin, comEscolha(id, 'ler', args), { stdin: id === 'antigravity' ? null : texto, timeout, cwd: pasta })
+  let lin = comEscolha(id, 'ler', args, barato ? BARATO[id] : undefined)
+  if (detalhe && COM_USO[id]) lin = COM_USO[id](lin)
+  const r = await rodar(bin, lin, { stdin: id === 'antigravity' ? null : texto, timeout, cwd: pasta })
   if (r.code !== 0 && !r.out.trim()) throw new Error(`O ${a.nome} não respondeu${r.err ? ': ' + r.err.trim().split('\n').pop().slice(0, 200) : '.'}`)
   if (r.code !== 0 && /limit|quota|rate.?limit|429|usage|credit|crédito|exceeded|esgot/i.test(r.out.slice(-600))) throw new Error(`O ${a.nome} chegou ao limite de uso: ${r.out.trim().split('\n').pop().slice(0, 160)}`)
-  return r.out
+  if (!detalhe) return r.out
+  const x = lerUso(id, r.out, texto)
+  if (x.erro) throw new Error(`O ${a.nome} não conseguiu: ${x.erro.slice(0, 200)}`)
+  return x
 }
 
-module.exports = { ESCOLHA, ESFORCOS, modelosDe, salvarEscolha, escolhaPub, AGENTES, ROTINAS, lista, status, login, job, cancelar, enviarCodigo, sincronizar, estadoSync, cancelarSync, rotina, agendamento, achar, abrirUrl, perguntar }
+// ---------------------------------------------------------------- pedido (as instruções num arquivo, como as rotinas, com o uso no fim)
+function executar(id, arq) {
+  const a = AGENTES[id]; if (!a) throw new Error('agente desconhecido')
+  const bin = achar(a.bin); if (!bin) throw new Error(`O ${a.via} não está instalado.`)
+  const { args, stdin } = a.rotina(arq)
+  let lin = comEscolha(id, 'criar', args)
+  if (COM_USO[id]) lin = COM_USO[id](lin)
+  const p = soltar(bin, lin, { stdio: ['pipe', 'pipe', 'pipe'] })
+  p.stdin.end(stdin || '')
+  return p
+}
+
+module.exports = { BARATO, nomeBarato, lerUso, executar, ESCOLHA, ESFORCOS, modelosDe, salvarEscolha, escolhaPub, AGENTES, ROTINAS, lista, status, login, job, cancelar, enviarCodigo, sincronizar, estadoSync, cancelarSync, rotina, agendamento, achar, abrirUrl, perguntar }

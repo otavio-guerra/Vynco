@@ -166,6 +166,51 @@ async function apiDemo(path, data) {
     case '/api/perfil': return { perfil: D.perfil, ativo: 'principal', perfis: [{ id: 'principal', nome: D.perfil.nome || 'Perfil principal', conta: D.linkedin.connected ? D.linkedin.name : null }], analise: D.analise, agente: 'Claude' }
     case '/api/perfil/salvar': D.perfil = { ...JSON.parse(JSON.stringify(data.perfil)), atualizado: new Date().toISOString() }; return D.perfil
     case '/api/perfil/analise': return D.analise || {}
+    // pedidos à IA simulados: o "entender" lê o texto com regras simples, sem chamar IA nenhuma
+    case '/api/pedidos': case '/api/pedidos/confirmar': case '/api/pedidos/ajustar': case '/api/pedidos/cancelar': case '/api/pedidos/apagar': case '/api/pedidos/repeticao': {
+      const P = D.ped = D.ped || { pedidos: [], repeticoes: [] }, FM = { texto: 'Post de texto', carrossel: 'Carrossel em PDF', fotos: 'Post com as suas fotos', imagem: 'Imagem gerada no Magnific', video: 'Vídeo gerado no Magnific' }
+      const conf = pl => ({ bloqueios: (pl.formato === 'fotos' || (pl.formato === 'video' && pl.pasta)) && !pl.pasta ? ['Diga qual pasta tem as fotos.'] : [], avisos: [], fotos: pl.pasta ? { pasta: pl.pasta, novas: 7, usar: Math.min(7, pl.formato === 'video' ? 1 : pl.quantasFotos) } : null, magnific: ['video', 'imagem'].includes(pl.formato) ? { op: pl.formato === 'video' ? 'video' : 'gerar', modelo: pl.formato === 'video' ? (pl.pasta ? 'Kling 2.6 Pro · 5 s' : 'Seedance 2.0 Pro · 720p · 5 s') : 'Mystic · 2K · 4:5', valor: null, usoMes: { operacoes: D.ops, limite: 30 } } : null, escrever: { ia: 'Claude', modelo: 'sonnet', esforco: 'medium', antes: P.pedidos.some(x => x.estado === 'pronto' && x.plano.formato === pl.formato) ? { vezes: 1, tokens: 38400 } : null } })
+      const resumo = p => { const u = p.uso || {}, l = []; if (u.entender) l.push(`entender ${milT(u.entender.total)} tokens (${u.entender.ia})`); if (u.escrever) l.push(`escrever ${milT(u.escrever.total)} tokens (${u.escrever.ia} ${u.escrever.modelo})`); if (p.plano && ['video', 'imagem'].includes(p.plano.formato) && p.estado === 'pronto') l.push(`Magnific 1 ${p.plano.formato === 'video' ? 'vídeo' : 'imagem'}`); return l.join(' · ') || 'nada' }
+      const achar = () => P.pedidos.find(x => x.id === data.id)
+      const fazer = (p, rep) => {
+        const t = p.plano.formato, passos = [...(t === 'fotos' ? ['Copiei 3 fotos da pasta.'] : t === 'video' || t === 'imagem' ? [`Pedi ${t === 'video' ? 'o vídeo' : 'a imagem'} ao Magnific (1 operação).`] : []), 'O Claude está escrevendo o post.']
+        Object.assign(p, { estado: 'fazendo', passos: [] })
+        passos.forEach((x, k) => setTimeout(() => p.passos.push({ t: Date.now(), texto: x }), 500 + k * 900))
+        setTimeout(() => {
+          const id = 'pedido-' + p.id, cor = { video: '#ff7a85', fotos: '#3ddc84', imagem: '#8b7cff', carrossel: '#4cc2ff' }[t] || '#ffb547'
+          D.fila.unshift({ kind: t === 'carrossel' ? 'noticias' : 'avulsos', id, title: p.plano.tema ? p.plano.tema[0].toUpperCase() + p.plano.tema.slice(1) : 'Pedido à IA', formato: t === 'fotos' ? 'multi' : t === 'imagem' ? 'imagem' : t === 'carrossel' ? 'carrossel' : t === 'video' ? 'video' : 'texto', ...(t === 'fotos' ? { arquivos: [svgDemo('#3ddc84'), svgDemo('#4cc2ff'), svgDemo('#ffb547')] } : {}), cover: t === 'texto' || t === 'video' ? undefined : svgDemo(cor), paginas: t === 'carrossel' ? 6 : undefined, hasFile: true, approved: false, published: null, agendado: p.plano.quando || null, caption: `${p.plano.tema || 'Um post do seu pedido'}\n\nUma demonstração: aqui vem o texto que a sua IA escreveu para o pedido, no seu tom.\n\nO que você acha?` })
+          p.uso.escrever = { ia: 'Claude', modelo: 'sonnet', total: 38400, cache: 24100, custoUsd: 0.081, estimado: false }
+          Object.assign(p, { estado: 'pronto', post: { kind: D.fila[0].kind, id }, titulo: D.fila[0].title, agendado: p.plano.quando || null })
+          if (rep) rep.feitos++
+        }, 600 + passos.length * 900 + (t === 'video' ? 1800 : 600))
+      }
+      if (q.pathname === '/api/pedidos' && data && data.texto) {
+        const t = String(data.texto), p = { id: Date.now().toString(36), texto: t, criado: Date.now(), estado: 'entendendo', uso: {} }
+        P.pedidos.unshift(p)
+        setTimeout(() => {
+          const f = /v[ií]deo/i.test(t) ? 'video' : /carrossel/i.test(t) ? 'carrossel' : /foto|pasta/i.test(t) ? 'fotos' : /imagem/i.test(t) ? 'imagem' : 'texto'
+          const pasta = (t.match(/[A-Za-z]:\\[^\s,;]+/) || [])[0] || null, d = new Date(), hora = /manh[ãa]/i.test(t) ? 9 : /almo[cç]o/i.test(t) ? 12 : /tarde/i.test(t) ? 15 : /noite/i.test(t) ? 19 : null
+          if (/amanh[ãa]/i.test(t)) d.setDate(d.getDate() + 1)
+          if (/sexta/i.test(t)) d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7))
+          if (hora != null) d.setHours(hora, 0, 0, 0)
+          const repetir = /todo dia|toda (segunda|ter[cç]a|quarta|quinta|sexta)|todos os dias/i.test(t) ? { dias: /todos os dias/i.test(t) ? [0, 1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5], hora: '08:00' } : null
+          const tema = (t.match(/sobre (.+?)(?:,| para | e agende|$)/i) || [])[1] || (f === 'fotos' ? 'avanço do trabalho' : '')
+          const pl = { resumo: `${FM[f]}${tema ? ' sobre ' + tema : ''}${repetir ? ', de segunda a sexta' : hora != null ? `, para ${d.toLocaleString('pt-BR', { weekday: 'long', hour: '2-digit', minute: '2-digit' })}` : ''}.`, formato: f, tema, pasta, quantasFotos: 3, quando: !repetir && hora != null ? d.toISOString() : null, repetir, horaPublicar: repetir ? '12:00' : null, duvida: null }
+          Object.assign(p, { plano: pl, conferencia: conf(pl), estado: 'conferir', uso: { entender: { ia: 'Claude Haiku · esforço baixo', total: 46300, cache: 21200, custoUsd: 0.0054, estimado: false } } })
+        }, 1500)
+        return p
+      }
+      if (q.pathname === '/api/pedidos/ajustar') { const p = achar(); Object.assign(p.plano, data.plano); if (data.plano.repetir) p.plano.quando = null; p.conferencia = conf(p.plano); return { ...p } }
+      if (q.pathname === '/api/pedidos/confirmar') {
+        const p = achar()
+        if (p.plano.repetir) { if (['video', 'imagem'].includes(p.plano.formato) && !data.magnificTodoDia) throw new Error('Esta repetição usa o Magnific todo dia (gasta créditos). Marque que você concorda antes.'); const r = { id: 'r' + p.id, texto: p.texto, resumo: p.plano.resumo, formato: p.plano.formato, pasta: p.plano.pasta, dias: p.plano.repetir.dias, hora: p.plano.repetir.hora, horaPublicar: p.plano.horaPublicar, ativo: true, feitos: 0 }; P.repeticoes.unshift(r); p.estado = 'repetindo'; if (data.agora) { const n = { id: p.id + 'x', texto: p.texto, criado: Date.now(), plano: { ...p.plano }, uso: {}, daRepeticao: true }; P.pedidos.unshift(n); fazer(n, r) } return p }
+        fazer(p); return p
+      }
+      if (q.pathname === '/api/pedidos/cancelar') { const p = achar(); p.estado = 'cancelado'; return p }
+      if (q.pathname === '/api/pedidos/apagar') { P.pedidos = P.pedidos.filter(x => x.id !== data.id); return { ok: true } }
+      if (q.pathname === '/api/pedidos/repeticao') { if (data.apagar) P.repeticoes = P.repeticoes.filter(x => x.id !== data.id); else P.repeticoes.find(x => x.id === data.id).ativo = !!data.ativo; return { ok: true } }
+      return { pedidos: P.pedidos.map(p => ({ ...p, uso: { ...p.uso, resumo: resumo(p) } })), repeticoes: P.repeticoes, formatos: FM, ia: { principal: 'Claude', barata: 'Claude Haiku · esforço baixo' } }
+    }
     case '/api/interacao': case '/api/interacao/ideias': {
       const hoje = new Date().toISOString().slice(0, 10)
       D.int = D.int || { meta: 3, dias: { [new Date(Date.now() - 864e5).toISOString().slice(0, 10)]: 2, [new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10)]: 3, [new Date(Date.now() - 4 * 864e5).toISOString().slice(0, 10)]: 1 }, ideias: [], buscas: [], job: null }
@@ -1994,8 +2039,132 @@ document.addEventListener('click', async e => {
 })
 document.addEventListener('change', async e => { if (!e.target.matches('[data-int-meta]')) return; try { INT = await api('/api/interacao', { acao: 'meta', n: +e.target.value }); Som.tique(); desenharInteracao() } catch (err) { falha(err) } })
 
+// ---------------------------------------------------------------- "Peça à sua IA" (Início): um pedido em texto vira um plano que você confere antes de qualquer gasto
+let PED = null, pedT = null, PED_TODOS = false
+const PED_EX = ['Um vídeo curto sobre o meu processo de trabalho, para hoje à tarde', 'Todo dia útil, um post com as fotos novas da pasta C:\\Users\\voce\\Pictures\\Obra sobre o avanço do trabalho', 'Um carrossel com 5 dicas sobre a minha área para sexta de manhã', 'Um post de texto com uma pergunta para a rede, amanhã no almoço']
+const PED_VIVO = ['entendendo', 'fazendo', 'esperando-midia']
+const PED_EST = { entendendo: ['Entendendo', ''], conferir: ['Confira antes', 'warn'], fazendo: ['Fazendo', ''], 'esperando-midia': ['Esperando o Magnific', ''], pronto: ['Pronto em Revisar', 'ok'], falhou: ['Não deu certo', 'bad'], pulado: ['Pulado hoje', 'soft'], cancelado: ['Cancelado', 'soft'], repetindo: ['Virou repetição', 'ok'] }
+const DIA_C = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+const milT = n => n == null ? '—' : n >= 1000 ? `${(n / 1000).toLocaleString('pt-BR', { maximumFractionDigits: n >= 1e5 ? 0 : 1 })} mil` : String(n)
+const nomeMod = m => { const r = /claude-([a-z]+)-(\d+)-(\d+)/i.exec(String(m || '')); return r ? `${r[1][0].toUpperCase()}${r[1].slice(1)} ${r[2]}.${r[3]}` : String(m || '').split(',')[0] }
+const isoLocal = q => { if (!q) return ''; const d = new Date(q); return isNaN(d) ? '' : `${ymd(d)}T${d.toTimeString().slice(0, 5)}` }
+const diasTxt = d => { const s = [...d].sort().join(','); return s === '1,2,3,4,5' ? 'de segunda a sexta' : s === '0,1,2,3,4,5,6' ? 'todo dia' : d.map(x => DIA_C[x]).join(', ') }
+async function carregarPedidos() {
+  const vivos = (PED?.pedidos || []).filter(p => PED_VIVO.includes(p.estado)).map(p => p.id + p.estado)
+  try { PED = await api('/api/pedidos') } catch { return }
+  desenharPedidos()
+  clearTimeout(pedT)
+  const agora = PED.pedidos.filter(p => PED_VIVO.includes(p.estado))
+  if (agora.length) pedT = setTimeout(carregarPedidos, DEMO ? 700 : 3000)
+  // o que mudou de estado desde a última leitura
+  for (const k of vivos) { const p = PED.pedidos.find(x => k.startsWith(x.id)); if (!p || PED_VIVO.includes(p.estado)) continue
+    if (p.estado === 'pronto') { Som.liga(); pill('Pedido pronto', 'Está em Revisar esperando você aprovar.', 'var(--green)'); if (!$('[data-scene=inicio]').hidden) carregarInicio(); else contarFila() }
+    else if (p.estado === 'conferir') { Som.tique(); pill('Plano pronto', 'Confira o que a IA entendeu antes de fazer.', 'var(--accent)') }
+    else if (p.estado === 'falhou') { Som.erro(); pill('O pedido não deu certo', p.erro || '', 'var(--red)') } }
+}
+function usoLinha(rot, u, extra = '') {
+  if (!u) return `<li><span class="pd-k">${rot}</span><span class="pd-v">${extra}</span></li>`
+  const custo = u.custoUsd != null ? ` · equivale a US$ ${u.custoUsd.toLocaleString('pt-BR', { maximumFractionDigits: 4 })} na API` : ''
+  return `<li><span class="pd-k">${rot}</span><span class="pd-v"><b>${u.estimado ? '~' : ''}${milT(u.total)} tokens</b> · ${esc(u.ia)}${u.modelo && !u.ia.includes('·') ? ' ' + esc(nomeMod(u.modelo)) : ''}${custo}${u.cache ? `<small>${milT(u.cache)} lidos do cache (mais baratos)</small>` : ''}${u.estimado ? '<small>esta IA não informa o uso: estimado pelo tamanho do texto</small>' : ''}</span></li>`
+}
+function cartaoPedido(p) {
+  const [rot, tom] = PED_EST[p.estado] || [p.estado, ''], pl = p.plano || {}, cf = p.conferencia || {}, u = p.uso || {}
+  const cab = `<header class="pd-h"><p class="pd-t">“${esc(p.texto)}”</p><span class="pd-e ${tom}">${PED_VIVO.includes(p.estado) ? '<span class="spin"></span>' : ''}${rot}</span></header>`
+  if (p.estado === 'entendendo') return `<article class="pd">${cab}<p class="fine">A ${esc(PED?.ia?.barata || 'IA')} está lendo o pedido. Só raciocínio: nada é criado ainda.</p></article>`
+  const passos = (p.passos || []).length ? `<ol class="pd-passos">${p.passos.map(x => `<li>${esc(x.texto)}</li>`).join('')}</ol>` : ''
+  const gasto = u.resumo && u.resumo !== 'nada' ? `<p class="pd-gasto">${icr('nivel')}Gasto: ${esc(u.resumo)}</p>` : ''
+  if (p.estado === 'conferir') {
+    const fmt = Object.entries(PED.formatos || {}).map(([v, n]) => `<option value="${v}"${v === pl.formato ? ' selected' : ''}>${esc(n)}</option>`).join('')
+    const usaPasta = pl.formato === 'fotos' || pl.formato === 'video', rep = pl.repetir
+    const mg = cf.magnific, es = cf.escrever
+    return `<article class="pd pd-conf" data-pd="${esc(p.id)}">${cab}
+      <p class="pd-resumo">${esc(pl.resumo || 'A IA montou o plano abaixo.')}</p>
+      ${(cf.bloqueios || []).map(t => `<p class="ini-alerta bad">${esc(t)}</p>`).join('')}${(cf.avisos || []).map(t => `<p class="ini-alerta">${esc(t)}</p>`).join('')}
+      <div class="pd-campos">
+        <label><span>Formato</span><select data-pd-c="formato">${fmt}</select></label>
+        <label class="pd-tema"><span>Tema</span><input data-pd-c="tema" value="${esc(pl.tema || '')}" maxlength="200"></label>
+        ${usaPasta ? `<label class="pd-pasta"><span>${pl.formato === 'video' ? 'Pasta das fotos (opcional: o vídeo anima a mais recente)' : 'Pasta das fotos'}${cf.fotos ? ` · <b>${cf.fotos.novas}</b> ${cf.fotos.novas === 1 ? 'foto nova' : 'fotos novas'}` : ''}</span><input data-pd-c="pasta" value="${esc(pl.pasta || '')}" placeholder="C:\\Users\\voce\\Pictures\\Obra" spellcheck="false"></label>` : ''}
+        ${pl.formato === 'fotos' ? `<label><span>Fotos por post</span><select data-pd-c="quantasFotos">${[1, 2, 3, 4, 5, 6, 9].map(n => `<option${n === pl.quantasFotos ? ' selected' : ''}>${n}</option>`).join('')}</select></label>` : ''}
+        <fieldset class="pd-quando"><legend>Quando</legend>
+          <div class="pd-modo" role="radiogroup"><button type="button" data-pd-modo="uma" aria-pressed="${!rep}">Uma vez</button><button type="button" data-pd-modo="rep" aria-pressed="${!!rep}">Repetir</button></div>
+          ${rep ? `<div class="pd-dias">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" data-pd-dia="${d}" aria-pressed="${rep.dias.includes(d)}">${DIA_C[d]}</button>`).join('')}</div>
+            <div class="pd-linha"><label><span>Criar às</span><input type="time" data-pd-c="hora" value="${esc(rep.hora)}"></label><label><span>Agendar cada post para</span><input type="time" data-pd-c="horaPublicar" value="${esc(pl.horaPublicar || '')}"></label></div>`
+            : `<label><span>Vai ao ar</span><input type="datetime-local" data-pd-c="quando" value="${isoLocal(pl.quando)}"></label><small class="fine">${pl.quando ? 'Entra na agenda, mas só sai se você aprovar até lá.' : 'Sem horário: fica em Revisar e você escolhe quando sai.'}</small>`}
+        </fieldset>
+      </div>
+      <div class="pd-usa"><span class="cm-k">O que vai usar</span><ul>
+        ${usoLinha('Entender', u.entender)}
+        <li><span class="pd-k">Escrever</span><span class="pd-v"><b>${esc(es?.ia || 'sua IA')}</b>${es?.modelo ? ' · ' + esc(es.modelo) : ''}${es?.esforco ? ' · esforço ' + esc(es.esforco) : ''}<small>${es?.antes ? `da última vez, ~${milT(es.antes.tokens)} tokens (média de ${es.antes.vezes})` : 'o gasto real aparece aqui quando terminar'}</small></span></li>
+        ${mg ? `<li><span class="pd-k">Magnific</span><span class="pd-v"><b>1 ${mg.op === 'video' ? 'vídeo' : 'imagem'}</b> · ${esc(mg.modelo)}<small>${mg.valor != null ? `~€${mg.valor}` : 'preço não publicado pelo Magnific: confira no painel'}${mg.usoMes ? ` · ${mg.usoMes.operacoes} de ${mg.usoMes.limite} operações neste mês` : ''}</small></span></li>` : ''}
+      </ul></div>
+      ${rep && mg ? `<label class="pd-ok"><input type="checkbox" data-pd-mg> Pode usar o Magnific em cada repetição (gasta créditos todo dia)</label>` : ''}
+      ${rep ? `<label class="pd-ok"><input type="checkbox" data-pd-agora checked> Fazer o primeiro agora</label>` : ''}
+      <div class="pd-a"><button class="btn sm accent" type="button" data-pd-ir${(cf.bloqueios || []).length ? ' disabled' : ''}>${rep ? 'Criar a repetição' : 'Fazer agora'}</button><button class="link soft" type="button" data-pd-x="cancelar">Cancelar</button></div>
+    </article>`
+  }
+  const fim = p.estado === 'pronto' ? `<div class="pd-a"><button class="btn sm accent" type="button" data-ini-abrir="${esc(p.post.kind + ':' + p.post.id)}">Ver em Revisar</button>${p.agendado ? `<span class="fine">agendado: ${esc(quandoRel(p.agendado))}</span>` : ''}</div>`
+    : ['falhou', 'pulado', 'cancelado'].includes(p.estado) ? `${p.erro ? `<p class="ini-alerta ${p.estado === 'falhou' ? 'bad' : ''}">${esc(p.erro)}</p>` : ''}<div class="pd-a"><button class="btn sm" type="button" data-pd-x="denovo">Pedir de novo</button><button class="link soft" type="button" data-pd-x="apagar">Tirar da lista</button>${p.log ? `<a class="link soft" href="${arquivo(p.log)}" target="_blank" rel="noopener">Ver o registro</a>` : ''}</div>`
+    : PED_VIVO.includes(p.estado) ? `<div class="pd-a"><button class="link soft" type="button" data-pd-x="cancelar">Parar</button></div>` : ''
+  return `<article class="pd" data-pd="${esc(p.id)}">${cab}${pl.resumo ? `<p class="pd-resumo">${esc(pl.resumo)}</p>` : ''}${passos}${gasto}${fim}</article>`
+}
+function desenharPedidos() {
+  const box = $('[data-ini-pedir]'); if (!box || !PED) return
+  const ativos = PED.pedidos.filter(p => p.estado !== 'repetindo' || !p.daRepeticao), lista = PED_TODOS ? ativos : ativos.slice(0, 3)
+  const rascunho = box.querySelector('[data-pd-texto]')?.value || ''
+  box.innerHTML = `<form class="pd-f" data-pd-form>
+      <label class="pd-ic" for="pd-texto">${icr('estrela')}</label>
+      <textarea id="pd-texto" data-pd-texto rows="1" maxlength="1500" placeholder="Peça à sua IA. Ex.: um vídeo sobre o meu processo, para hoje à tarde" aria-label="O que você quer que a sua IA faça">${esc(rascunho)}</textarea>
+      <button class="btn accent" type="submit"${PED.ia ? '' : ' disabled'}>Pedir</button>
+    </form>
+    <div class="pd-sob">
+      <div class="pd-ex">${PED_EX.map((t, i) => `<button type="button" class="chip-link" data-pd-ex="${i}">${esc(t.length > 52 ? t.slice(0, 50) + '…' : t)}</button>`).join('')}</div>
+      <p class="fine">${PED.ia ? `Quem entende: <b>${esc(PED.ia.barata)}</b> (só raciocínio, gasta pouco). Quem faz: <b>${esc(PED.ia.principal)}</b>, e o Magnific quando o pedido for imagem ou vídeo. Você confere o plano e o gasto antes; nada vai ao ar sem a sua aprovação.` : 'Conecte uma IA em Ajustes para fazer pedidos.'}</p>
+    </div>
+    ${lista.length ? `<div class="pd-lista">${lista.map(cartaoPedido).join('')}</div>${ativos.length > 3 ? `<button class="link soft" type="button" data-pd-todos>${PED_TODOS ? 'Mostrar menos' : `Ver todos os pedidos (${ativos.length})`}</button>` : ''}` : ''}
+    ${PED.repeticoes.length ? `<div class="pd-reps"><span class="cm-k">Repetições</span><ul>${PED.repeticoes.map(r => `<li class="${r.ativo ? '' : 'off'}" data-pd-rep="${esc(r.id)}"><div><b>${esc(r.resumo || r.texto)}</b><small>${esc(PED.formatos[r.formato] || r.formato)} · ${diasTxt(r.dias)}, cria às ${esc(r.hora)}${r.horaPublicar ? `, agenda para ${esc(r.horaPublicar)}` : ''}${r.pasta ? ` · ${esc(r.pasta)}` : ''} · ${r.feitos} ${r.feitos === 1 ? 'post feito' : 'posts feitos'}</small></div><button class="link" type="button" data-pd-rep-a="${r.ativo ? 'pausar' : 'retomar'}">${r.ativo ? 'Pausar' : 'Retomar'}</button><button class="link soft" type="button" data-pd-rep-a="apagar">Apagar</button></li>`).join('')}</ul></div>` : ''}`
+  const ta = box.querySelector('[data-pd-texto]'); autoAltura(ta)
+}
+const autoAltura = ta => { if (!ta) return; ta.style.height = 'auto'; ta.style.height = Math.min(160, ta.scrollHeight) + 'px' }
+async function enviarPedido(texto) {
+  texto = String(texto || '').trim(); if (texto.length < 6) return pill('Escreva o pedido', 'Diga o que a sua IA deve fazer.', 'var(--amber)')
+  try { await api('/api/pedidos', { texto }); const ta = $('[data-pd-texto]'); if (ta) ta.value = ''; humor('work'); Som.tique(); carregarPedidos() } catch (e) { falha(e) }
+}
+async function ajustarPedido(id, plano) { try { const p = await api('/api/pedidos/ajustar', { id, plano }); const i = PED.pedidos.findIndex(x => x.id === id); if (i >= 0) PED.pedidos[i] = { ...p, uso: PED.pedidos[i].uso ? { ...p.uso, resumo: PED.pedidos[i].uso.resumo } : p.uso }; desenharPedidos() } catch (e) { falha(e) } }
+document.addEventListener('submit', e => { if (!e.target.matches('[data-pd-form]')) return; e.preventDefault(); enviarPedido(e.target.querySelector('[data-pd-texto]').value) })
+document.addEventListener('keydown', e => { if (e.target.matches?.('[data-pd-texto]') && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarPedido(e.target.value) } })
+document.addEventListener('input', e => { if (e.target.matches?.('[data-pd-texto]')) autoAltura(e.target) })
+document.addEventListener('click', async e => {
+  const ex = e.target.closest('[data-pd-ex]'); if (ex) { const ta = $('[data-pd-texto]'); ta.value = PED_EX[+ex.dataset.pdEx]; autoAltura(ta); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); return }
+  if (e.target.closest('[data-pd-todos]')) { PED_TODOS = !PED_TODOS; return desenharPedidos() }
+  const card = e.target.closest('[data-pd]'), id = card?.dataset.pd, p = id && PED?.pedidos.find(x => x.id === id)
+  const rep = e.target.closest('[data-pd-rep-a]')
+  if (rep) { const rid = rep.closest('[data-pd-rep]').dataset.pdRep, a = rep.dataset.pdRepA; if (a === 'apagar' && !confirm('Apagar esta repetição? Os posts que ela já fez continuam em Revisar.')) return; try { await api('/api/pedidos/repeticao', a === 'apagar' ? { id: rid, apagar: true } : { id: rid, ativo: a === 'retomar' }); Som.tique(); carregarPedidos() } catch (err) { falha(err) } return }
+  if (!p) return
+  const modo = e.target.closest('[data-pd-modo]'); if (modo) return ajustarPedido(id, modo.dataset.pdModo === 'rep' ? { repetir: p.plano.repetir || { dias: [1, 2, 3, 4, 5], hora: '08:00' } } : { repetir: null })
+  const dd = e.target.closest('[data-pd-dia]'); if (dd) { const d = +dd.dataset.pdDia, r = p.plano.repetir, dias = r.dias.includes(d) ? r.dias.filter(x => x !== d) : [...r.dias, d]; if (!dias.length) return; return ajustarPedido(id, { repetir: { ...r, dias } }) }
+  if (e.target.closest('[data-pd-ir]')) {
+    const b = e.target.closest('[data-pd-ir]'); b.disabled = true
+    try { await api('/api/pedidos/confirmar', { id, agora: card.querySelector('[data-pd-agora]') ? card.querySelector('[data-pd-agora]').checked : true, magnificTodoDia: !!card.querySelector('[data-pd-mg]')?.checked }); humor('work'); Som.liga(); carregarPedidos() } catch (err) { b.disabled = false; falha(err) }
+    return
+  }
+  const x = e.target.closest('[data-pd-x]')?.dataset.pdX; if (!x) return
+  try {
+    if (x === 'cancelar') await api('/api/pedidos/cancelar', { id })
+    if (x === 'apagar') await api('/api/pedidos/apagar', { id })
+    if (x === 'denovo') { await api('/api/pedidos/apagar', { id }); return enviarPedido(p.texto) }
+    carregarPedidos()
+  } catch (err) { falha(err) }
+})
+document.addEventListener('change', e => {
+  const c = e.target.closest?.('[data-pd-c]'); if (!c) return
+  const id = c.closest('[data-pd]').dataset.pd, p = PED.pedidos.find(x => x.id === id), k = c.dataset.pdC, v = c.value
+  if (k === 'hora') return ajustarPedido(id, { repetir: { ...p.plano.repetir, hora: v || '08:00' } })
+  if (k === 'quando') return ajustarPedido(id, { quando: v ? new Date(v).toISOString() : null })
+  ajustarPedido(id, { [k]: k === 'quantasFotos' ? +v : v, ...(k === 'pasta' ? { limparDuvida: true } : {}) })
+})
+
 async function carregarInicio() {
-  carregarInteracao()
+  carregarInteracao(); carregarPedidos()
   try { const [f, r, au, pf] = await Promise.all([api('/api/queue'), api('/api/runs').catch(() => ({ rotinas: [] })), api('/api/automatico').catch(() => null), api('/api/perfil').then(x => x.perfil).catch(() => null), ST ? null : status()]); INI_FREQ = pf?.frequencia || ''; FILA = f; INI_ROT = (r.rotinas || []).filter(x => x.agenda?.ativo); INI_AUTO = !!au?.ativo } catch (e) { return falha(e) }
   desenharInicio(); contarFila(); atualizarHumor()
 }

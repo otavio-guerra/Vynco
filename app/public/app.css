@@ -1533,3 +1533,48 @@ label .vsel { width: 100% }
 .int-ideias small { font-size: 11px; color: var(--area); font-weight: 600 } .int-ideias p { margin: 0; font-size: var(--fs-small); color: var(--text); line-height: 1.45 } .int-ideias .link { justify-self: start; display: inline-flex; gap: 5px; align-items: center; font-size: var(--fs-caption) }
 .int-bl > .btn { justify-self: start } .int-nota { margin: 0 }
 .btn .spin { width: 12px; height: 12px; border-width: 2px; margin-right: 6px }
+
+/* ---------------------------------------------------------------- Peça à sua IA (Início) */
+.ped { padding: 14px 16px; display: grid; gap: 10px; margin-bottom: var(--sp-4) }
+.pd-f { display: flex; align-items: flex-end; gap: 10px; padding: 6px 6px 6px 12px; border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--edge); transition: border-color .2s var(--ease), box-shadow .2s var(--ease) }
+.pd-f:focus-within { border-color: color-mix(in srgb, var(--area) 60%, var(--edge)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--area) 18%, transparent) }
+.pd-ic { align-self: center; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; color: var(--area); background: color-mix(in srgb, var(--area) 14%, transparent); flex: none } .pd-ic .icr { width: 15px; height: 15px }
+.pd-f textarea { flex: 1; min-height: 38px; max-height: 160px; resize: none; border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-body); line-height: 1.45; padding: 8px 0; outline: none }
+.pd-f textarea::placeholder { color: var(--faint) }
+.pd-f .btn { flex: none }
+.pd-sob { display: grid; gap: 6px } .pd-sob .fine { margin: 0 } .pd-sob .fine b { color: var(--soft); font-weight: 600 }
+.pd-ex { display: flex; flex-wrap: wrap; gap: 6px } .pd-ex .chip-link { font-size: var(--fs-caption); padding: 4px 10px; cursor: pointer }
+.pd-lista { display: grid; gap: 8px }
+.pd { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--edge) }
+.pd-conf { border-color: color-mix(in srgb, var(--amber) 35%, var(--edge)) }
+.pd-h { display: flex; align-items: flex-start; gap: 10px } .pd-t { margin: 0; flex: 1; font-size: var(--fs-small); color: var(--soft); font-style: italic; line-height: 1.4; overflow-wrap: anywhere }
+.pd-e { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; color: var(--area); background: color-mix(in srgb, var(--area) 12%, transparent) }
+.pd-e.ok { color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent) } .pd-e.warn { color: var(--amber); background: color-mix(in srgb, var(--amber) 13%, transparent) } .pd-e.bad { color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent) } .pd-e.soft { color: var(--faint); background: var(--glass-3) }
+.pd-e .spin { width: 10px; height: 10px }
+.pd-resumo { margin: 0; font-weight: 600; color: var(--text); line-height: 1.4 }
+.pd .ini-alerta { margin: 0 }
+.pd-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px 10px }
+.pd-campos label, .pd-linha label { display: grid; gap: 4px; font-size: var(--fs-caption); color: var(--faint) } .pd-campos label > span b { color: var(--green) }
+.pd-tema, .pd-pasta, .pd-quando { grid-column: 1 / -1 }
+.pd-campos input, .pd-campos select { width: 100%; min-height: 34px; padding: 6px 10px; border-radius: var(--r-sm); border: 1px solid var(--edge); background: var(--glass-2, var(--glass)); color: var(--text); font: inherit; font-size: var(--fs-small) }
+.pd-pasta input { font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px }
+.pd-quando { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0 } .pd-quando legend { font-size: var(--fs-caption); color: var(--faint); padding: 0; margin-bottom: 4px }
+.pd-quando .fine { margin: 0 }
+.pd-modo, .pd-dias { display: inline-flex; flex-wrap: wrap; gap: 4px; justify-self: start }
+.pd-modo button, .pd-dias button { min-height: 30px; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--edge); background: transparent; color: var(--soft); font: inherit; font-size: var(--fs-caption); cursor: pointer }
+.pd-dias button { min-width: 42px; padding: 4px 8px }
+.pd-modo button[aria-pressed=true], .pd-dias button[aria-pressed=true] { background: color-mix(in srgb, var(--area) 16%, transparent); border-color: color-mix(in srgb, var(--area) 50%, transparent); color: var(--text); font-weight: 600 }
+.pd-linha { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 10px }
+.pd-usa { display: grid; gap: 6px } .pd-usa ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px }
+.pd-usa li { display: grid; grid-template-columns: 76px 1fr; gap: 8px; font-size: var(--fs-small); padding: 7px 10px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--text) 3%, transparent) }
+.pd-k { color: var(--faint); font-size: var(--fs-caption); padding-top: 1px } .pd-v { color: var(--soft); line-height: 1.4 } .pd-v b { color: var(--text) } .pd-v small { display: block; color: var(--faint); font-size: 11.5px }
+.pd-ok { display: flex; align-items: center; gap: 8px; font-size: var(--fs-small); color: var(--soft); cursor: pointer } .pd-ok input { accent-color: var(--area); width: 16px; height: 16px }
+.pd-a { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap } .pd-a .fine { margin: 0 }
+.pd-passos { margin: 0; padding-left: 18px; display: grid; gap: 2px; font-size: var(--fs-small); color: var(--soft) } .pd-passos li::marker { color: var(--faint) }
+.pd-gasto { margin: 0; display: flex; align-items: center; gap: 6px; font-size: var(--fs-caption); color: var(--faint) } .pd-gasto .icr { width: 13px; height: 13px; flex: none }
+.pd-reps { display: grid; gap: 6px } .pd-reps ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px }
+.pd-reps li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-sm); background: var(--glass); border: 1px solid var(--edge) } .pd-reps li > div { flex: 1; min-width: 0; display: grid; gap: 2px }
+.pd-reps li b { font-size: var(--fs-small); font-weight: 600 } .pd-reps li small { font-size: 11.5px; color: var(--faint); overflow-wrap: anywhere } .pd-reps li.off { opacity: .6 }
+@media (prefers-reduced-motion: reduce) { .pd-f { transition: none } }
+.pd-campos .vsel, .pd-campos .vsel-b { width: 100% } .pd-campos .vsel-b { justify-content: space-between }
+@media (min-width: 900px) { .pd-campos { grid-template-columns: 240px 1fr } .pd-tema { grid-column: auto } }
