@@ -1517,3 +1517,19 @@ label .vsel { width: 100% }
 .cv-alerta a { display: inline !important; padding: 0 !important }
 .rd-prefs .ed-acoes { justify-content: flex-start }
 .cv-lista li { transition: border-color var(--t-fast) } .cv-lista li:hover { border-color: var(--edge-2) }
+
+/* Início: Para interagir hoje */
+.ini-int { display: grid; gap: var(--sp-3) }
+.int-seq { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-caption); font-weight: 700; color: var(--amber); padding: 3px 9px; border-radius: 99px; background: color-mix(in srgb, var(--amber) 12%, transparent) } .int-seq .icr { width: 12px; height: 12px }
+.int-meta { display: grid; gap: 8px; padding: 12px; border-radius: var(--r-md); background: var(--glass); border: 1px solid var(--edge) }
+.int-top { display: flex; align-items: baseline; gap: 8px } .int-top b { font-size: 24px; line-height: 1 } .int-top b small { font-size: 13px; color: var(--faint) } .int-top > span { color: var(--soft); font-size: var(--fs-caption); flex: 1 }
+.int-m { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-caption); color: var(--faint) } .int-m .vsel-b { min-height: 28px; padding: 3px 8px; font-size: var(--fs-caption) }
+.int-barra { display: block; height: 6px; border-radius: 99px; background: var(--glass-3); overflow: hidden } .int-barra em { display: block; height: 100%; border-radius: 99px; background: var(--area); transition: width .4s var(--ease) }
+.int-meta.ok .int-barra em { background: var(--green) } .int-meta.ok .int-top b { color: var(--green) }
+.int-a { display: flex; align-items: center; gap: var(--sp-2) }
+.int-sem { margin-left: auto; display: inline-flex; align-items: flex-end; gap: 3px; height: 26px } .int-sem i { width: 7px; height: var(--h); min-height: 3px; border-radius: 3px; background: var(--glass-3) } .int-sem i.on { background: color-mix(in srgb, var(--area) 75%, transparent) }
+.int-bl { display: grid; gap: 6px } .int-bl .chips { display: flex; flex-wrap: wrap; gap: 6px } .int-bl .chip-link { font-size: var(--fs-caption); padding: 5px 10px }
+.int-ideias { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px } .int-ideias li { display: grid; gap: 3px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--glass); border: 1px solid var(--edge) }
+.int-ideias small { font-size: 11px; color: var(--area); font-weight: 600 } .int-ideias p { margin: 0; font-size: var(--fs-small); color: var(--text); line-height: 1.45 } .int-ideias .link { justify-self: start; display: inline-flex; gap: 5px; align-items: center; font-size: var(--fs-caption) }
+.int-bl > .btn { justify-self: start } .int-nota { margin: 0 }
+.btn .spin { width: 12px; height: 12px; border-width: 2px; margin-right: 6px }

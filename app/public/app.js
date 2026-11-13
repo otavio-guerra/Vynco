@@ -166,6 +166,20 @@ async function apiDemo(path, data) {
     case '/api/perfil': return { perfil: D.perfil, ativo: 'principal', perfis: [{ id: 'principal', nome: D.perfil.nome || 'Perfil principal', conta: D.linkedin.connected ? D.linkedin.name : null }], analise: D.analise, agente: 'Claude' }
     case '/api/perfil/salvar': D.perfil = { ...JSON.parse(JSON.stringify(data.perfil)), atualizado: new Date().toISOString() }; return D.perfil
     case '/api/perfil/analise': return D.analise || {}
+    case '/api/interacao': case '/api/interacao/ideias': {
+      const hoje = new Date().toISOString().slice(0, 10)
+      D.int = D.int || { meta: 3, dias: { [new Date(Date.now() - 864e5).toISOString().slice(0, 10)]: 2, [new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10)]: 3, [new Date(Date.now() - 4 * 864e5).toISOString().slice(0, 10)]: 1 }, ideias: [], buscas: [], job: null }
+      if (q.pathname === '/api/interacao/ideias') {
+        D.int.job = { estado: 'rodando' }
+        setTimeout(() => { D.int.ideias = [
+          { tema: 'Design de produto', angulo: 'Concordar com um exemplo da prática', comeco: 'Vivi isso num projeto recente: quando mostramos o rascunho cedo, a conversa com o time mudou. O que mais me ajudou foi…' },
+          { tema: 'Pesquisa com usuários', angulo: 'Pergunta que puxa conversa', comeco: 'Fiquei pensando em como isso funciona em times pequenos, sem pesquisador dedicado. Como vocês decidem o que testar primeiro?' },
+          { tema: 'Design system', angulo: 'Contraponto respeitoso', comeco: 'Concordo com a ideia, e acrescentaria um cuidado: no começo, um design system pequeno e usado vale mais que um completo e esquecido.' },
+          { tema: 'Carreira em design', angulo: 'Dica curta', comeco: 'Uma coisa que funcionou para mim: guardar o antes e o depois de cada projeto. Na hora de contar o caso, ele se explica sozinho.' }], D.int.buscas = ['design de produto', 'ux research', 'design system', 'portfólio de design']; D.int.ideiasEm = new Date().toISOString(); D.int.job = { estado: 'pronto' } }, 2500)
+      } else if (data && data.acao) { const n = D.int.dias[hoje] || 0; if (data.acao === 'comentei') D.int.dias[hoje] = n + 1; if (data.acao === 'desfazer') D.int.dias[hoje] = Math.max(0, n - 1); if (data.acao === 'meta') D.int.meta = +data.n }
+      const seq = (() => { let k = 0, d = new Date(); if (!(D.int.dias[d.toISOString().slice(0, 10)] > 0)) d = new Date(Date.now() - 864e5); while (D.int.dias[d.toISOString().slice(0, 10)] > 0) { k++; d = new Date(d.getTime() - 864e5) } return k })()
+      return { meta: D.int.meta, hoje: D.int.dias[hoje] || 0, sequencia: seq, semana: Array.from({ length: 7 }, (_, i) => { const x = new Date(Date.now() - (6 - i) * 864e5).toISOString().slice(0, 10); return { dia: x, n: D.int.dias[x] || 0 } }), ideias: D.int.ideias, buscas: D.int.buscas, ideiasEm: D.int.ideiasEm || null, perfil: { area: D.perfil.area, temas: D.perfil.temas }, job: D.int.job }
+    }
     case '/api/atualizacao': {
       D.att = D.att || { atual: '0.18.0', procurada: new Date().toISOString(), avisar: true, erro: null, download: null,
         nova: { versao: '0.19.0', nome: 'Vynco 0.19.0 beta (exemplo)', publicada: new Date(Date.now() - 864e5).toISOString(), tamanho: 31702947, instalavel: true, pagina: 'https://github.com/otavio-guerra/Vynco/releases/latest',
@@ -1932,7 +1946,56 @@ $('[data-scene=rede]').addEventListener('click', async e => {
 
 // ---------------------------------------------------------------- início: o que vai ao ar, o que espera você e o que a IA vai fazer
 let INI_ROT = [], INI_AUTO = false, INI_FREQ = ''
+// ---------------------------------------------------------------- "Para interagir hoje" (Início): constância de comentar, sem automatizar nada no LinkedIn
+let INT = null, intT = null, INT_TODAS = false
+const urlPosts = q => 'https://www.linkedin.com/search/results/content/?keywords=' + encodeURIComponent(q) + '&datePosted=%22past-24h%22&sortBy=%22date_posted%22'
+async function carregarInteracao() {
+  const era = INT?.job?.estado
+  try { INT = await api('/api/interacao') } catch { return }
+  desenharInteracao()
+  clearTimeout(intT)
+  if (INT.job?.estado === 'rodando') intT = setTimeout(carregarInteracao, DEMO ? 800 : 3000)
+  else if (era === 'rodando' && (atualizarHumor(), true)) INT.job?.estado === 'pronto' ? (Som.liga(), pill('Ideias prontas', 'Escolha uma, copie e complete com o assunto do post.', 'var(--green)')) : (Som.erro(), pill('Não deu para gerar as ideias', INT.job?.erro || '', 'var(--red)'))
+}
+function desenharInteracao() {
+  const box = $('[data-ini-interagir]'); if (!box || !INT) return
+  const { hoje, meta, sequencia, semana } = INT, pct = Math.min(100, Math.round(100 * hoje / meta)), ok = hoje >= meta
+  const termos = (INT.buscas.length ? INT.buscas : [INT.perfil.area, ...[].concat(INT.perfil.temas || [])]).map(x => String(x || '').trim()).filter(Boolean).slice(0, 5)
+  const maxS = Math.max(meta, ...semana.map(d => d.n)), rodando = INT.job?.estado === 'rodando'
+  const ideias = INT_TODAS ? INT.ideias : INT.ideias.slice(0, 2)
+  box.innerHTML = `<header class="ini-h"><h2>Para interagir hoje</h2>${sequencia ? `<span class="int-seq" title="Dias seguidos com pelo menos um comentário">${icr('estrela')}${sequencia} ${sequencia === 1 ? 'dia' : 'dias'}</span>` : ''}</header>
+    <div class="int-meta${ok ? ' ok' : ''}">
+      <div class="int-top"><b>${hoje}<small> de ${meta}</small></b><span>${ok ? 'meta do dia cumprida' : `comentário${meta === 1 ? '' : 's'} hoje`}</span>
+        <label class="int-m" title="Meta de comentários por dia"><span>meta</span><select data-int-meta aria-label="Meta de comentários por dia">${[1, 2, 3, 4, 5, 8, 10].map(n => `<option value="${n}"${n === meta ? ' selected' : ''}>${n}</option>`).join('')}</select></label></div>
+      <i class="int-barra"><em style="width:${pct}%"></em></i>
+      <div class="int-a"><button class="btn sm accent" type="button" data-int="comentei">${icr('carta')}Comentei</button>${hoje ? '<button class="link soft" type="button" data-int="desfazer">Desfazer</button>' : ''}
+        <span class="int-sem" aria-label="Comentários nos últimos 7 dias">${semana.map(d => `<i title="${new Date(d.dia + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric' })}: ${d.n}" style="--h:${Math.max(8, Math.round(100 * d.n / maxS))}%" class="${d.n ? 'on' : ''}"></i>`).join('')}</span></div>
+    </div>
+    ${termos.length ? `<div class="int-bl"><span class="cm-k">Posts das últimas 24 horas</span><div class="chips">${termos.map(q => `<a class="chip-link" href="${esc(urlPosts(q))}" target="_blank" rel="noopener">${esc(q)}${icr('externo', 'icr mini')}</a>`).join('')}</div></div>` : ''}
+    <div class="int-bl"><span class="cm-k">Ideias de comentário${INT.ideiasEm ? ` · ${quando(Date.parse(INT.ideiasEm))}` : ''}</span>
+      ${ideias.length ? `<ul class="int-ideias">${ideias.map((x, i) => `<li><small>${esc(x.angulo)}${x.tema ? ' · ' + esc(x.tema) : ''}</small><p>${esc(x.comeco)}</p><button class="link" type="button" data-int-copia="${i}">${icr('copiar')}Copiar</button></li>`).join('')}</ul>${INT.ideias.length > 2 ? `<button class="link soft" type="button" data-int="todas">${INT_TODAS ? 'Mostrar menos' : `Ver todas (${INT.ideias.length})`}</button>` : ''}`
+        : `<p class="fine">A sua IA sugere ângulos e um começo de comentário no seu tom, a partir do seu perfil. Você completa com o assunto do post.</p>`}
+      <button class="btn sm" type="button" data-int="ideias"${rodando ? ' disabled' : ''}>${rodando ? '<span class="spin"></span>Preparando ideias…' : INT.ideias.length ? 'Novas ideias' : 'Sugerir ideias'}</button>
+    </div>
+    <p class="fine int-nota">Curtir e comentar é com você, no LinkedIn. O Vynco não lê nem publica no feed.</p>`
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-int]'), c = e.target.closest('[data-int-copia]')
+  if (c) { try { const i = +c.dataset.intCopia; await navigator.clipboard.writeText(INT.ideias[i].comeco); Som.tique(); pill('Copiado', 'Cole no comentário e complete com o assunto do post.', 'var(--green)') } catch { pill('Não consegui copiar', 'Selecione e copie à mão.', 'var(--amber)') } return }
+  if (!b) return
+  const q = b.dataset.int
+  if (q === 'todas') { INT_TODAS = !INT_TODAS; return desenharInteracao() }
+  try {
+    if (q === 'ideias') { INT = await api('/api/interacao/ideias', {}); INT.job = { estado: 'rodando' }; humor('work'); desenharInteracao(); clearTimeout(intT); intT = setTimeout(carregarInteracao, DEMO ? 800 : 3000); return }
+    const antes = INT.hoje
+    INT = await api('/api/interacao', { acao: q }); desenharInteracao()
+    if (q === 'comentei') { Som.tique(); if (antes < INT.meta && INT.hoje >= INT.meta) { Som.liga(); window.fx?.confete(innerWidth - 220, 260, 60); pill('Meta do dia cumprida', 'Boa! Constância pesa mais que volume.', 'var(--green)') } }
+  } catch (err) { falha(err) }
+})
+document.addEventListener('change', async e => { if (!e.target.matches('[data-int-meta]')) return; try { INT = await api('/api/interacao', { acao: 'meta', n: +e.target.value }); Som.tique(); desenharInteracao() } catch (err) { falha(err) } })
+
 async function carregarInicio() {
+  carregarInteracao()
   try { const [f, r, au, pf] = await Promise.all([api('/api/queue'), api('/api/runs').catch(() => ({ rotinas: [] })), api('/api/automatico').catch(() => null), api('/api/perfil').then(x => x.perfil).catch(() => null), ST ? null : status()]); INI_FREQ = pf?.frequencia || ''; FILA = f; INI_ROT = (r.rotinas || []).filter(x => x.agenda?.ativo); INI_AUTO = !!au?.ativo } catch (e) { return falha(e) }
   desenharInicio(); contarFila(); atualizarHumor()
 }

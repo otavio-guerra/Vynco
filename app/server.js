@@ -22,6 +22,7 @@ const APROV = require('../engine/aprovacao.js')
 const LIMITES = require('../engine/limites.js')
 const AUTO = require('../engine/automatico.js')
 const ATUALIZA = require('../engine/atualizacao.js')
+const INTERAGE = require('../engine/interacao.js')
 // o perfil em uso é o da conta do LinkedIn em uso (ou o "principal", sem conta)
 const perfilAtivo = () => PERFIS.definirAtivo(CONTAS.ativaId() || 'principal')
 
@@ -418,6 +419,7 @@ const server = http.createServer(async (req, res) => {
           return send(res, 200, { ativo: !!c.ativo, dailyUi: !!c.dailyUi, veto: c.veto == null ? 2 : c.veto, aplicado: c.ativo ? { slots: c.slots, nivel: c.nivel, motivo: c.motivo, atualizado: c.atualizado } : null, plano, temReserva: !!reservaId(), design: MODELOS.MODELOS.some(m => m.id === 'daily-ui') && /design|ux|ui\b|produto/i.test(PERFIS.carregar(perfilAtivo()).area || '') })
         }
         case '/api/janela': return send(res, 200, JANELA || { propria: null })
+        case '/api/interacao': return send(res, 200, INTERAGE.estado(perfilAtivo()))
         case '/api/atualizacao': return send(res, 200, u.searchParams.get('procurar') ? await ATUALIZA.procurar({ forcar: u.searchParams.get('procurar') === 'agora' }) : ATUALIZA.estado())
         case '/api/ia/modelos': {   // modelo e esforço por IA (só as que aceitam escolher)
           const ids = [...new Set([agenteId(), reservaId(), 'claude', 'codex', 'antigravity'].filter(id => id && AG.ESCOLHA[id]))]
@@ -559,6 +561,11 @@ const server = http.createServer(async (req, res) => {
       }
       case '/api/imagem/estimar': { try { return send(res, 200, IMAGEM.estimar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/imagem/pedir': { try { return send(res, 200, await IMAGEM.pedir(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/interacao': { try { return send(res, 200, INTERAGE.registrar(perfilAtivo(), b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/interacao/ideias': {
+        const ag = agenteId(); if (!ag) return send(res, 400, { erro: 'Conecte uma IA em Ajustes antes.' })
+        try { return send(res, 200, INTERAGE.gerarIdeias(perfilAtivo(), ag, perguntarComReserva)) } catch (e) { return send(res, 400, { erro: e.message }) }
+      }
       case '/api/rede/candidaturas': { try { return send(res, 200, { candidaturas: REDE.anotarCandidatura(perfilAtivo(), b) }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/rede/convites': { try { return send(res, 200, { convites: REDE.anotarConvite(perfilAtivo(), b) }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/rede/buscar': {
