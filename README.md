@@ -3,7 +3,7 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.18.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.18.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
@@ -25,13 +25,26 @@ O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 | **Criar e modo automático** | **Estratégia** |
 | ![Criar: modo automático com o plano da semana e a folga das IAs](docs/img/vynco-criar.png) | ![Estratégia em uma frase](docs/img/vynco-estrategia.png) |
 | **Conexões** | **Vagas** |
-| ![Conexões: tipos de pessoa, convite no seu tom e o que seguir](docs/img/vynco-rede.png) | ![Vagas com o link conferido e filtros por modalidade](docs/img/vynco-vagas.png) |
-| **Menu da conta** | **Ajustes** |
-| ![Menu da conta: uso das IAs, IA reserva e Magnific](docs/img/vynco-conta.png) | ![Ajustes: conexões, IA reserva e preferências](docs/img/vynco-ajustes.png) |
+| ![Conexões: tipos de pessoa com nota de 0 a 10, convite no seu tom e abas](docs/img/vynco-rede.png) | ![Vagas com nota de 0 a 10, link conferido e abas](docs/img/vynco-vagas.png) |
+| **Convites que você mandou** | **Menu da conta** |
+| ![Convites anotados, com filtros e a situação de cada um](docs/img/vynco-convites.png) | ![Menu da conta: uso das IAs, IA reserva e Magnific](docs/img/vynco-conta.png) |
 
 ![Vynco Design System 1.0](docs/img/design-system.png)
 
-<sub>Capturas da demonstração (versão 0.17), com dados de exemplo.</sub>
+<sub>Capturas da demonstração (versão 0.18), com dados de exemplo.</sub>
+
+## Novidades da 0.18.1
+Tudo dentro das regras do LinkedIn: o Vynco sugere, abre a busca normal do LinkedIn e ajuda a organizar. Ele não clica, não envia convites, não se candidata e não lê nem publica no feed.
+- **Para interagir hoje (Início).** Registro de comentários do dia ("Comentei"), meta diária, sequência de dias e a semana num mini gráfico. Buscas de posts das últimas 24 horas da sua área e ideias de comentário pela sua IA, com um começo no seu tom para você completar (sem inventar fatos, números ou falas).
+- **Conexões.**
+  - Cada sugestão ganha uma **nota de 0 a 10** pelo seu perfil (decide contratação, da sua área, é o seu público, abre vagas, fala dos seus temas), com os motivos, em ordem.
+  - **Buscas prontas** por tema: quem contrata, vagas ativas e colegas da área.
+  - **Convites que você mandou:** anote o convite, marque aceitou, sem resposta ou retirado, acompanhe a taxa de aceite e receba um lembrete para retirar convites parados há 3 semanas. Exporta em CSV.
+- **Vagas.**
+  - **Nota de 0 a 10** por vaga (da sua área, o seu nível, a sua modalidade, desta semana, link conferido, mostra o salário).
+  - **Buscas prontas de vagas** que abrem a busca do LinkedIn já com os filtros (modalidade, nível, última semana ou últimas 24 horas, só remotas).
+  - **Candidaturas que você mandou:** enviada, entrevista, proposta, recusada ou sem resposta, com lembrete de acompanhamento depois de 10 dias. Exporta em CSV.
+- **Visual da Rede.** Abas dentro de Conexões e de Vagas, nota em anel no canto do cartão, ações numa fileira e listas com filtros.
 
 ## Novidades da 0.18
 - **Atualizações dentro do app.** O Vynco procura sozinho uma versão nova (ao abrir e a cada 6 horas), mostra o que mudou e baixa e abre o instalador em **Ajustes → Atualizações**, sem passar pelo GitHub. Antes de abrir, confere o tamanho e a impressão digital (SHA-256) que o GitHub publica para o arquivo. Quem está na 0.17 ou antes instala esta versão uma vez pelo jeito antigo; daí em diante, as atualizações chegam pelo app.
