@@ -106,6 +106,26 @@ function anotarConvite(id, b = {}) {
   fs.mkdirSync(path.dirname(arqConv(id)), { recursive: true }); fs.writeFileSync(arqConv(id), JSON.stringify(l.slice(0, 1000), null, 2), 'utf8')
   return l
 }
+// ---------------------------------------------------------------- candidaturas que você mandou
+// Mesma ideia dos convites: a pessoa se candidata no site da vaga e anota aqui para acompanhar.
+const arqCand = id => path.join(C.ws('perfis'), id, 'candidaturas.json')
+const ESTADOS_CAND = ['enviada', 'entrevista', 'proposta', 'recusada', 'sem-resposta', 'desisti']
+const candidaturas = id => ler(arqCand(id), [])
+function anotarCandidatura(id, b = {}) {
+  const l = candidaturas(id)
+  if (b.acao === 'add') {
+    const vaga = txt(b.vaga, 140); if (!vaga) throw new Error('Diga qual é a vaga.')
+    const link = /^https?:\/\//i.test(String(b.link || '')) ? txt(b.link, 500) : ''
+    l.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), vaga, empresa: txt(b.empresa, 100), link, nota: Number.isInteger(b.nota) ? Math.max(0, Math.min(10, b.nota)) : null, quando: new Date().toISOString(), estado: 'enviada' })
+  } else {
+    const c = l.find(x => x.id === b.id); if (!c) throw new Error('candidatura não encontrada')
+    if (b.acao === 'estado') { if (!ESTADOS_CAND.includes(b.estado)) throw new Error('estado desconhecido'); c.estado = b.estado; c.mudou = new Date().toISOString() }
+    else if (b.acao === 'remover') l.splice(l.indexOf(c), 1)
+    else throw new Error('ação desconhecida')
+  }
+  fs.mkdirSync(path.dirname(arqCand(id)), { recursive: true }); fs.writeFileSync(arqCand(id), JSON.stringify(l.slice(0, 1000), null, 2), 'utf8')
+  return l
+}
 const estado = () => JOB && { id: JOB.id, tipo: JOB.tipo, estado: JOB.estado, erro: JOB.erro, inicio: JOB.inicio }
 
-module.exports = { carregar, buscar, estado, conferir, buscaPessoas, buscaVagas, convites, anotarConvite }
+module.exports = { carregar, buscar, estado, conferir, buscaPessoas, buscaVagas, convites, anotarConvite, candidaturas, anotarCandidatura }

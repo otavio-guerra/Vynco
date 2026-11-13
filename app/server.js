@@ -445,7 +445,7 @@ const server = http.createServer(async (req, res) => {
           const ativo = perfilAtivo(), id = u.searchParams.get('id') || ativo
           try { return send(res, 200, { perfil: PERFIS.carregar(id), ativo, perfis: PERFIS.lista(CONTAS.lista()), analise: PERFIS.estadoAnalise(), agente: agenteId() && AG.AGENTES[agenteId()].nome }) } catch (e) { return send(res, 400, { erro: e.message }) }
         }
-        case '/api/rede': { const id = perfilAtivo(), p = PERFIS.carregar(id); return send(res, 200, { rede: REDE.carregar(id), convites: REDE.convites(id), estado: REDE.estado(), perfil: { area: p.area, objetivo: p.objetivo, publico: p.publico, temas: p.temas }, agente: agenteId() && AG.AGENTES[agenteId()].nome }) }
+        case '/api/rede': { const id = perfilAtivo(), p = PERFIS.carregar(id); return send(res, 200, { rede: REDE.carregar(id), convites: REDE.convites(id), candidaturas: REDE.candidaturas(id), estado: REDE.estado(), perfil: { area: p.area, objetivo: p.objetivo, publico: p.publico, temas: p.temas }, agente: agenteId() && AG.AGENTES[agenteId()].nome }) }
         case '/api/linkedin/ponte': return send(res, 200, { pronto: await ponteOk() })
         case '/api/perfil/analise': return send(res, 200, PERFIS.estadoAnalise() || {})
         case '/api/atividade': {
@@ -559,6 +559,7 @@ const server = http.createServer(async (req, res) => {
       }
       case '/api/imagem/estimar': { try { return send(res, 200, IMAGEM.estimar(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/imagem/pedir': { try { return send(res, 200, await IMAGEM.pedir(b)) } catch (e) { return send(res, 400, { erro: e.message }) } }
+      case '/api/rede/candidaturas': { try { return send(res, 200, { candidaturas: REDE.anotarCandidatura(perfilAtivo(), b) }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/rede/convites': { try { return send(res, 200, { convites: REDE.anotarConvite(perfilAtivo(), b) }) } catch (e) { return send(res, 400, { erro: e.message }) } }
       case '/api/rede/buscar': {
         const ag = agenteId(); if (!ag) return send(res, 400, { erro: 'Conecte uma IA em Ajustes antes.' })

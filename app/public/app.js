@@ -184,13 +184,19 @@ async function apiDemo(path, data) {
         { id: 'claude', nome: 'Claude', papel: 'principal', instalado: true, livre: false, modelos: [{ v: 'haiku', n: 'Haiku', d: 'rápido, gasta menos' }, { v: 'sonnet', n: 'Sonnet', d: 'equilibrado' }, { v: 'opus', n: 'Opus', d: 'mais capaz' }, { v: 'fable', n: 'Fable', d: 'o mais capaz, gasta mais' }], escolha: D.iaMod.claude },
         { id: 'antigravity', nome: 'Antigravity', papel: 'reserva', instalado: true, livre: false, modelos: [{ v: 'gemini-3.8-flash-low', n: 'Gemini 3.8 Flash (Low)' }, { v: 'gemini-3.8-flash-high', n: 'Gemini 3.8 Flash (High)' }, { v: 'claude-sonnet-4-6', n: 'Claude Sonnet 4.6 (Thinking)' }, { v: 'claude-opus-4-6-thinking', n: 'Claude Opus 4.6 (Thinking)' }], escolha: D.iaMod.antigravity }] }
     }
+    case '/api/rede/candidaturas': {
+      D.cands = D.cands || []
+      if (data.acao === 'add') { if (!String(data.vaga || '').trim()) throw new Error('Diga qual é a vaga.'); D.cands.unshift({ id: 'v' + Date.now().toString(36), vaga: data.vaga.trim(), empresa: data.empresa || '', link: data.link || '', nota: data.nota ?? null, quando: new Date().toISOString(), estado: 'enviada' }) }
+      else { const c = D.cands.find(x => x.id === data.id); if (c && data.acao === 'estado') c.estado = data.estado; if (c && data.acao === 'remover') D.cands.splice(D.cands.indexOf(c), 1) }
+      return { candidaturas: D.cands }
+    }
     case '/api/rede/convites': {
       D.convites = D.convites || []
       if (data.acao === 'add') { if (!String(data.quem || '').trim()) throw new Error('Diga para quem você mandou (o nome ou o cargo).'); D.convites.unshift({ id: 'c' + Date.now().toString(36), quem: data.quem.trim(), sugestao: data.sugestao || '', nota: data.nota ?? null, quando: new Date().toISOString(), estado: 'enviado' }) }
       else { const c = D.convites.find(x => x.id === data.id); if (c && data.acao === 'estado') c.estado = data.estado; if (c && data.acao === 'remover') D.convites.splice(D.convites.indexOf(c), 1) }
       return { convites: D.convites }
     }
-    case '/api/rede': D.convites = D.convites || [{ id: 'c1', quem: 'Ana (head de design)', sugestao: 'Líderes de produto em startups', nota: 8, quando: new Date(Date.now() - 25 * 864e5).toISOString(), estado: 'enviado' }, { id: 'c2', quem: 'Bruno (recrutador de design)', sugestao: 'Recrutadores de design', nota: 9, quando: new Date(Date.now() - 4 * 864e5).toISOString(), estado: 'aceito' }, { id: 'c3', quem: 'Carla (product designer)', sugestao: 'Designers sêniores da sua área', nota: 6, quando: new Date(Date.now() - 2 * 864e5).toISOString(), estado: 'enviado' }]; return { convites: D.convites, rede: D.rede, estado: D.redeEstado, perfil: { area: D.perfil.area, objetivo: D.perfil.objetivo, temas: D.perfil.temas }, agente: 'Claude' }
+    case '/api/rede': D.convites = D.convites || [{ id: 'c1', quem: 'Ana (head de design)', sugestao: 'Líderes de produto em startups', nota: 8, quando: new Date(Date.now() - 25 * 864e5).toISOString(), estado: 'enviado' }, { id: 'c2', quem: 'Bruno (recrutador de design)', sugestao: 'Recrutadores de design', nota: 9, quando: new Date(Date.now() - 4 * 864e5).toISOString(), estado: 'aceito' }, { id: 'c3', quem: 'Carla (product designer)', sugestao: 'Designers sêniores da sua área', nota: 6, quando: new Date(Date.now() - 2 * 864e5).toISOString(), estado: 'enviado' }]; D.cands = D.cands || [{ id: 'v1', vaga: 'Designer de produto pleno', empresa: 'Empresa de exemplo', link: '', nota: 8, quando: new Date(Date.now() - 12 * 864e5).toISOString(), estado: 'enviada' }, { id: 'v2', vaga: 'Product designer sênior', empresa: 'Outra empresa', link: '', nota: 7, quando: new Date(Date.now() - 6 * 864e5).toISOString(), estado: 'entrevista' }]; return { candidaturas: D.cands, convites: D.convites, rede: D.rede, estado: D.redeEstado, perfil: { area: D.perfil.area, objetivo: D.perfil.objetivo, temas: D.perfil.temas }, agente: 'Claude' }
     case '/api/rede/buscar': {
       D.redeEstado = { estado: 'rodando', tipo: data.tipo }
       setTimeout(() => {
@@ -1690,14 +1696,16 @@ function desenharRede() {
   const mods = [...new Set(r.vagas.map(v => v.modalidade).filter(Boolean))]
   if (VG_F !== 'todas' && !mods.includes(VG_F)) VG_F = 'todas'
   $('[data-vg-filtro]').innerHTML = mods.length > 1 ? ['todas', ...mods].map(m => `<button type="button" data-vg-f="${esc(m)}" class="${VG_F === m ? 'on' : ''}">${m === 'todas' ? 'Todas' : esc(m)}<span class="n">${m === 'todas' ? r.vagas.length : r.vagas.filter(v => v.modalidade === m).length}</span></button>`).join('') : ''
-  const vs = r.vagas.filter(v => VG_F === 'todas' || v.modalidade === VG_F)
+  const vs = r.vagas.map((v, i) => ({ v, i, ...notaVaga(v, RD.perfil) })).filter(({ v }) => VG_F === 'todas' || v.modalidade === VG_F).sort((a, b) => b.nota - a.nota)
+  desenharBuscasVagas(); desenharCandidaturas()
   const nota = $('[data-vg-auto]'); if (nota) nota.textContent = r.auto && r.quando ? `Atualizadas sozinhas em ${new Date(r.quando).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}: o Vynco busca vagas da sua área a cada 3 dias.` : 'O Vynco também busca vagas da sua área sozinho, a cada 3 dias.'
   $('[data-rd-vagas]').innerHTML = (vs.length ? vs.map(cartaoVaga).join('')
     : `<div class="es-vazio glass"><h3>${r.quando ? 'Nada com essas preferências' : 'Nenhuma vaga ainda'}</h3><p>${r.quando ? 'A IA não achou vagas recentes assim. Tente outro local, modalidade ou nível.' : 'Diga onde e como quer trabalhar e clique em "Buscar vagas". A sua IA traz vagas públicas recentes que combinam com a sua área, com o link conferido.'}</p></div>`)
     + (r.maisVagas ? `<a class="link" href="${esc(urlOk(r.maisVagas))}" target="_blank" rel="noopener">Ver mais vagas no LinkedIn ↗</a>` : '')
 }
 // a vaga em duas camadas: o essencial à vista (cargo, empresa, etiquetas, por que combina) e o resto em "Ver detalhes"
-function cartaoVaga(v) {
+function cartaoVaga({ v, i, nota, motivos }) {
+  const anotada = (RD.candidaturas || []).some(c => c.vaga === v.titulo && c.empresa === (v.empresa || ''))
   const tags = [[v.modalidade, icModo(v.modalidade)], [v.nivel, 'nivel'], [v.contrato, 'contrato']].filter(x => x[0]).map(([t, i]) => `<span class="vg-tag">${icr(i)}${esc(t)}</span>`).join('') + (v.salario ? `<span class="vg-tag money">${icr('dinheiro')}${esc(v.salario)}</span>` : '')
   const lista = (t, xs, cls = '') => xs && xs.length ? `<div class="vg-bloco${cls}"><small>${t}</small><ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''
   const tem = (v.requisitos || []).length || (v.diferenciais || []).length || v.combina || v.falta || v.candidatura
@@ -1710,7 +1718,8 @@ function cartaoVaga(v) {
       ${v.combina || v.falta ? `<div class="vg-fit">${v.combina ? `<div class="vg-bloco ok"><small>O que você já tem</small><p>${esc(v.combina)}</p></div>` : ''}${v.falta ? `<div class="vg-bloco falta"><small>O que pode faltar</small><p>${esc(v.falta)}</p></div>` : ''}</div>` : ''}
       ${v.candidatura ? `<div class="vg-bloco"><small>Como se candidatar</small><p>${esc(v.candidatura)}</p></div>` : ''}
     </details>` : ''}
-    <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">${icr('externo')}Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''}</a><span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? `${icr('escudo')}link conferido` : 'o site não deixa conferir o link'}</span></div></article>`
+    <div class="cx-nota" title="Nota pelo seu perfil e pelo que você procura: da sua área +3, o seu nível +2, a sua modalidade +2, desta semana +1, link conferido +1, mostra o salário +1"><b style="color:${corNota(nota)}">${nota}<small>/10</small></b><span>${motivos.length ? motivos.map(m => `<i>${esc(m)}</i>`).join('') : '<i>pouco a ver com o que você procura</i>'}</span></div>
+    <div class="rd-a"><a class="btn sm accent" href="${esc(urlOk(v.link))}" target="_blank" rel="noopener">${icr('externo')}Abrir a vaga${v.fonte ? ' no ' + esc(v.fonte) : ''}</a>${anotada ? `<span class="rd-ok ok">${icr('escudo')}candidatura anotada</span>` : `<button class="link" type="button" data-vg-anota="${i}">${icr('pasta')}Anotar candidatura</button>`}<span class="rd-ok ${v.conferido ? 'ok' : ''}">${v.conferido ? `${icr('escudo')}link conferido` : 'o site não deixa conferir o link'}</span></div></article>`
 }
 // ---------------------------------------------------------------- nota de 0 a 10: o quanto cada tipo de pessoa combina com o seu perfil
 // Só lê o texto da sugestão e o seu perfil (nada do LinkedIn). Os pesos somam 10:
@@ -1787,6 +1796,87 @@ document.addEventListener('click', async e => {
     const linhas = [['quando', 'quem', 'sugestao', 'nota', 'situacao'], ...(RD.convites || []).map(c => [c.quando.slice(0, 10), c.quem, c.sugestao, c.nota ?? '', (CV_EST.find(x => x[0] === c.estado) || [, c.estado])[1]])]
     const blob = new Blob(['\ufeff' + linhas.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n')], { type: 'text/csv;charset=utf-8' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `convites-vynco-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+  }
+})
+
+// ---------------------------------------------------------------- vagas: nota de 0 a 10 pelo seu perfil e pelo que você procura
+// da sua área +3 · nível que você escolheu +2 · modalidade que você escolheu +2 · publicada nesta semana +1 · link conferido +1 · mostra o salário +1
+function recente(p) {
+  const t = semAcento(p); if (!t) return false
+  if (/hora|minuto|hoje|ontem|today|yesterday|agora/.test(t)) return true
+  const m = t.match(/(\d+)\s*(dia|day)/); if (m) return +m[1] <= 7
+  const d = Date.parse(p); return !isNaN(d) && Date.now() - d <= 7 * 864e5
+}
+function notaVaga(v, P) {
+  const t = semAcento([v.titulo, v.por_que, v.combina].join(' ')), motivos = []
+  let n = 0
+  if (palavrasDe(P.area).some(p => t.includes(p))) { n += 3; motivos.push('da sua área') }
+  const nivel = semAcento(v.nivel + ' ' + v.titulo), pn = semAcento(RD_P.senioridade)
+  if (pn && (nivel.includes(pn) || (pn === 'senior' && /senior|sr\b/.test(nivel)) || (pn === 'lideranca' && /lead|head|gerente|coordenad|lider|manager/.test(nivel)))) { n += 2; motivos.push('o seu nível') }
+  if (RD_P.modalidade && semAcento(v.modalidade).includes(semAcento(RD_P.modalidade))) { n += 2; motivos.push(RD_P.modalidade.toLowerCase()) }
+  if (recente(v.publicada)) { n += 1; motivos.push('desta semana') }
+  if (v.conferido) { n += 1; motivos.push('link conferido') }
+  if (v.salario) { n += 1; motivos.push('mostra o salário') }
+  return { nota: Math.min(10, n), motivos }
+}
+
+// buscas de vagas no LinkedIn com os filtros do próprio site (modalidade, nível e data)
+const WT = { Remoto: '2', 'Híbrido': '3', Presencial: '1' }, EXP = { 'Júnior': '2', Pleno: '3', 'Sênior': '4', 'Liderança': '5,6' }
+const urlVagas = (q, o = {}) => 'https://www.linkedin.com/jobs/search/?' + new URLSearchParams(Object.entries({ keywords: q, location: o.local || '', f_TPR: o.tempo || '', f_WT: o.wt || '', f_E: o.e || '' }).filter(([, v]) => v)).toString()
+function buscasDeVagas(P) {
+  const area = String(P.area || '').split(',')[0].trim().toLowerCase(); if (!area) return []
+  const design = /design|ux|ui\b/.test(area), local = (RD_P.local || '').trim()
+  const prefs = { local, wt: WT[RD_P.modalidade] || '', e: EXP[RD_P.senioridade] || '' }
+  const termos = [area, ...(design ? ['product designer', 'ui ux designer'] : []), ...[].concat(P.temas || []).slice(0, 2).map(t => `${area} ${String(t).trim()}`)]
+  return [
+    ['Com o que você procura', 'alvo', [RD_P.modalidade, RD_P.senioridade, local].filter(Boolean).join(' · ') || 'escolha local, modalidade e nível acima', termos.map(q => ({ q, url: urlVagas(q, { ...prefs, tempo: 'r604800' }) }))],
+    ['Publicadas nas últimas 24 horas', 'relogio', 'quem se candidata cedo aparece mais', termos.slice(0, 3).map(q => ({ q, url: urlVagas(q, { ...prefs, tempo: 'r86400' }) }))],
+    ['Só remotas', 'casa', 'de qualquer lugar', termos.slice(0, 3).map(q => ({ q, url: urlVagas(q, { e: prefs.e, wt: '2', tempo: 'r604800' }) }))],
+  ]
+}
+function desenharBuscasVagas() {
+  const box = $('[data-vg-buscas]'); if (!box || !RD) return
+  const g = buscasDeVagas(RD.perfil); box.hidden = !g.length; if (!g.length) return
+  box.innerHTML = `<header class="rd-h"><h2>${icr('busca')}Buscas prontas de vagas</h2><small class="fine">Abrem a busca de vagas do LinkedIn já com os filtros. A candidatura é sempre feita por você, no site da vaga.</small></header>
+    <div class="rd-bg">${g.map(([t, ic, sub, qs]) => `<div class="rd-bgrupo"><span class="rd-bt">${icr(ic)}<b>${t}</b><small>${esc(sub)}</small></span><div class="chips">${qs.map(x => `<a class="chip-link" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.q)}${icr('externo', 'icr mini')}</a>`).join('')}</div></div>`).join('')}</div>`
+}
+
+// candidaturas que você mandou (anotadas à mão)
+const CD_EST = [['enviada', 'Enviada'], ['entrevista', 'Entrevista'], ['proposta', 'Proposta'], ['recusada', 'Recusada'], ['sem-resposta', 'Sem resposta']]
+function desenharCandidaturas() {
+  const box = $('[data-vg-cand]'); if (!box || !RD) return
+  const l = RD.candidaturas || [], n = e => l.filter(c => c.estado === e).length
+  const respondidas = l.filter(c => ['entrevista', 'proposta', 'recusada'].includes(c.estado)).length
+  const paradas = l.filter(c => c.estado === 'enviada' && diasDesde(c.quando) >= 10)
+  const quandoTxt = d => d < 1 ? 'hoje' : d === 1 ? 'ontem' : 'há ' + d + ' dias'
+  box.innerHTML = `<header class="rd-h"><h2>${icr('pasta')}Candidaturas que você mandou</h2>${l.length ? `<span class="tag">${l.length}</span>` : ''}</header>
+    <p class="fine">O Vynco não se candidata por você. Candidate-se no site da vaga e anote aqui para acompanhar cada uma.</p>
+    ${l.length ? `<div class="cv-num"><span><b>${l.filter(c => diasDesde(c.quando) < 7).length}</b>nesta semana</span><span><b>${n('entrevista')}</b>em entrevista</span><span><b>${n('proposta')}</b>com proposta</span><span><b>${l.length ? Math.round(100 * respondidas / l.length) + '%' : '—'}</b>tiveram resposta</span></div>` : ''}
+    ${paradas.length ? `<p class="cv-alerta">${icr('relogio')}${paradas.length} ${paradas.length === 1 ? 'candidatura está' : 'candidaturas estão'} sem resposta há mais de 10 dias. Uma mensagem curta e educada para quem recruta pode destravar: diga a vaga, por que você combina e que segue à disposição.</p>` : ''}
+    <form class="cv-add" data-cd-add><input name="vaga" maxlength="140" autocomplete="off" placeholder="Vaga (ex.: Product designer pleno)" aria-label="Vaga"><input name="empresa" maxlength="100" autocomplete="off" placeholder="Empresa" aria-label="Empresa"><button class="btn sm accent" type="submit">Anotar candidatura</button>${l.length ? '<button class="link" type="button" data-cd-csv>Baixar CSV</button>' : ''}</form>
+    ${l.length ? `<ul class="cv-lista">${l.slice(0, 40).map(c => `<li data-cd="${c.id}"><span class="cv-q"><b>${c.link ? `<a class="link" href="${esc(urlOk(c.link))}" target="_blank" rel="noopener">${esc(c.vaga)}</a>` : esc(c.vaga)}</b><small>${[c.empresa, c.nota != null ? 'nota ' + c.nota : '', quandoTxt(diasDesde(c.quando))].filter(Boolean).map(esc).join(' · ')}</small></span>
+      <span class="cv-est" role="radiogroup" aria-label="Situação">${CD_EST.map(([v, t]) => `<button type="button" role="radio" aria-checked="${c.estado === v}" data-cd-est="${v}" class="e-${v}">${t}</button>`).join('')}</span><button class="ic-btn" type="button" data-cd-fora title="Apagar da lista" aria-label="Apagar da lista">×</button></li>`).join('')}</ul>` : ''}`
+}
+async function anotarCand(b) { try { const r = await api('/api/rede/candidaturas', b); RD.candidaturas = r.candidaturas; desenharCandidaturas(); return true } catch (e) { falha(e); return false } }
+document.addEventListener('submit', async e => {
+  if (!e.target.matches('[data-cd-add]')) return
+  e.preventDefault()
+  if (await anotarCand({ acao: 'add', vaga: e.target.vaga.value.trim(), empresa: e.target.empresa.value.trim() })) { Som.tique(); pill('Candidatura anotada', 'Atualize a situação quando tiver resposta.', 'var(--green)') }
+})
+document.addEventListener('click', async e => {
+  const est = e.target.closest('[data-cd-est]'), fora = e.target.closest('[data-cd-fora]'), csv = e.target.closest('[data-cd-csv]'), anota = e.target.closest('[data-vg-anota]')
+  if (est) { Som.tique(); return anotarCand({ acao: 'estado', id: est.closest('[data-cd]').dataset.cd, estado: est.dataset.cdEst }) }
+  if (fora) return anotarCand({ acao: 'remover', id: fora.closest('[data-cd]').dataset.cd })
+  if (anota) {
+    const v = RD.rede.vagas[+anota.dataset.vgAnota]
+    if ((RD.candidaturas || []).some(c => c.vaga === v.titulo && c.empresa === (v.empresa || ''))) return pill('Já anotada', 'Essa candidatura já está na sua lista.', 'var(--amber)')
+    if (await anotarCand({ acao: 'add', vaga: v.titulo, empresa: v.empresa || '', link: v.link || '', nota: notaVaga(v, RD.perfil).nota })) { Som.liga(); pill('Candidatura anotada', 'Boa! Ela está em "Candidaturas que você mandou".', 'var(--green)'); desenharRede() }
+    return
+  }
+  if (csv) {
+    const linhas = [['quando', 'vaga', 'empresa', 'nota', 'situacao', 'link'], ...(RD.candidaturas || []).map(c => [c.quando.slice(0, 10), c.vaga, c.empresa, c.nota ?? '', (CD_EST.find(x => x[0] === c.estado) || [, c.estado])[1], c.link])]
+    const blob = new Blob(['\ufeff' + linhas.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n')], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `candidaturas-vynco-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000)
   }
 })
 

@@ -1488,3 +1488,8 @@ label .vsel { width: 100% }
 .cv-est button { font: var(--fw-semibold) 11px var(--font); color: var(--soft); background: none; border: 0; padding: 5px 9px; border-radius: 99px; cursor: pointer }
 .cv-est button[aria-checked=true] { color: #fff } .cv-est .e-enviado[aria-checked=true] { background: var(--violet) } .cv-est .e-aceito[aria-checked=true] { background: var(--green); color: #0C1220 } .cv-est .e-sem-resposta[aria-checked=true] { background: var(--amber); color: #0C1220 } .cv-est .e-retirado[aria-checked=true] { background: var(--glass-3); color: var(--text) }
 @media (max-width: 1000px) { .rd-bgrupo { grid-template-columns: 1fr } .cv-num { grid-template-columns: repeat(2, 1fr) } .cv-lista li { flex-wrap: wrap } }
+
+/* Vagas: candidaturas */
+.cv-add input[name=empresa] { flex: 0 1 220px }
+.cv-est .e-enviada[aria-checked=true] { background: var(--violet) } .cv-est .e-entrevista[aria-checked=true] { background: #5AA9FF; color: #0C1220 } .cv-est .e-proposta[aria-checked=true] { background: var(--green); color: #0C1220 } .cv-est .e-recusada[aria-checked=true] { background: var(--red); color: #fff }
+.vg .cx-nota { margin: var(--sp-2) 0 }
