@@ -3,7 +3,7 @@
   <img src="app/public/marca/vynco-logo-lockup-escuro.svg" alt="Vynco" width="320">
 </picture>
 
-![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.19.0%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
+![Beta](https://img.shields.io/badge/status-beta%20test-7FFFD4?style=flat-square&labelColor=0C1220) ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.19.1%20beta-6C63FF?style=flat-square&labelColor=0C1220) ![Windows](https://img.shields.io/badge/Windows-10%20e%2011-F4F5FA?style=flat-square&labelColor=0C1220)
 
 **Sua carreira em outro nível.** Seus posts no ar, do seu jeito. Nada sai sem você.
 
@@ -34,6 +34,14 @@ O Vynco é um motor de conteúdo para LinkedIn, para qualquer profissão:
 ![Vynco Design System 1.0](docs/img/design-system.png)
 
 <sub>Capturas da demonstração (versão 0.19), com dados de exemplo.</sub>
+
+## Novidades da 0.19.1
+- **Comentários (Início → Para interagir hoje).**
+  - **Responda quem comentou:** os seus posts das últimas 48 horas, com um botão para abrir cada um no LinkedIn e responder.
+  - Depois de copiar uma ideia de comentário, o botão **Comentei** aparece nela; o contador mostra quantos faltam para a meta.
+- **Prévia do feed:** hashtags e links em destaque, como no LinkedIn, o "ver mais" sem reticências repetidas e o "Enviar" no rodapé.
+- **Visual e uso:** tema claro revisado (barras de progresso, Agenda, miniaturas de vídeo e etiquetas), títulos longos não estouram mais os cartões (Agenda, Conexões), Mídias e Criar aproveitam melhor a largura, o topo não cobre mais as contas e o aviso de nova versão ficou numa linha.
+- **Código:** o painel foi dividido em arquivos menores (`app.js`, `conteudo.js`, `rede.js`, `inicio.js`, `telas.js`).
 
 ## Novidades da 0.19
 - **Peça à sua IA (Início).** Escreva o que quer do seu jeito: "um vídeo sobre X para hoje à tarde" ou "todo dia útil, um post com as fotos novas da pasta X sobre o avanço do meu trabalho".

@@ -91,7 +91,7 @@
   if (reduzido) return
 
   // ---------------------------------------------------------------- luz que acompanha o cursor nos cartões
-  const ALVOS = '.glass, .post, .ini-chip, .rot, .cr-acao, .midia, .btn, .tour-pop'
+  const ALVOS = '.glass, .post, .ini-chip, .rot-card, .cr-acao, .midia, .btn, .tour-pop'
   let ultimo = null
   document.addEventListener('pointermove', e => {
     const el = e.target.closest && e.target.closest(ALVOS)

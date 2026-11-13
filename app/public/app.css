@@ -574,16 +574,16 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .cr-aviso { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 14px; border-radius: 12px; font-size: 13.5px; background: var(--glass); border: 1px solid var(--edge); --c: var(--green) } .cr-aviso.bad { --c: var(--amber) }
 .cr-aviso .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c) } .cr-aviso > span:nth-child(2) { flex: 1; color: var(--soft) } .cr-aviso b { color: var(--text) }
 .rot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px }
-.rot { padding: 14px; display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: start; transition: border-color .2s }
-.rot.rodando { border-color: color-mix(in srgb, var(--violet) 55%, var(--edge)) }
+.rot-card { padding: 14px; display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: start; transition: border-color .2s }
+.rot-card.rodando { border-color: color-mix(in srgb, var(--violet) 55%, var(--edge)) }
 .rot-art .wf { width: 92px; border-radius: 10px }
 .rot-c { display: grid; gap: 7px; min-width: 0 }
 .rot-c header { display: grid; gap: 5px } .rot-c h3 { margin: 0; font-size: 15.5px }
-.rot p { color: var(--soft); margin: 0; font-size: 13.5px; text-wrap: pretty }
+.rot-card p { color: var(--soft); margin: 0; font-size: 13.5px; text-wrap: pretty }
 .rot-agenda { color: var(--faint); font-size: 12.5px } .rot-agenda.on { color: var(--green); font-weight: 600 }
 .rot-st { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--soft) } .rot-st .spin { width: 13px; height: 13px; border-width: 2px }
 .rot-st.ok { color: var(--green) } .rot-st.bad { color: var(--amber) } .rot-st .link { font-size: 12.5px }
-.rot .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.rot-card .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
 .rot-form { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--bg-2); border: 1px solid var(--edge); animation: entra .25s var(--ease) both }
 .dias { display: flex; gap: 5px }
 .dias button { width: 34px; height: 34px; border-radius: 50%; font: 700 12.5px var(--font); color: var(--soft); background: var(--glass); border: 1px solid var(--edge-2); cursor: pointer; transition: all .2s var(--ease) }
@@ -616,20 +616,26 @@ kbd.lit { color: var(--accent); border-color: var(--accent); background: color-m
 .cal-nav .icon { width: 34px; padding: 0 } .cal-nav .icon svg { width: 16px; height: 16px }
 .cal-legenda { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 12.5px; color: var(--soft) }
 .cl { display: inline-flex; align-items: center; gap: 6px } .cl::before { content: ''; width: 10px; height: 10px; border-radius: 3px; background: var(--c) }
-.cl.pub { --c: var(--accent) } .cl.ag { --c: var(--violet) } .cl.rot { --c: var(--green) } .cal-legenda .fine { margin: 0 }
+.cl.pub { --c: var(--green) } .cl.ag { --c: var(--sec-agenda) } .cl.rot { --c: var(--sec-criar) } .cl.rot::before { background: transparent; border: 1.5px dashed var(--sec-criar); width: 8px; height: 8px }
+.cal-legenda .fine { margin: 0 0 0 auto }
 .cal-grid { display: grid; grid-template-columns: 1fr 330px; gap: 16px; align-items: start }
-.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; padding: 10px }
-.cal-dow { text-align: center; font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); padding: 4px 0 6px }
-.cal-d { position: relative; min-height: 104px; padding: 6px; border-radius: 10px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; background: var(--glass); border: 1px solid transparent; transition: background .2s, border-color .2s; overflow: hidden }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: var(--sp-3) }
+.cal-dow { text-align: center; font-size: var(--fs-overline); font-weight: 700; letter-spacing: var(--ls-overline); text-transform: uppercase; color: var(--faint); padding: 2px 0 8px }
+.cal-d { position: relative; min-height: 108px; padding: var(--sp-2); border-radius: var(--r-md); display: flex; flex-direction: column; gap: 4px; cursor: pointer; background: var(--glass); border: 1px solid transparent; transition: background var(--t-fast), border-color var(--t-fast); overflow: hidden }
 .cal-d:hover { background: var(--glass-2) } .cal-d:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
-.cal-d.fora { opacity: .4 } .cal-d.passado .cal-n { color: var(--faint) }
-.cal-d.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--glass)) }
+.cal-d.fora { opacity: .4 } .cal-d.passado .cal-n { color: var(--faint) } .cal-d.passado:not(.hoje) { opacity: .62 } .cal-d.fds { background: color-mix(in srgb, var(--glass) 45%, transparent) }
+.cal-d.tem .cal-n { color: var(--text) }
+.cal-d.sel { border-color: var(--area); background: color-mix(in srgb, var(--area) 10%, var(--glass)) }
+.cal-d.hoje { border-color: color-mix(in srgb, var(--area) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--area) 40%, transparent) }
 .cal-d.alvo { border-color: var(--violet); border-style: dashed; background: color-mix(in srgb, var(--violet) 14%, var(--glass)) }
-.cal-n { font-size: 13px; font-weight: 650; color: var(--soft); line-height: 1 }
-.cal-d.hoje .cal-n { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: -3px 0 0 -3px; border-radius: 50%; color: var(--accent-ink); background: var(--accent) }
-.cal-ev { display: block; font-size: 12px; line-height: 1.25; padding: 2px 6px; border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); --c: var(--accent); background: color-mix(in srgb, var(--c) 18%, transparent); border-left: 3px solid var(--c) }
-.cal-ev i { font-style: normal; color: var(--soft); margin-right: 4px; font-variant-numeric: tabular-nums }
-.cal-ev.ag { --c: var(--violet); cursor: grab } .cal-ev.rot { --c: var(--green); background: transparent; border: 1px dashed color-mix(in srgb, var(--green) 60%, transparent); border-left-width: 3px; border-left-style: solid; color: var(--soft) }
+.cal-n { font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--soft); line-height: 1 }
+.cal-d.hoje .cal-n { display: inline-grid; place-items: center; width: 22px; height: 22px; margin: -3px 0 0 -3px; border-radius: 50%; color: #0C1220; background: var(--area) }
+.cal-ev { display: block; font-size: 11.5px; line-height: 1.25; padding: 3px 6px 3px 7px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); --c: var(--accent); background: color-mix(in srgb, var(--c) 15%, transparent); border-left: 3px solid var(--c) }
+.cal-ev i { font-style: normal; color: color-mix(in srgb, var(--c) 70%, var(--text)); font-weight: var(--fw-semibold); margin-right: 4px; font-variant-numeric: tabular-nums }
+.cal-ev.ag { --c: var(--sec-agenda); cursor: grab } .cal-ev.pub { --c: var(--green) }
+.cal-ev.rot { --c: var(--sec-criar); background: transparent; border: 1px dashed color-mix(in srgb, var(--sec-criar) 55%, transparent); border-left: 3px solid var(--sec-criar); color: var(--soft) }
+/* dia com um item só: o título ganha até duas linhas */
+.cal-d.um .cal-ev { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: clip }
 .cal-mais { font-size: 12px; color: var(--faint); padding-left: 6px }
 .cal-lado { display: grid; gap: 14px }
 .cal-lado h3::first-letter { text-transform: uppercase }
@@ -805,12 +811,12 @@ dialog p { color: var(--soft); margin: 0 }
 .cards > .empty, .midias:not(.pk) > :not(.midia) { flex: 0 1 720px; width: 100%; max-width: 720px; margin-inline: auto }
 /* Criar: os modelos em linhas centralizadas, inclusive a última */
 .rot-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px }
-.rot-grid > .rot { flex: 0 1 380px; min-width: 300px } .rot-grid > :not(.rot) { flex: 1 1 100% }
+.rot-grid > .rot-card { flex: 0 1 380px; min-width: 300px } .rot-grid > :not(.rot-card) { flex: 1 1 100% }
 /* Apresentação: cartões de escolha em linhas centralizadas */
 .vc-tiles { display: flex; flex-wrap: wrap; justify-content: center } .vc-tiles > .vc-tile { flex: 0 1 178px; min-width: 150px }
 .vc-tiles.tres > .vc-tile { flex-basis: 210px }
 .vc-tons { display: flex; flex-wrap: wrap; justify-content: center } .vc-tons > .vc-tom { flex: 0 1 280px; min-width: 220px }
-@media (max-width: 700px) { .vc-tiles > .vc-tile, .vc-tiles.tres > .vc-tile { flex: 0 1 calc(50% - 5px); min-width: 0 } .vc-tons > .vc-tom { flex-basis: 100% } .rot-grid > .rot { flex-basis: 100%; min-width: 0 } }
+@media (max-width: 700px) { .vc-tiles > .vc-tile, .vc-tiles.tres > .vc-tile { flex: 0 1 calc(50% - 5px); min-width: 0 } .vc-tons > .vc-tom { flex-basis: 100% } .rot-grid > .rot-card { flex-basis: 100%; min-width: 0 } }
 
 /* a sua IA trabalhando: sempre visível na barra do topo */
 .ativ { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 9px; min-height: 34px; border-radius: 99px; font: 600 13px var(--font); color: var(--text); background: color-mix(in srgb, var(--violet) 16%, var(--glass)); border: 1px solid color-mix(in srgb, var(--violet) 45%, var(--edge)); cursor: pointer; white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis }
@@ -850,7 +856,7 @@ dialog p { color: var(--soft); margin: 0 }
 /* Criar: recomendados */
 .cr-rec:empty { display: none } .cr-rec { display: grid; gap: 4px; margin-bottom: 10px }
 .cr-rec .cr-head { gap: 4px; margin-bottom: 8px } .cr-rec .cr-head .fine { margin: 0; text-align: center; max-width: 620px }
-.rot-grid.rec > .rot { border-color: color-mix(in srgb, var(--accent) 45%, var(--edge)) }
+.rot-grid.rec > .rot-card { border-color: color-mix(in srgb, var(--accent) 45%, var(--edge)) }
 /* Estratégia: ritmo */
 .pf-ritmo { margin-bottom: 14px } .pf-ritmo-t { margin: 0; color: var(--soft); font-size: 14.5px } .pf-ritmo-t b { color: var(--text) }
 /* Agenda: no ar */
@@ -933,7 +939,7 @@ body.com-lado .scene.view { padding-top: 76px }
 
 /* revisar: cartões maiores, com a legenda à vista */
 .cards > .post { flex: 0 0 220px }
-.post .resumo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 10px 10px; margin: -2px 0 0; font-size: 12.5px; color: var(--soft); line-height: 1.4 }
+.post .resumo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 10px; margin: -2px 0 10px; font-size: 12.5px; color: var(--soft); line-height: 1.4 }
 
 /* conta à direita: LinkedIn e IA com nome, estado e o uso da sessão */
 .bar-r { justify-self: end; display: flex; align-items: center; gap: 8px; min-width: 0 }
@@ -1054,11 +1060,11 @@ body::after { content: ''; position: fixed; inset: -50%; z-index: 90; pointer-ev
 .glass { background-image: linear-gradient(160deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, 0) 42%) }
 [data-theme=light] .glass { background-image: linear-gradient(160deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .2) 60%) }
 .fx-luz { --luz: 1 }
-.post::before, .ini-chip::before, .rot::before, .cr-acao::before, .midia::before, .ed-box::before, .ini-hero::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s var(--ease); z-index: -1;
+.post::before, .ini-chip::before, .rot-card::before, .cr-acao::before, .midia::before, .ed-box::before, .ini-hero::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .35s var(--ease); z-index: -1;
   background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%) }
 .fx-luz::before { opacity: 1 }
-.post, .ini-chip, .rot, .cr-acao, .midia, .ed-box, .ini-hero { isolation: isolate }
-.ed-box, .ini-hero, .ini-chip, .rot, .cr-acao { position: relative }
+.post, .ini-chip, .rot-card, .cr-acao, .midia, .ed-box, .ini-hero { isolation: isolate }
+.ed-box, .ini-hero, .ini-chip, .rot-card, .cr-acao { position: relative }
 
 /* ================================================================ microinterações */
 .btn { transition: transform .18s var(--spring), box-shadow .25s var(--ease), background .2s, border-color .2s, color .2s }
@@ -1067,8 +1073,8 @@ body::after { content: ''; position: fixed; inset: -50%; z-index: 90; pointer-ev
 .fx-tem-onda { overflow: hidden }
 .fx-onda { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255, 255, 255, .35), rgba(255, 255, 255, 0) 60%); transform: scale(0); animation: onda .6s var(--ease) forwards; z-index: 0 }
 @keyframes onda { to { transform: scale(1); opacity: 0 } }
-.post, .ini-chip, .rot, .cr-acao, .midia { transition: transform .35s var(--spring), border-color .25s, box-shadow .35s var(--ease) }
-.post:hover, .rot:hover, .cr-acao:hover, .ini-chip:hover { transform: translateY(-3px); box-shadow: 0 18px 44px rgba(0, 0, 0, .28) }
+.post, .ini-chip, .rot-card, .cr-acao, .midia { transition: transform .35s var(--spring), border-color .25s, box-shadow .35s var(--ease) }
+.post:hover, .rot-card:hover, .cr-acao:hover, .ini-chip:hover { transform: translateY(-3px); box-shadow: 0 18px 44px rgba(0, 0, 0, .28) }
 .ini-hero { transition: transform .5s var(--ease), box-shadow .4s; will-change: transform }
 .ini-hero-capa img { transition: transform .8s var(--ease) } .ini-hero:hover .ini-hero-capa img { transform: scale(1.04) }
 .ini-dot { animation: pulsa 2.4s ease-in-out infinite } @keyframes pulsa { 50% { box-shadow: 0 0 0 5px transparent, 0 0 18px var(--green) } }
@@ -1163,7 +1169,7 @@ body::after { content: ''; position: fixed; inset: -50%; z-index: 90; pointer-ev
 .res-aviso { color: var(--amber) }
 
 /* criar: cartão que não vaza e erro explicado */
-.rot { overflow: hidden; min-width: 0 }
+.rot-card { overflow: hidden; min-width: 0 }
 .log { overflow-wrap: anywhere; word-break: break-word; max-height: 150px }
 .rot-erro { display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--amber) 9%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 32%, transparent) }
 .rot-erro b { font-size: 13.5px; color: var(--amber) } .rot-erro span { font-size: 13px; color: var(--soft); line-height: 1.45 } .rot-erro small { color: var(--faint) }
@@ -1229,7 +1235,7 @@ body[data-area=revisar] { --area: var(--sec-revisar) } body[data-area=agenda] { 
 .chips button, .filters button, .subnav, .subnav button, .ini-tag, .vg-tag, .auto-ia, .nav-n, .conns { border-radius: var(--r-pill) }
 .glass, .ed-box, .set { border-radius: var(--r-lg) }
 .ini-hero, .tour-pop, dialog > .glass, .sheet { border-radius: var(--r-xl) }
-.post, .rot, .cr-acao, .midia, .ini-chip, .rd-card, .cx-seg { border-radius: var(--r-lg) }
+.post, .rot-card, .cr-acao, .midia, .ini-chip, .rd-card, .cx-seg { border-radius: var(--r-lg) }
 .conta-menu, .vsel-lista, .ctx-menu, .aviso-fixo { border-radius: var(--r-md); box-shadow: var(--e-2) }
 input, textarea, .sel, .vsel-b { border-radius: var(--r-sm) }
 
@@ -1302,36 +1308,18 @@ label .vsel { width: 100% }
 [data-scene=calendario] .view-head .sub { margin: var(--sp-1) 0 0 } [data-scene=calendario] .view-head::after { display: none }
 [data-scene=calendario] .cal-nav { display: flex; gap: var(--sp-2); align-items: center }
 [data-scene=calendario] .cal-legenda { justify-content: flex-start; gap: var(--sp-4); margin-bottom: var(--sp-3); font-size: var(--fs-caption) }
-.cal-legenda .cl { display: inline-flex; align-items: center; gap: 6px } .cal-legenda .cl::before { content: ''; width: 10px; height: 10px; border-radius: 3px; background: var(--c) }
-.cal-legenda .cl.pub { --c: var(--green) } .cal-legenda .cl.ag { --c: var(--sec-agenda) } .cal-legenda .cl.rot { --c: var(--sec-criar) }
-.cal-legenda .fine { margin-left: auto }
 [data-scene=calendario] [data-ag-abas] { margin: 0 0 var(--sp-3) }
-.cal { gap: 6px; padding: var(--sp-3) }
-.cal-dow { font-size: var(--fs-overline); letter-spacing: var(--ls-overline); padding: 2px 0 8px }
-.cal-d { min-height: 108px; padding: var(--sp-2); border-radius: var(--r-md); gap: 4px; border: 1px solid transparent; transition: background var(--t-fast), border-color var(--t-fast) }
-.cal-d.fds { background: color-mix(in srgb, var(--glass) 45%, transparent) }
-.cal-d.passado:not(.hoje) { opacity: .62 }
-.cal-d.tem .cal-n { color: var(--text) }
-.cal-d.hoje { border-color: color-mix(in srgb, var(--area) 70%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--area) 40%, transparent) }
-.cal-d.hoje .cal-n { color: #0C1220; background: var(--area) }
-.cal-d.sel { border-color: var(--area); background: color-mix(in srgb, var(--area) 10%, var(--glass)) }
-.cal-n { font-size: var(--fs-small); font-weight: var(--fw-semibold) }
-.cal-ev { font-size: 11.5px; padding: 3px 6px 3px 7px; border-radius: 6px; border-left: 3px solid var(--c); background: color-mix(in srgb, var(--c) 15%, transparent) }
-.cal-ev.ag { --c: var(--sec-agenda) } .cal-ev.pub { --c: var(--green) }
-.cal-ev.rot { --c: var(--sec-criar); background: transparent; border: 1px dashed color-mix(in srgb, var(--sec-criar) 55%, transparent); border-left: 3px solid var(--sec-criar) }
-.cal-ev i { color: color-mix(in srgb, var(--c) 70%, var(--text)); font-weight: var(--fw-semibold) }
 .cal-li.ag { --c: var(--sec-agenda) } .cal-li.rot { --c: var(--sec-criar) } .cal-li.pub { --c: var(--green) }
 .cal-lado .ed-box { border-radius: var(--r-lg) }
 @media (max-width: 1100px) { .cal-grid { grid-template-columns: minmax(0, 1fr) } }
-.cal-legenda .cl.rot::before { background: transparent !important; border: 1.5px dashed var(--sec-criar) !important; width: 8px; height: 8px }
 
 /* luz do cursor bem mais suave; o destaque do Início não inclina nem brilha forte */
-.post::before, .ini-chip::before, .rot::before, .cr-acao::before, .midia::before, .ed-box::before { background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--area) 6%, transparent), transparent 65%) }
+.post::before, .ini-chip::before, .rot-card::before, .cr-acao::before, .midia::before, .ed-box::before { background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--area) 6%, transparent), transparent 65%) }
 .ini-hero::before { background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--area) 4%, transparent), transparent 70%) }
 .ini-hero { transform: none !important }
 .ini-hero:hover { border-color: color-mix(in srgb, var(--area) 45%, var(--edge)) }
 .ini-hero:hover .ini-hero-capa img { transform: none }
-.post:hover, .rot:hover, .cr-acao:hover, .ini-chip:hover { box-shadow: var(--e-1) }
+.post:hover, .rot-card:hover, .cr-acao:hover, .ini-chip:hover { box-shadow: var(--e-1) }
 
 /* logo do Magnific e foto do LinkedIn */
 .mg-ic, .c-ic.mg { background: #000 !important; padding: 0; overflow: visible } .mg-ic svg, .c-ic.mg svg { width: 100%; height: 100%; border-radius: inherit }
@@ -1578,3 +1566,61 @@ label .vsel { width: 100% }
 @media (prefers-reduced-motion: reduce) { .pd-f { transition: none } }
 .pd-campos .vsel, .pd-campos .vsel-b { width: 100% } .pd-campos .vsel-b { justify-content: space-between }
 @media (min-width: 900px) { .pd-campos { grid-template-columns: 240px 1fr } .pd-tema { grid-column: auto } }
+
+/* ---------------------------------------------------------------- Refino 0.19.1 */
+/* topo: em telas médias, a pílula mostra só o título para não cobrir as contas */
+@media (max-width: 1240px) { .pill small { display: none } .pill { max-width: min(300px, 32vw) } .pill b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis } }
+/* vazios da Rede ocupam a largura toda e trazem a ação */
+.cx-lista > .es-vazio, .vg-lista > .es-vazio { grid-column: 1 / -1; justify-items: center; padding: 36px 24px }
+.cx-lista > .es-vazio .btn, .vg-lista > .es-vazio .btn { margin-top: 6px }
+/* subtítulo ao lado do título do cartão */
+h3 > small.opt { font-weight: 500; font-size: 12px; color: var(--faint); margin-left: 6px; letter-spacing: 0 }
+/* avisos fixos mais estreitos em telas médias, para cobrir menos o título */
+@media (max-width: 1240px) { .avisos { width: min(340px, calc(100vw - 32px)) } .aviso-fixo small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden } }
+/* barra de baixo (tela estreita): sem os títulos de seção */
+@media (max-width: 860px) { .lado-sep { display: none } }
+/* Mídias: cartões crescem para ocupar a linha, sem sobra no meio */
+.midias:not(.pk) { justify-content: flex-start } .midias:not(.pk) > .midia { flex: 1 1 150px; max-width: 210px }
+/* Criar: modelos em três colunas quando cabe; a tabela do ritmo fica compacta */
+.rot-grid > .rot-card { flex: 1 1 340px; max-width: 440px }
+.auto-tab td { white-space: nowrap } .auto-tab td:nth-child(2) { width: 100%; white-space: normal }
+/* Ajustes → Preferências: rótulo com espaço para a explicação; botão no tamanho do texto */
+.pref { grid-template-columns: 180px 1fr } .pref > .btn { justify-self: start }
+@media (max-width: 700px) { .pref { grid-template-columns: 1fr } }
+/* anel de uso no topo: trilho visível também no tema claro */
+.cx-anel { background: conic-gradient(var(--cor) calc(var(--p) * 1%), color-mix(in srgb, var(--text) 16%, transparent) 0) }
+/* tema claro: dias da Agenda se destacam do fundo */
+:where([data-theme=light]) .cal-d { background: color-mix(in srgb, var(--text) 4%, transparent); border-color: color-mix(in srgb, var(--text) 6%, transparent) }
+:where([data-theme=light]) .cal-d.fds { background: color-mix(in srgb, var(--text) 2%, transparent) }
+:where([data-theme=light]) .cal-d:hover { background: color-mix(in srgb, var(--text) 7%, transparent) }
+/* tema claro: trilhos de progresso e marcadores visíveis (glass-3 é branco no claro) */
+:where([data-theme=light]) :is(.uso-barra, .cm-uso i, .ini-meta, .es-prog span, .att-prog span, .int-barra, .int-sem i, .tour-pts i) { background: color-mix(in srgb, var(--text) 11%, transparent) }
+/* tema claro: miniatura de vídeo como uma tela escura, igual às de imagem */
+[data-theme=light] .wf-vid { background: #161d33; --text: #fff; --soft: rgba(255, 255, 255, .72); --bg: #0c1220; --wf-a: rgba(255, 255, 255, .08); --wf-b: rgba(255, 255, 255, .26); --wf-c: rgba(255, 255, 255, .45) }
+/* etiquetas sobre miniaturas: sempre escuras, porque ficam sobre a imagem (contraste igual nos dois temas) */
+[data-theme=light] .wf-badge { color: #fff; background: rgba(12, 18, 32, .74); border-color: rgba(255, 255, 255, .18) }
+/* o selo do formato fica na frente das páginas do carrossel */
+.wf .wf-badge { z-index: 6 }
+/* Agenda: título longo na lista do dia fica em até duas linhas */
+.cal-li b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere }
+.cal-li small { overflow-wrap: anywhere }
+/* topo: um véu do fundo para o conteúdo rolado não aparecer entre as contas */
+.bar::before { content: ''; position: absolute; inset: 0 0 -14px; z-index: -1; pointer-events: none; background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 94%, transparent) 60%, transparent) }
+@media (min-width: 861px) { body.com-lado .bar::before { left: 216px } }
+/* Agenda → Sem data: título longo quebra e fica em até duas linhas, sem rolar para o lado */
+.cal-it > span:last-child { min-width: 0; flex: 1 }
+.cal-it b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere }
+.cal-it small { overflow-wrap: anywhere }
+/* Conexões: título e motivo longos não esticam nem estouram o cartão */
+.cx-h { align-items: flex-start } .cx-h > .cx-av, .cx-h > :last-child { flex: none }
+.cx-h b { flex: 1; min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden }
+.cx-card > p:not(.motivos) { overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden }
+/* Para interagir hoje: responder quem comentou e marcar o comentário logo depois de copiar a ideia */
+.int-posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px }
+.int-posts li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--r-sm); background: var(--glass); border: 1px solid var(--edge) }
+.int-posts li > span { flex: 1; min-width: 0; display: grid; gap: 1px } .int-posts b { font-size: var(--fs-small); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .int-posts small { font-size: 11.5px; color: var(--faint) }
+.int-posts .btn { flex: none } .int-resp .fine { margin: 0 }
+.int-ia { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap }
+/* prévia do feed: hashtags e links em destaque, quatro ações no rodapé */
+.fp-tag { color: var(--accent); font-weight: 600 } [data-theme=light] .fp-tag { color: #0a66c2 }
+.fp-foot { justify-content: space-between; padding-inline: 6px } .fp-foot span { padding: 6px 4px }

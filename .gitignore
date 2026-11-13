@@ -43,3 +43,6 @@ dist/
 /src-tauri/binaries/
 /src-tauri/gen/
 /src-tauri/build.log
+
+# capturas e registros de teste locais
+.playwright-mcp/
